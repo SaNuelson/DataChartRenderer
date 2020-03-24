@@ -1,0 +1,18 @@
+#chart-container{
+    background-color:grey;
+    border: 6px solid lightgrey;
+    border-radius: 6px;
+
+    width: 350px;
+    height: 350px;
+
+    position: absolute;
+    right: 0;
+    bottom: 0;
+}
+
+#chart-header{
+    position: absolute;
+    width: 100%;
+    background-color: darkgrey;
+}

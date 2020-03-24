@@ -1,0 +1,66 @@
+<!doctype html>
+
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+
+    <title>CSV Charts</title>
+    <meta name="author" content="Black Warden">
+
+</head>
+
+<body>
+    <ul>
+        <li>
+            <a class="csvLink" href="http://siret.ms.mff.cuni.cz/novelinka/new/web/res/akcezoo.csv">AkceVZoo.csv</a>
+        </li>
+        <li>
+            <a class="csvLink" href="http://siret.ms.mff.cuni.cz/novelinka/new/web/res/data_type_debug.csv">DataTypeDebug.csv</a>
+        </li>
+        <li>
+            <a class="csvLink" href="http://siret.ms.mff.cuni.cz/novelinka/new/web/res/FL_insurance_sample.csv">FLInsuranceSample.csv</a>
+        </li>
+        <li>
+            <a class="csvLink" href="http://siret.ms.mff.cuni.cz/novelinka/new/web/res/saudi-arabia-money-supply-2000-2009.csv">SaudiArabiaMoneySupply.csv</a>
+        </li>
+    </ul>
+
+    <div id="table-div">
+
+    </div>
+
+    <div id="chart-opts">
+        
+    </div>
+
+
+
+    <div id="chart-container">
+        <div id="chart-header">
+        </div>
+
+        <div id="chart-div"></div>
+    </div>
+    
+
+    <!-- JQuery -->
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+    <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+    <!-- JQuery -->
+
+    <!-- GCCSV Copy begin -->
+    <script src="include/js/script.js"></script>
+    <script src="include/js/csvdata.js"></script>
+    <link rel="stylesheet" href="include/css/style.css">
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    <script type="text/javascript">
+        google.charts.load('current', { packages: ['corechart', 'annotationchart', 'calendar', 'sankey', 'timeline', 'treemap', 'wordtree'] });
+        google.charts.setOnLoadCallback(onGCLoaded);
+    </script>
+    <!-- GCCSV Copy end -->
+
+</body>
+
+</html>

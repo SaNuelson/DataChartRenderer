@@ -1,0 +1,59 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+
+    <title>Main Page</title>
+
+    <meta charset="utf-8">
+    <meta name="description" content="CSVCharter full JS debug deploy site">
+    <meta name="author" content="BlackWarden">
+
+    <link rel="stylesheet" href="../css/style.css">
+
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    <script type="text/javascript" src="../js/json_loader.js"></script>
+    <script type="text/javascript" src="../js/index_logic_minmem.js"></script>
+    <script type="text/javascript" src="../js/csvsrc_minmem.js"></script>
+    <script type="text/javascript" src="../js/chart_opts.js"></script>
+    <script type="text/javascript">
+        google.charts.load('current',{packages:['corechart','annotationchart','calendar','sankey','timeline','treemap','wordtree']});
+        google.charts.setOnLoadCallback(onGCLoaded);
+    </script>
+    
+</head>
+
+<body onload="page_onload()">
+
+    <div id="options_div">
+        <p>
+            Source File:
+            <input id="src" name="src" type="file" accept=".csv" style="background: white" />
+            <input id="path_submit_btn" type="button" value="Submit" onclick="loadFile()" />
+        </p>
+
+    </div>
+
+    <div id="graph_div"></div>
+    <div>
+        <button id="draw_graph" onclick="draw_graph_btn_click()">Draw Graph</button>
+        <select id="graph_type" onchange="on_gc_type_change()"></select>
+        <div id="graph_options_div"></div>
+    </div>
+
+    <div id="table_div">
+        <!--<button id="table_div_hide_btn" onclick="toggle_hide_parent(this.id)">-</button>-->
+        <p id="table_div_hidden_msg" style="display: none">Table div hidden</p>
+        <table id="data_table"></table>
+    </div>
+
+    <div id="graph_div">
+    </div>
+
+    <hr/>
+
+    <div id="graph_div2">
+    </div>
+
+</body>
+</html>
