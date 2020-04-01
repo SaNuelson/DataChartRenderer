@@ -1,5 +1,12 @@
-class CSVData {
+/**
+ * Class responsible for parsing, holding and working with raw data.
+ */
+class SourceData {
 
+    /**
+     * Create instance from raw text, which will be split and cut appropriately.
+     * @param {string} text 
+     */
     constructor(text) {
 
         if (text == null || text == "") {
@@ -11,6 +18,8 @@ class CSVData {
         this.parseData(text);
     }
 
+    lineDelimiter = '\n';
+    entryDelimiter = ',';
     parseData(text) {
 
         this.head = [];

@@ -1,276 +1,551 @@
-{ 
-        "AnnotationChart":
-            [
+{
+    "ChartTypes": [
+        {
+            "name": "AnnotationChart",
+            "roles": [
                 {
-                    "name":"X Value",
-                    "types":["date","datetime"]
+                    "name": "X Value",
+                    "types": [
+                        "date",
+                        "datetime"
+                    ]
                 },
                 {
-                    "name":"Y Value",
-                    "types":["number"]
+                    "name": "Y Value",
+                    "types": [
+                        "number"
+                    ]
                 },
                 {
-                    "role":"annotation"
+                    "role": "annotation"
                 },
                 {
-                    "role":"annotationText"
+                    "role": "annotationText"
                 }
-            ],
-        "AreaChart":
-            [
+            ]
+        },
+        {
+            "name": "AreaChart",
+            "roles": [
                 {
-                    "name":"X Value",
-                    "types":["string","number","data","datetime","timeofday"],
-                    "roles":["annotation","annotationText"]
+                    "name": "X Value",
+                    "types": [
+                        "string",
+                        "number",
+                        "data",
+                        "datetime",
+                        "timeofday"
+                    ],
+                    "subroles": [
+                        "annotation",
+                        "annotationText"
+                    ]
                 },
                 {
-                    "name":"Line {1} Value",
-                    "types":["number"],
-                    "repeatable":true,
-                    "roles":["annotation","annotationText","certainty","emphasis","interval","scope","style","tooltip"]
+                    "name": "Line {1} Value",
+                    "types": [
+                        "number"
+                    ],
+                    "repeatable": true,
+                    "subroles": [
+                        "annotation",
+                        "annotationText",
+                        "certainty",
+                        "emphasis",
+                        "interval",
+                        "scope",
+                        "style",
+                        "tooltip"
+                    ]
                 }
-            ],
-        "BarChart":
-            [
+            ]
+        },
+        {
+            "name": "BarChart",
+            "roles": [
                 {
-                    "name":"Y Value",
-                    "types":["string","number","date","datetime","timeofday"]
+                    "name": "Y Value",
+                    "types": [
+                        "string",
+                        "number",
+                        "date",
+                        "datetime",
+                        "timeofday"
+                    ]
                 },
                 {
-                    "name":"Line {1} Value",
-                    "types":["number"],
-                    "repeatable":true,
-                    "roles":["certainty","interval","scope","tooltip"]
+                    "name": "Line {1} Value",
+                    "types": [
+                        "number"
+                    ],
+                    "repeatable": true,
+                    "subroles": [
+                        "certainty",
+                        "interval",
+                        "scope",
+                        "tooltip"
+                    ]
                 },
                 {
-                    "role":"style"
+                    "role": "style"
                 }
-            ],
-        "BubbleChart":
-            [
+            ]
+        },
+        {
+            "name": "BubbleChart",
+            "roles": [
                 {
-                    "name":"ID (name)",
-                    "types":["string"]
+                    "name": "ID (name)",
+                    "types": [
+                        "string"
+                    ]
                 },
                 {
-                    "name":"X Coordinate",
-                    "types":["number"]
+                    "name": "X Coordinate",
+                    "types": [
+                        "number"
+                    ]
                 },
                 {
-                    "name":"Y Coordinate",
-                    "types":["number"]
+                    "name": "Y Coordinate",
+                    "types": [
+                        "number"
+                    ]
                 },
                 {
-                    "name":"Color/Group",
-                    "types":["string","number"],
-                    "optional":true
+                    "name": "Color/Group",
+                    "types": [
+                        "string",
+                        "number"
+                    ],
+                    "optional": true
                 },
                 {
-                    "name":"Size",
-                    "types":["number"],
-                    "optional":true
+                    "name": "Size",
+                    "types": [
+                        "number"
+                    ],
+                    "optional": true
                 }
-            ],
-        "Calendar":
-            [
+            ]
+        },
+        {
+            "name": "Calendar",
+            "roles": [
                 {
-                    "name":"Date",
-                    "types":["date","datetime","timeofday"]
+                    "name": "Date",
+                    "types": [
+                        "date",
+                        "datetime",
+                        "timeofday"
+                    ]
                 },
                 {
-                    "name":"Value",
-                    "types":["number"]
+                    "name": "Value",
+                    "types": [
+                        "number"
+                    ]
                 },
                 {
-                    "role":"tooltip"
+                    "role": "tooltip"
                 }
-            ],
-        "CandlestickChart":
-            [
+            ]
+        },
+        {
+            "name": "CandlestickChart",
+            "roles": [
                 {
-                    "name":"X Value",
-                    "types":["number","string","date","datetime","timeofday"]
+                    "name": "X Value",
+                    "types": [
+                        "number",
+                        "string",
+                        "date",
+                        "datetime",
+                        "timeofday"
+                    ]
                 },
                 {
-                    "name":"Minimal Value",
-                    "types":["number"]
+                    "name": "Minimal Value",
+                    "types": [
+                        "number"
+                    ]
                 },
                 {
-                    "name":"Initial Value",
-                    "types":["number"]
+                    "name": "Initial Value",
+                    "types": [
+                        "number"
+                    ]
                 },
                 {
-                    "name":"Closing Value",
-                    "types":["number"]
+                    "name": "Closing Value",
+                    "types": [
+                        "number"
+                    ]
                 },
                 {
-                    "name":"Maximal Value",
-                    "types":["number"]
+                    "name": "Maximal Value",
+                    "types": [
+                        "number"
+                    ]
                 },
                 {
-                    "role":"tooltip"
+                    "role": "tooltip"
                 },
                 {
-                    "role":"style"
+                    "role": "style"
                 }
-            ],
-        "ColumnChart":
-            [
+            ]
+        },
+        {
+            "name": "ColumnChart",
+            "roles": [
                 {
-                    "name":"X Value",
-                    "types":["string","number","date","datetime","timeofday"]
+                    "name": "X Value",
+                    "types": [
+                        "string",
+                        "number",
+                        "date",
+                        "datetime",
+                        "timeofday"
+                    ]
                 },
                 {
-                    "name":"Bar {1} Value",
-                    "types":["number"],
-                    "repeatable":true,
-                    "roles":["certainty","interval","scope","style","tooltip"]
+                    "name": "Bar {1} Value",
+                    "types": [
+                        "number"
+                    ],
+                    "repeatable": true,
+                    "subroles": [
+                        "certainty",
+                        "interval",
+                        "scope",
+                        "style",
+                        "tooltip"
+                    ]
                 }
-            ],
-        "ComboChart":
-            [
+            ]
+        },
+        {
+            "name": "ComboChart",
+            "roles": [
                 {
-                    "name":"X Value",
-                    "types":["string","number","date","datetime","timeofday"],
-                    "roles":["annotation","annotationText"]
+                    "name": "X Value",
+                    "types": [
+                        "string",
+                        "number",
+                        "date",
+                        "datetime",
+                        "timeofday"
+                    ],
+                    "subroles": [
+                        "annotation",
+                        "annotationText"
+                    ]
                 },
                 {
-                    "name":"Line {1} Value",
-                    "types":["number"],
-                    "repeatable":true,
-                    "roles":["annotationText","annotation","certainty","emphasis","interval","scope","style","tooltip"]
+                    "name": "Line {1} Value",
+                    "types": [
+                        "number"
+                    ],
+                    "repeatable": true,
+                    "subroles": [
+                        "annotationText",
+                        "annotation",
+                        "certainty",
+                        "emphasis",
+                        "interval",
+                        "scope",
+                        "style",
+                        "tooltip"
+                    ]
                 }
-            ],
-        "PieChart":
-            [
+            ]
+        },
+        {
+            "name": "PieChart",
+            "roles": [
                 {
-                    "name":"Slice Label",
-                    "types":["string"]
+                    "name": "Slice Label",
+                    "types": [
+                        "string"
+                    ]
                 },
                 {
-                    "name":"Slice Value",
-                    "types":["number"]
+                    "name": "Slice Value",
+                    "types": [
+                        "number"
+                    ]
                 },
                 {
-                    "role":"tooltip"
+                    "role": "tooltip"
                 }
-            ],
-        "Sankey":
-            [
+            ]
+        },
+        {
+            "name": "Sankey",
+            "roles": [
                 {
-                    "name":"Source",
-                    "types":["string"]
+                    "name": "Source",
+                    "types": [
+                        "string"
+                    ]
                 },
                 {
-                    "name":"Destination",
-                    "types":["string"]
+                    "name": "Destination",
+                    "types": [
+                        "string"
+                    ]
                 },
                 {
-                    "name":"Value",
-                    "types":["number"]
+                    "name": "Value",
+                    "types": [
+                        "number"
+                    ]
                 },
                 {
-                    "role":"tooltip"
+                    "role": "tooltip"
                 },
                 {
-                    "role":"style"
+                    "role": "style"
                 }
-            ],
-        "ScatterChart":
-            [
+            ]
+        },
+        {
+            "name": "ScatterChart",
+            "roles": [
                 {
-                    "name":"X Value",
-                    "types":["string","number","date","datetime","timeofday"]
+                    "name": "X Value",
+                    "types": [
+                        "string",
+                        "number",
+                        "date",
+                        "datetime",
+                        "timeofday"
+                    ]
                 },
                 {
-                    "name":"Series {1} Value",
-                    "types":["string","number","date","datetime","timeofday"],
-                    "repeatable":true,
-                    "roles":["certainty","emphasis","scope","tooltip"]
+                    "name": "Series {1} Value",
+                    "types": [
+                        "string",
+                        "number",
+                        "date",
+                        "datetime",
+                        "timeofday"
+                    ],
+                    "repeatable": true,
+                    "subroles": [
+                        "certainty",
+                        "emphasis",
+                        "scope",
+                        "tooltip"
+                    ]
                 },
                 {
-                    "role":"style"
+                    "role": "style"
                 }
-            ],
-        "SteppedAreaChart":
-            [
+            ]
+        },
+        {
+            "name": "SteppedAreaChart",
+            "roles": [
                 {
-                    "name":"X Label",
-                    "types":["string"]
+                    "name": "X Label",
+                    "types": [
+                        "string"
+                    ]
                 },
                 {
-                    "name":"Bar {1} Value",
-                    "types":["number"],
-                    "repeatable":true,
-                    "roles":["certainty","interval","scope","style","tooltip"]
+                    "name": "Bar {1} Value",
+                    "types": [
+                        "number"
+                    ],
+                    "repeatable": true,
+                    "subroles": [
+                        "certainty",
+                        "interval",
+                        "scope",
+                        "style",
+                        "tooltip"
+                    ]
                 }
-            ],
-        "Timeline":
-            [
+            ]
+        },
+        {
+            "name": "Timeline",
+            "roles": [
                 {
-                    "name":"Row Label",
-                    "types":["string"]
+                    "name": "Row Label",
+                    "types": [
+                        "string"
+                    ]
                 },
                 {
-                    "name":"Bar Label",
-                    "types":["string"]
+                    "name": "Bar Label",
+                    "types": [
+                        "string"
+                    ]
                 },
                 {
-                    "role":"tooltip"
+                    "role": "tooltip"
                 },
                 {
-                    "name":"Start",
-                    "roles":["number","date"]
+                    "name": "Start",
+                    "subroles": [
+                        "number",
+                        "date"
+                    ]
                 },
                 {
-                    "name":"End",
-                    "roles":["number","date"]
+                    "name": "End",
+                    "subroles": [
+                        "number",
+                        "date"
+                    ]
                 }
-            ],
-        "TreeMap":
-            [
+            ]
+        },
+        {
+            "name": "TreeMap",
+            "roles": [
                 {
-                    "name":"ID (name)",
-                    "roles":["string"]
+                    "name": "ID (name)",
+                    "subroles": [
+                        "string"
+                    ]
                 },
                 {
-                    "name":"Parent ID (name)",
-                    "roles":["string"]
+                    "name": "Parent ID (name)",
+                    "subroles": [
+                        "string"
+                    ]
                 },
                 {
-                    "name":"Size",
-                    "roles":["number"]
+                    "name": "Size",
+                    "subroles": [
+                        "number"
+                    ]
                 },
                 {
-                    "name":"Color",
-                    "roles":["number"],
-                    "optional":true
+                    "name": "Color",
+                    "subroles": [
+                        "number"
+                    ],
+                    "optional": true
                 }
-            ],
-        "WordTree":
-            [
+            ]
+        },
+        {
+            "name": "WordTree",
+            "roles": [
                 {
-                    "name":"Text",
-                    "types":["string"]
+                    "name": "Text",
+                    "types": [
+                        "string"
+                    ]
                 },
                 {
-                    "name":"Size",
-                    "types":["number"],
-                    "optional":true
+                    "name": "Size",
+                    "types": [
+                        "number"
+                    ],
+                    "optional": true
                 },
                 {
-                    "name":"Style",
-                    "types":["string"]
+                    "name": "Style",
+                    "types": [
+                        "string"
+                    ]
                 },
                 {
-                    "name":"ID",
-                    "types":["number"],
-                    "optional":true
+                    "name": "ID",
+                    "types": [
+                        "number"
+                    ],
+                    "optional": true
                 },
                 {
-                    "name":"Parent ID",
-                    "types":["number"],
-                    "optional":true
+                    "name": "Parent ID",
+                    "types": [
+                        "number"
+                    ],
+                    "optional": true
                 }
             ]
         }
+    ],
+    "RoleDetails": [
+        {
+            "name": "annotation",
+            "caption": "Annotation",
+            "types": [
+                "string"
+            ],
+            "default": ""
+        },
+        {
+            "name": "annotationtext",
+            "caption": "Annotation Text",
+            "types": [
+                "string"
+            ],
+            "default": ""
+        },
+        {
+            "name": "certainty",
+            "caption": "Certainty",
+            "types": [
+                "boolean"
+            ],
+            "default": true
+        },
+        {
+            "name": "emphasis",
+            "caption": "Emphasis",
+            "types": [
+                "boolean"
+            ],
+            "default": false
+        },
+        {
+            "name": "interval",
+            "caption": "Interval",
+            "types": [
+                "number"
+            ],
+            "default": null
+        },
+        {
+            "name": "scope",
+            "caption": "Scope",
+            "types": [
+                "boolean"
+            ],
+            "default": true
+        },
+        {
+            "name": "style",
+            "caption": "Style",
+            "types": [
+                "object"
+            ],
+            "default": null
+        },
+        {
+            "name": "tooltip",
+            "caption": "Tooltip",
+            "types": [
+                "string"
+            ],
+            "default": null
+        },
+        {
+            "name": "domain",
+            "caption": "Domain",
+            "types": [
+                "string",
+                "date",
+                "number"
+            ]
+        }
+    ]
+}

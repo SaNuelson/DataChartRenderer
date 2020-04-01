@@ -26,23 +26,19 @@
         </li>
     </ul>
 
-    <div id="table-div">
-
-    </div>
-
-    <div id="chart-opts">
-        
-    </div>
-
-
-
     <div id="chart-container">
-        <div id="chart-header">
+        <ul>
+            <li><a href="#table-div">Date Preview</a></li>
+            <li><a href="#chart-opts">Chart Options</a></li>
+            <li><a href="#chart-div">Chart</a></li>
+        </ul>
+        <div id="table-div"></div>
+        <div id="chart-opts">
+            <div id="chart-type-select-wrapper"></div>
+            <div id="chart-opts-menu"></div>
         </div>
-
         <div id="chart-div"></div>
     </div>
-    
 
     <!-- JQuery -->
     <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
@@ -50,15 +46,12 @@
     <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
     <!-- JQuery -->
 
-    <!-- GCCSV Copy begin -->
-    <script src="include/js/script.js"></script>
-    <script src="include/js/csvdata.js"></script>
-    <link rel="stylesheet" href="include/css/style.css">
+    <!-- GCCSV Copy begin -->       
     <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
-    <script type="text/javascript">
-        google.charts.load('current', { packages: ['corechart', 'annotationchart', 'calendar', 'sankey', 'timeline', 'treemap', 'wordtree'] });
-        google.charts.setOnLoadCallback(onGCLoaded);
-    </script>
+    <script src="include/js/core.js"></script>
+    <script src="include/js/script.js"></script>
+    <script src="include/js/uigen.js"></script>
+    <link rel="stylesheet" href="include/css/style.css">
     <!-- GCCSV Copy end -->
 
 </body>

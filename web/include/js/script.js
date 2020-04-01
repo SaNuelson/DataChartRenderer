@@ -1,3 +1,5 @@
+var manager = new ChartManager();
+
 $(() => {
     // csv sources on page
     $("a").each((idx, val) => {
@@ -11,6 +13,8 @@ $(() => {
             handles: "n,w,nw",
             containment: "document"
         });
+
+    $("#chart-container").tabs();
 })
 
 function insertChartButtonAfter(element) {
@@ -23,25 +27,12 @@ function insertChartButtonAfter(element) {
 }
 
 // GCCSV
-var csvData = null;
 
 function setSource(srcUrl) {
-    readCSV(srcUrl);
-    loadDataPreview();
-    loadChartOpts();
-}
-
-function readCSV(srcUrl) {
-    var file = new XMLHttpRequest();
-    file.open("GET", srcUrl, false);
-    file.onreadystatechange = () => {
-        if (file.readyState == 4) {
-            if (file.status == 200 || file.status == 0) {
-                csvData = new CSVData(file.responseText);
-            }
-        }
-    }
-    file.send(null);
+    manager.setDataSource(srcUrl).then(()=>{
+        loadDataPreview();
+        loadChartOpts();
+    })
 }
 
 function loadDataPreview(){
@@ -49,8 +40,9 @@ function loadDataPreview(){
     if(wrapper == null)
         return;
     let table = document.createElement('table');
-	table.innerHTML = "";
-	if(csvData == null)
+    table.innerHTML = "";
+    var csvData = manager.SourceData;
+	if(!csvData)
 		return;
 
 	let table_head = table.createTHead();
@@ -63,7 +55,6 @@ function loadDataPreview(){
 	}
 
     // insert all data
-    // console.log("Length: " + csvData.data.length);
     let table_body = table.createTBody();
     let upto = Math.min(csvData.data.length, 5);
 	for(i = 0; i < upto; i++){
@@ -77,4 +68,72 @@ function loadDataPreview(){
     wrapper.appendChild(table);
 }
 
-function onGCLoaded() {}
+function loadChartOpts(){
+    var opt_wrapper = document.getElementById("chart-type-select-wrapper");
+    opt_wrapper.innerHTML = "";
+    opt_wrapper.appendChild(createChartSelector());
+    document.getElementById("chart-opts-menu").innerHTML = "";
+}
+
+function createChartSelector(){
+    var chartSelector = document.createElement("select");
+    chartSelector.id = "chart-type-select";
+    var graphTypes = manager.getChartTypes();
+    
+    // null option
+    var option = document.createElement("option");
+    option.innerHTML = "- Select Chart Type -";
+    chartSelector.options.add(option);
+    
+    for(chartType of graphTypes)
+    {
+        var option = document.createElement("option");
+        option.value = chartType;
+        option.innerHTML = chartType;
+        chartSelector.options.add(option);
+    }
+    chartSelector.onchange = function() { onGCTypeChange(); }
+    return chartSelector;
+}
+
+function onGCTypeChange(){
+    console.log("onGCTypeChange")
+    let chartSelector = document.getElementById("chart-type-select");
+    let opt = chartSelector.value;
+    console.log("Opt " + opt);
+    manager.setChartType(opt);
+    loadChartTypeOpts(opt);
+}
+
+
+function loadChartTypeOpts(){
+    let option_menu = document.getElementById("chart-opts");
+    var menu = document.getElementById("chart-opts-menu")
+    if(!menu){
+        menu = document.createElement("div")
+        menu.id = "chart-opts-menu";
+    }
+    else{
+        menu.innerHTML = "";
+    }
+    
+    for(let role of manager.getChartRoles()){
+        var line = document.createElement("div");
+        line.appendChild(document.createTextNode(role.name));
+        line.appendChild(role.getColumnSelector());
+        line.appendChild(role.getTypeSelector());
+        line.appendChild(role.getFormatInput());
+        menu.appendChild(line);
+    }
+}
+
+
+
+////////////
+function bindToChart(element,role,property){
+    element.chartBinding = {"role" : role, "setter" : property};
+    element.onchange = function(){
+        element.chartBinding.role[element.chartBinding.property] = element.value;
+        console.log("Changed " + property + " ")
+    }
+}
