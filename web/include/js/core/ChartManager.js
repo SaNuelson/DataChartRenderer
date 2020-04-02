@@ -286,7 +286,6 @@ class ChartManager {
     static ChartTypeData = chartJsonWrapper;
 
     static checkChartTypeData() {
-        // TODO: should use some checksum or other mechanism to ensure that the data is valid.
         if (!ChartManager.ChartTypeData) {
             throw new Error("ChartTypeData is not defined. Please contact the developer.")
         }

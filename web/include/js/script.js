@@ -7,15 +7,6 @@ $(() => {
             insertChartButtonAfter(val);
     })
 
-    // chart-container settings
-    $("#chart-container").resizable(
-        {
-            handles: "n,w,nw",
-            containment: "document"
-        });
-
-    $("#chart-container").tabs();
-    
     manager.ChartBoundElement = document.getElementById("chart-div");
 })
 
