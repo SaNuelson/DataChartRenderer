@@ -7,6 +7,7 @@ HTMLElement.prototype.fillSelect = function(options, clear = true){
         this.innerHTML = "";
     }
     for(let opt of options){
+        console.log(options);
         var option = document.createElement("option");
         option.innerHTML = opt;
         option.value = opt;
@@ -32,9 +33,10 @@ ChartRole.prototype.getColumnSelector = function(){
  * Generate a <select> filled with types bound to the "this" chartRole.
  */
 ChartRole.prototype.getTypeSelector = function(){
-    if()
-    return document.createElement("select")
-        .fillSelect(types);
+    var select = document.createElement('select');
+    if(this.types.length == 1)
+        select.disabled = true;
+    return select.fillSelect(this.types);
 }
 
 /**

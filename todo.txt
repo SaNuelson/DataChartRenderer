@@ -1,0 +1,2 @@
+ - Add Event Listeners to uigen.js and add Event Dispatching into core for OnPropertyChanged.
+ 

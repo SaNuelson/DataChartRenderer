@@ -10,22 +10,43 @@ class ChartManager {
      * class SourceData instance, holds currently loaded CSV
      * @type {SourceData}
      */
-    SourceData = null;
+    _sourceData = null;
+    get SourceData() { return this._sourceData; }
+    set SourceData(value) {
+        // TODO validate source data
+        this._sourceData = value;
+        document.dispatchEvent(new CustomEvent("onCMSourceDataChange",{"detail":this}));
+    }
     /**
      * Array holding current roles (unfilled and filled alike). 
      * @type {Oeject[]}
     */
-    ChartRoles = []
+    _chartRoles = []
+    get ChartRoles() { return this._chartRoles; }
+    set ChartRoles(value) {
+        this._chartRoles = value;
+        document.dispatchEvent(new CustomEvent("onCMChartRolesChange",{"detail":this}));
+    }
     /**
      * Element (div) onto which google chart should be rendered.
      * @type {HTMLElement}
      */
-    ChartBoundElement = null;
+    _chartBoundElement = null;
+    get ChartBoundElement() { return this._chartBoundElement; }
+    set ChartBoundElement(value) { 
+        this._chartBoundElement = value;
+        document.dispatchEvent(new CustomEvent("onCMBoundElementChange",{"detail":this}));
+    }
     /**
      * Name of chart type currently selected.
      * @type {string}
      */
-    SelectedChartTypeName = null;
+    _selectedChartTypeName = null;
+    get SelectedChartTypeName() { return this._selectedChartTypeName; }
+    set SelectedChartTypeName(value) { 
+        this._selectedChartTypeName = value;
+        document.dispatchEvent(new CustomEvent("onCMSelectedChartTypeNameChange",{"detail":this}));
+    }
 
     /* #endregion */
 
