@@ -96,6 +96,10 @@ class SourceData {
 
     getChartData(cols, types, formats) {
 
+        console.log(cols);
+        console.log(types);
+        console.log(formats);
+
         let parsed_data = new google.visualization.DataTable();
 
         for (let i = 0; i < cols.length; i++) {

@@ -1,4 +1,4 @@
-{
+var chartJsonWrapper = {
     "ChartTypes": [
         {
             "name": "AnnotationChart",

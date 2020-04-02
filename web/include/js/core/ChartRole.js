@@ -6,31 +6,78 @@
  */
 class ChartRole {
 
-    /**
-     * Properties
-     */
-    name; caption; types; defval; subroles; optional; repeatable;
+    /* #region Properties */
+    
+    /** @property {string} Name used internally */
+    name = "name.unset";
 
-    selectedColumn; selectedType; selectedFormat; manager;
+    /** @property {string} Name used externally in frontend */
+    caption = "caption.unset";
+    
+    /** @property {string[]} Compatible types with this chart role */
+    types = null;
+
+    /** @property {string} Default value */
+    defval = "defval.unset";
+
+    /** @property {string} Specific role for this chart role */
+    role = "";
+    
+    /** @property {ChartRole[]} Subroles compatible with this chart role */
+    subroles = [];
+
+    /** @property {string[]} Subrole names (used for generating copies) */
+    subrolenames = []; 
+
+    /** @property {boolean} If this chart role can be left unassigned */
+    optional = false; 
+    
+    /** @property {boolean} If this chart role can appear multiple times */
+    repeatable = false;
+    /** @property {ChartRole[]} References to created copies of this chart role */
+    copies = [];
+    /** @property {ChartRole} Reference to parent of this chart role copy */
+    owner = null;
+
+    /** @property {string} Head of the currently selected SourceData column for this chart role */
+    selectedColumn = "";
+    /** @property {string} Currently selected type from the types */
+    selectedType = "";
+    /** @property {string} Additional format information. Currently necessary only for date/time/datetime */
+    selectedFormat = "";
+    /** @property {ChartManager} associated with this chart role */
+    manager;
+
+    /* #endregion */
 
     constructor(srcObj, manager) {
-        if (srcObj["name"]) this.name = srcObj["name"];
-        if (srcObj["caption"]) this.caption = srcObj["caption"];
-        if (srcObj["types"]) this.types = srcObj["types"];
-        if (srcObj["default"]) this.defval = srcObj["default"];
-        if (srcObj["subroles"]) this.subroles = srcObj["subroles"];
-        if (srcObj["optional"]) this.optional = srcObj["optional"];
-        if (srcObj["repeatable"]) this.repeatable = srcObj["repeatable"];
-        
-        this.selectedColumn = null;
-        this.selectedType = null;
-        this.selectedFormat = null;
-
-        if(!manager){
-            console.error("Manager not defined for a chartRole.");
-        }
 
         this.manager = manager;
+
+        if (srcObj["name"]) this.name = srcObj["name"];
+        if (srcObj["caption"]) this.caption = srcObj["caption"];
+        if (srcObj["types"]) {
+            this.types = srcObj["types"];
+            this.selectedType = this.types[0];
+        }
+        if (srcObj["default"]) this.defval = srcObj["default"];
+        if (srcObj["optional"]) this.optional = srcObj["optional"];
+        if (srcObj["repeatable"]) this.repeatable = srcObj["repeatable"];
+        if (srcObj["subrolenames"]) {
+            this.subroles = [];
+            this.subrolenames = srcObj["subrolenames"];
+            for(var subrolename of srcObj["subrolenames"]){
+                this.subroles.push(ChartRole.createByRole(subrolename, manager));
+            }
+        }
+        
+        this.selectedColumn = manager.SourceData.head[0];
+        this.selectedFormat = "";
+
+        if(!manager){
+            console.error("Manager not defined for a chartRole in:");
+            console.log(this);
+        }
     }
 
     /**
@@ -39,13 +86,15 @@ class ChartRole {
      * @param {ChartManager} manager
      * @returns {ChartRole}
      */
-    static createByRole(role, manager) {
-        let roleData = ChartManager.getChartRoleTemplate(role);
+    static createByRole(rolename, manager) {
+        let roleData = ChartManager.getChartRoleTemplate(rolename);
         if (!roleData) {
-            console.log(`Role ${role} not found`);
+            console.log(`Role ${rolename} not found`);
             return null;
         }
-        return new ChartRole(roleData, manager)
+        var role =  new ChartRole(roleData, manager)
+        role.role = rolename;
+        return role;
     }
 
     /**
@@ -77,6 +126,20 @@ class ChartRole {
                 arr.push(ChartRole.createByData(template, manager))
         }
         return arr;
+    }
+
+    /**
+     * Get repeat copy
+     */
+    getRepeatCopy() {
+        if(!this.repeatable){
+            console.error("getRepeatCopy called on a non-repeatable chart role.");
+            return null;
+        }
+        var copy = new ChartRole(this,this.manager);
+        this.copies.push(copy);
+        copy.parent = this;
+        copy.optional = true;
     }
 
 }

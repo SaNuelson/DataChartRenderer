@@ -7,7 +7,6 @@ HTMLElement.prototype.fillSelect = function(options, clear = true){
         this.innerHTML = "";
     }
     for(let opt of options){
-        console.log(options);
         var option = document.createElement("option");
         option.innerHTML = opt;
         option.value = opt;
@@ -17,7 +16,6 @@ HTMLElement.prototype.fillSelect = function(options, clear = true){
 }
 
 
-
 ////////////////////////////
 
 
@@ -25,8 +23,16 @@ HTMLElement.prototype.fillSelect = function(options, clear = true){
  * Generate a <select> filled with head of source data bound to the "this" chartRole.
  */
 ChartRole.prototype.getColumnSelector = function(){
-    return document.createElement("select")
-        .fillSelect(this.manager.SourceData.head);
+    var select = document.createElement("select");
+    
+    var empty = document.createElement("option");
+    empty.value ="";
+    empty.innerHTML = " - Select Column - ";
+    select.options.add(empty);
+
+    select.fillSelect(this.manager.SourceData.head, false);
+    select.onchange = function() { this.selectedColumn = select.value; }.bind(this);
+    return select;
 }
 
 /**
@@ -36,6 +42,7 @@ ChartRole.prototype.getTypeSelector = function(){
     var select = document.createElement('select');
     if(this.types.length == 1)
         select.disabled = true;
+    select.onchange = function() { this.selectedType = select.value; }.bind(this);
     return select.fillSelect(this.types);
 }
 
@@ -45,5 +52,30 @@ ChartRole.prototype.getTypeSelector = function(){
 ChartRole.prototype.getFormatInput = function(){
     var input = document.createElement("input")
     input.placeholder = "Format";
+    input.onchange = function() { this.selectedFormat = select.value; }.bind(this);
     return input;
+}
+
+/**
+ * Callback to handle a copy of a ChartRole.
+ * @callback ChartRoleCopyProcessor
+ * @param {ChartRole} copy
+ */
+
+/**
+ * Generate a repeat button bound to the "this" chartRole.
+ * Upon clicking it generates a deep copy (with increased counter).
+ * @param {ChartRoleCopyProcessor} callback
+ * @returns {ChartRole}
+ */
+ChartRole.prototype.getRepeatButton = function(callback){
+    if(!this.repeatable){
+        console.error("ChartRole.prototype.getRepeatButton called on a non-repeatable chart role.");
+        return null; 
+    }
+
+    var button = document.createElement("button");
+    button.innerHTML = "+";
+    button.onclick = function(){ callback(this.getRepeatCopy()); }.bind(this);
+    return button;
 }

@@ -25,8 +25,9 @@
             <a class="csvLink" href="http://siret.ms.mff.cuni.cz/novelinka/new/web/res/saudi-arabia-money-supply-2000-2009.csv">SaudiArabiaMoneySupply.csv</a>
         </li>
     </ul>
+    
 
-    <div id="chart-container">
+    <div id="chart-container" style="overflow:auto">
         <ul>
             <li><a href="#table-div">Date Preview</a></li>
             <li><a href="#chart-opts">Chart Options</a></li>
@@ -48,7 +49,13 @@
 
     <!-- GCCSV Copy begin -->       
     <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+
+        <!-- TOOD: This part should be removed before putting it on the web -->
+        <script type="text/javascript" src="include/js/temp/jsonwrapper.js"></script>
+        <!-- Temp section end -->
+
     <script type="text/javascript" src="include/js/core/SourceData.js"></script>
+    <script type="text/javascript" src="include/js/core/Parser.js"></script>
     <script type="text/javascript" src="include/js/core/ChartRole.js"></script>
     <script type="text/javascript" src="include/js/core/ChartManager.js"></script>
     <script type="text/javascript" src="include/js/core/Init.js"></script>

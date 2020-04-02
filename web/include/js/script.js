@@ -15,6 +15,8 @@ $(() => {
         });
 
     $("#chart-container").tabs();
+    
+    manager.ChartBoundElement = document.getElementById("chart-div");
 })
 
 function insertChartButtonAfter(element) {
@@ -73,6 +75,14 @@ function loadChartOpts(){
     opt_wrapper.innerHTML = "";
     opt_wrapper.appendChild(createChartSelector());
     document.getElementById("chart-opts-menu").innerHTML = "";
+    
+    var drawChart = document.createElement("button");
+    drawChart.innerHTML = "Draw Chart";
+    drawChart.onclick = function(){ 
+        $("#chart-container").tabs("option","active",2); 
+        manager.drawChart(); 
+    }
+    opt_wrapper.appendChild(drawChart);
 }
 
 function createChartSelector(){
@@ -83,6 +93,7 @@ function createChartSelector(){
     // null option
     var option = document.createElement("option");
     option.innerHTML = "- Select Chart Type -";
+    option.value = "";
     chartSelector.options.add(option);
     
     for(chartType of graphTypes)
@@ -110,7 +121,7 @@ function loadChartTypeOpts(){
     let option_menu = document.getElementById("chart-opts");
     var menu = document.getElementById("chart-opts-menu")
     if(!menu){
-        menu = document.createElement("div")
+        menu = document.createElement("ul")
         menu.id = "chart-opts-menu";
     }
     else{
@@ -118,13 +129,42 @@ function loadChartTypeOpts(){
     }
     
     for(let role of manager.getChartRoles()){
-        var line = document.createElement("div");
-        line.appendChild(document.createTextNode(role.name));
-        line.appendChild(role.getColumnSelector());
-        line.appendChild(role.getTypeSelector());
-        line.appendChild(role.getFormatInput());
-        menu.appendChild(line);
+        menu.appendChild(getRoleListItem(role));
     }
+}
+
+function addChartTypeOpt(role){
+    var menu = document.getElementById("chart-opts-menu")
+    var copy = role.getRepeatCopy();
+    var line = getRoleListItem(copy);
+    menu.appendChild(line);
+}
+
+function getRoleListItem(role){
+    var line = document.createElement("li");
+    line.appendChild(document.createTextNode(role.name));
+    line.appendChild(role.getColumnSelector());
+    line.appendChild(role.getTypeSelector());
+    line.appendChild(role.getFormatInput());
+
+    if(role.repeatable)
+        line.appendChild(role.getRepeatButton(function(copy){addChartTypeOpt(copy)}));
+
+    if(role.subroles){
+        var sublist = document.createElement('ul');
+        for(var subrole of role.subroles){
+            console.log(subrole)
+            var subline = document.createElement("li");
+            subline.appendChild(document.createTextNode(subrole.name));
+            subline.appendChild(role.getColumnSelector());
+            subline.appendChild(role.getTypeSelector());
+            subline.appendChild(role.getFormatInput());
+            sublist.appendChild(subline);
+        }
+        line.appendChild(sublist);
+    }
+
+    return line;
 }
 
 
