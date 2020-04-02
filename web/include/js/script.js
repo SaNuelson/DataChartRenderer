@@ -147,9 +147,9 @@ function getRoleListItem(role){
             console.log(subrole)
             var subline = document.createElement("li");
             subline.appendChild(document.createTextNode(subrole.name));
-            subline.appendChild(role.getColumnSelector());
-            subline.appendChild(role.getTypeSelector());
-            subline.appendChild(role.getFormatInput());
+            subline.appendChild(subrole.getColumnSelector());
+            subline.appendChild(subrole.getTypeSelector());
+            subline.appendChild(subrole.getFormatInput());
             sublist.appendChild(subline);
         }
         line.appendChild(sublist);

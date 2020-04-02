@@ -199,7 +199,7 @@ class ChartManager {
             formats.push(role.selectedFormat);
 
             // repeat for subroles
-            for(subrole of role.subroles){
+            for(let subrole of role.subroles){
                 // all subroles are optional
                 if(!subrole.selectedColumn)
                     continue;
@@ -217,7 +217,7 @@ class ChartManager {
 
             // and finally check any copies
             if(role.repeatable){
-                for(copy of role.copies){
+                for(let copy of role.copies){
                     // any copy automatically optional
 
                     // skip if unassigned
@@ -245,7 +245,7 @@ class ChartManager {
                     formats.push(copy.selectedFormat);
                     
                     // and add any subroles of the copy
-                    for(subrole of role.subroles){
+                    for(let subrole of role.subroles){
                         // all subroles are optional
                         if(!subrole.selectedColumn)
                             continue;

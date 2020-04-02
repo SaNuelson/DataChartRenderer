@@ -32,7 +32,7 @@ var chartJsonWrapper = {
                     "types": [
                         "string",
                         "number",
-                        "data",
+                        "date",
                         "datetime",
                         "timeofday"
                     ],

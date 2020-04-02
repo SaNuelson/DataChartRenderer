@@ -71,7 +71,7 @@ class ChartRole {
             }
         }
         
-        this.selectedColumn = manager.SourceData.head[0];
+        this.selectedColumn = "";
         this.selectedFormat = "";
 
         if(!manager){

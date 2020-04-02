@@ -52,7 +52,7 @@ ChartRole.prototype.getTypeSelector = function(){
 ChartRole.prototype.getFormatInput = function(){
     var input = document.createElement("input")
     input.placeholder = "Format";
-    input.onchange = function() { this.selectedFormat = select.value; }.bind(this);
+    input.onchange = function() { this.selectedFormat = input.value; }.bind(this);
     return input;
 }
 
