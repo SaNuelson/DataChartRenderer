@@ -27,24 +27,23 @@ Implementation Details
 
 DataChartRenderer (DCR for short) consists of multiple layers described below:
 
- - Core
-   + The inner-most layer of the DCR. It consists purely of back-end JS, enabling you to use its API at your own discretion.
-   + The most notable part of this layer are classes which take care of the internal logic.
-     - ChartManager
-       + Handles everything associated with a single chart.
-       + Thanks to that, you can render multiple charts on your webpage using multiple instances.
-       + Each instance has to have its bound HTMLElement on which the chart renders, since Google Charts renders the chart directly
-       onto the bound element.
-     - ChartRole
-       + Handles everything associated with a specific "role" within the chart (eg. height of bars in Bar Chart)
-       + Currently consumes the index of the column in the data, its assumed type and format (in case of datetime,timeofday...)
-     - SourceData
-       + Handles the data source and is responsible for parsing it and formatting once ChartRoles are defined.
- - UiGenerator
-   + The extension layer which offers a set of prototype extensions for HTMLElements.
-   + Thanks to that, you're able to easily get eg. a <select> for a specific ChartRole column that already takes care of its own changes, changes within the SourceData, etc.
- - ChartRenderer
-   + The upper-most layer currently entirely in concept form, it should be able to provide a quick and effortless way of rendering a chart with little to no changes within the codebase.
+- Core
+	+ The inner-most layer of the DCR. It consists purely of back-end JS, enabling you to use its API at your own discretion.
+	+ The most notable part of this layer are classes which take care of the internal logic.
+		- ChartManager
+			- Handles everything associated with a single chart.
+			- Thanks to that, you can render multiple charts on your webpage using multiple instances.
+			- Each instance has to have its bound HTMLElement on which the chart renders, since Google Charts renders the chart directly onto the bound element.
+		- ChartRole
+			- Handles everything associated with a specific "role" within the chart (eg. height of bars in Bar Chart)
+			- Currently consumes the index of the column in the data, its assumed type and format (in case of datetime,timeofday...)
+		- SourceData
+			- Handles the data source and is responsible for parsing it and formatting once ChartRoles are defined.
+- UiGenerator
+	- The extension layer which offers a set of prototype extensions for HTMLElements.
+	- Thanks to that, you're able to easily get eg. a \<select\> for a specific ChartRole column that already takes care of its own changes, changes within the SourceData, etc.
+- ChartRenderer
+  - The upper-most layer currently entirely in concept form, it should be able to provide a quick and effortless way of rendering a         chart with little to no changes within the codebase.  
   
 Planned Improvements
 ---
