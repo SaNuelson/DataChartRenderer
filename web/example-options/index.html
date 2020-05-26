@@ -1,0 +1,191 @@
+<!doctype html>
+
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title>CSV Charts</title>
+    <meta name="author" content="Black Warden">
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+        integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <link rel="stylesheet" href="css/index.css">
+    <link rel="stylesheet" href="css/popup.css">
+</head>
+
+<body class="bg-dark text-white">
+    <nav class="navbar navbar-expand-md navbar-dark bg-primary">
+
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div id="navbarSupportedContent" class="collapse navbar-collapse">
+
+            <div class="d-md-none container text-center">
+                <a href="#" class="d-inline d-md-none navbar-brand">
+                    <img src="../img/logo.png" class="logo img-fluid" />
+                </a>
+            </div>
+
+            <ul class="navbar-nav navbar-left mr-auto">
+                <li class="nav-item dropdown">
+                    <a id="file-dropdown-toggler" class="nav-link dropdown-toggle" href="#" role="button"
+                        data-toggle="dropdown">
+                        File
+                    </a>
+                    <ul class="dropdown-menu">
+                        <a id="load-local-file-btn" href="#" class="dropdown-item">Load New Datafile</a>
+                    </ul>
+                </li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-toggle="dropdown">
+                        Chart
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a href="#" class="dropdown-item">Save Options as JSON...</a></li>
+                    </ul>
+                </li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-toggle="dropdown">
+                        Help
+                    </a>
+                    <ul class="dropdown-menu">
+                        <a id="toggle-table-btn" href="#" data-toggle="collapse" data-target="#table-div"
+                            class="dropdown-item toggle">Toggle Preview Table</a>
+                        <a id="toggle-opts-btn" href="#" data-toggle="collapse" data-target="#opts-div"
+                            class="dropdown-item toggle">Toggle Options</a>
+                        <a id="toggle-chart-btn" href="#" data-toggle="collapse" data-target="#chart-div"
+                            class="dropdown-item toggle">Toggle Chart</a>
+                        <a id="toggle-help-btn" href="#" data-toggle="collapse" data-target="#help-div"
+                            class="dropdown-item toggle">Toggle Help</a>
+                        <a id="toggle-log-btn" href="#" data-toggle="collapse" data-target="#log-div"
+                            class="dropdown-item toggle">Toggle Logger</a>
+                    </ul>
+                </li>
+            </ul>
+
+            <div class="d-none d-md-block container text-center text-center">
+                <img src="../img/logo.png" class="logo img-fluid" />
+            </div>
+
+            <ul class="navbar-nav navbar-right ml-auto">
+                <li class="nav-item">
+                    <select id="chart-type-select" class="custom-select" disabled>
+                        <option disabled selected>Chart Type</option>
+                    </select>
+                </li>
+                <li class="nav-item">
+                    <a id="draw-chart-btn" class="btn custom-control btn-light" href="#" role="button">Draw Chart</a>
+                </li>
+            </ul>
+
+        </div>
+    </nav>
+
+    <input id="source-file-input" style="display:none" type="file" />
+
+    <div id="body-wrapper" class="container-fluid">
+        <div id="help-div" class="row row-collapse m-3 show">
+            <div class="col-4 col-lg-2">
+                <div class="list-group" id="list-tab" role="tablist">
+                    <a id="general-help-btn" class="list-group-item list-group-item-action active" data-toggle="list" href="#general-help"
+                        role="tab">0. Get familiar with the site</a>
+                    <a id="data-help-btn" class="list-group-item list-group-item-action" data-toggle="list" href="#data-help" role="tab">1.
+                        Load your data file</a>
+                    <a id="chart-type-help-btn" class="list-group-item list-group-item-action" data-toggle="list" href="#chart-type-help"
+                        role="tab">2. Pick a chart type</a>
+                    <a id="opts-help-btn" class="list-group-item list-group-item-action" data-toggle="list" href="#opts-help" role="tab">3.
+                        Configurate the chart</a>
+                    <a id="chart-help-btn" class="list-group-item list-group-item-action" data-toggle="list" href="#chart-help"
+                        role="tab">4. Render it and save it</a>
+                </div>
+            </div>
+            <div class="col-8 col-lg-10">
+                <div class="tab-content" id="nav-tabContent">
+                    <div class="tab-pane fade show active" id="general-help" role="tabpanel">
+                        Welcome to CSV2GCR app that enables you to render data as charts via Google Charts app. <br />
+                        In the top left corner there's a menu that handles most of the functionality nicely packed away.
+                        <br />
+                        File enables you to work with your data files, Chart helps you exporting the configured chart
+                        data, <br />
+                        and finally Help enables you to quickly hide or display different parts of this website
+                        including this help section.
+                    </div>
+                    <div class="tab-pane fade show" id="data-help" role="tabpanel">
+                        Load the data file you want to visualize. <br />
+                        As you can see from the name of this app, we currently only support CSV files. <br />
+                        Don't you worry, we'll fix that sometimes... maybe.<br />
+                        Anyways, load it up in the top left menu: File > <a id="file-helper-link"
+                            href="#load-local-file-btn">Load New Datafile</a> <br />
+                    </div>
+                    <div class="tab-pane fade" id="chart-type-help" role="tabpanel">
+                        Now that you've loaded up your data, a table should show up below taking the first 5 rows.
+                        <br />
+                        Just to give you an idea what you're working with. <br />
+                        Next, select a specific type of chart you'd like to visualize. <br />
+                        You can find it in the top right corner. Here, let me <a href="#chart-type-select">show you</a>.
+                        <br />
+                    </div>
+                    <div class="tab-pane fade" id="opts-help" role="tabpanel">
+                        You're doing great! If you did all according to plan, below the table a configuration section
+                        should show up. <br />
+                        This is where you put in all the info about how you want your chart displayed. <br />
+                        A single option consists of the following parts: <br />
+                        <ul>
+                            <li>Label describing which "aspect" of the chart it's bound to.</li>
+                            <li>Select element where you choose which column of your data corresponds with it.</li>
+                            <li>Select element where you choose what type is your data / what type you want it to be
+                                used as.</li>
+                            <li>Text input element for when you want to specify a format. This is generally necessary
+                                only for weird date/datetime formats.</li>
+                        </ul>
+                        Furthermore, some options are optional, those you can leave blank if you'd prefer. Others can be
+                        specified multiple times. Those can be copied.
+                    </div>
+                    <div class="tab-pane fade" id="chart-help" role="tabpanel">...</div>
+                </div>
+            </div>
+        </div>
+        <div id="table-div" class="m-4 justify-content-center show" style="overflow-x:auto;overflow-y:hidden">
+        </div>
+        <div id="opts-div" class="row m-4 show">
+        </div>
+        <div id="chart-div" class="row m-4 show">
+        </div>
+    </div>
+
+    <div id="popup-div" class="col-10 col-sm-8 col-md-5 col-lg-3">
+    </div>
+
+    <!-- JQuery -->
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+    <script src="https://code.jquery.com/jquery-3.5.1.js"
+        integrity="sha256-QWo7LDvxbWT2tbbQ97B53yJnYU3WhH/C8ycbRAkjPDc=" crossorigin="anonymous"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"
+        integrity="sha256-T0Vest3yCU7pafRw9r+settMBX6JkKN06dqBnpQ8d30=" crossorigin="anonymous"></script>
+    <!-- JQuery -->
+
+    <!-- Bootstrap -->
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"
+        integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo"
+        crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"
+        integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6"
+        crossorigin="anonymous"></script>
+    <!-- Bootstrap -->
+
+    <script>
+        let rootPath = "../";
+    </script>
+
+    <!-- GCCSV Copy begin -->
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    <script type="module" src="js/index.js"></script>
+    <script type="text/javascript" src="js/popup.js"></script>
+    <!-- GCCSV Copy end -->
+
+</body>
+
+</html>

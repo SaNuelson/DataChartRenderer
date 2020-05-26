@@ -1,3 +1,10 @@
+
+console.log("Loaded script.js");
+
+import {ChartManager, ChartRole, SourceData} from "./core/Main.js";
+
+import "./uigen/Main.js";
+
 var manager = new ChartManager();
 
 $(() => {
@@ -42,7 +49,7 @@ function loadDataPreview(){
 
 	// insert head
 	var table_head_row = table_head.insertRow();
-	for(i = 0; i < csvData.head.length; i++){
+	for(let i = 0; i < csvData.head.length; i++){
 		var table_head_cell = table_head_row.insertCell();
         table_head_cell.innerHTML = csvData.head[i];
 	}
@@ -50,9 +57,9 @@ function loadDataPreview(){
     // insert all data
     let table_body = table.createTBody();
     let upto = Math.min(csvData.data.length, 5);
-	for(i = 0; i < upto; i++){
+	for(let i = 0; i < upto; i++){
 		let table_body_row = table_body.insertRow();
-		for(j = 0; j < csvData.data[i].length; j++){
+		for(let j = 0; j < csvData.data[i].length; j++){
             let table_body_cell = table_body_row.insertCell();
             table_body_cell.innerHTML = csvData.data[i][j];
 		}
@@ -87,7 +94,7 @@ function createChartSelector(){
     option.value = "";
     chartSelector.options.add(option);
     
-    for(chartType of graphTypes)
+    for(let chartType of graphTypes)
     {
         var option = document.createElement("option");
         option.value = chartType;
@@ -143,8 +150,7 @@ function getRoleListItem(role){
 
     if(role.subroles){
         var sublist = document.createElement('ul');
-        for(var subrole of role.subroles){
-            console.log(subrole)
+        for(let subrole of role.subroles){
             var subline = document.createElement("li");
             subline.appendChild(document.createTextNode(subrole.name));
             subline.appendChild(subrole.getColumnSelector());

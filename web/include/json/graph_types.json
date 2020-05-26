@@ -262,6 +262,49 @@
             ]
         },
         {
+            "name": "Histogram(single)",
+            "internal-name": "Histogram",
+            "roles": [
+                {
+                    "name": "Name",
+                    "types": [
+                        "string"
+                    ]
+                },
+                {
+                    "name": "Number",
+                    "types": [
+                        "number"
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "Histogram (multiple)",
+            "internal-name": "Histogram",
+            "roles": [
+                {
+                    "name": "Name",
+                    "types": [
+                        "string"
+                    ]
+                },
+                {
+                    "name": "Number 1",
+                    "types": [
+                        "number"
+                    ]
+                },
+                {
+                    "name": "Number {2}",
+                    "types": [
+                        "number"
+                    ],
+                    "repeatable": true
+                }
+            ]
+        },
+        {
             "name": "PieChart",
             "roles": [
                 {
@@ -390,14 +433,14 @@
                 },
                 {
                     "name": "Start",
-                    "subrolenames": [
+                    "types": [
                         "number",
                         "date"
                     ]
                 },
                 {
                     "name": "End",
-                    "subrolenames": [
+                    "types": [
                         "number",
                         "date"
                     ]
@@ -409,25 +452,25 @@
             "roles": [
                 {
                     "name": "ID (name)",
-                    "subrolenames": [
+                    "types": [
                         "string"
                     ]
                 },
                 {
                     "name": "Parent ID (name)",
-                    "subrolenames": [
+                    "types": [
                         "string"
                     ]
                 },
                 {
                     "name": "Size",
-                    "subrolenames": [
+                    "types": [
                         "number"
                     ]
                 },
                 {
                     "name": "Color",
-                    "subrolenames": [
+                    "types": [
                         "number"
                     ],
                     "optional": true

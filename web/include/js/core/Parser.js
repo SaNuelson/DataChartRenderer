@@ -1,4 +1,4 @@
-function tryParse(source, type, format){
+export default function tryParse(source, type, format){
 	switch(type){
 		case "string":
 			return source;

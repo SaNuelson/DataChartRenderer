@@ -1,19 +1,28 @@
+import ChartManager from './ChartManager.js';
+
+console.log("Loaded ChartRole.js");
+
 /**
  * This class holds information about a specific role for a Google Chart.
  * 
  *      In example, Bubble Chart holds (among others) a role for "ID/Name" of each bubble node rendered on the chart.
  *      A ChartRole for this particular case would then hold all necessary information (name = "ID (name)", types = ["string"], corresponding CSV column = "c13").
  */
-class ChartRole {
+export default class ChartRole {
 
     /* #region Properties */
-    
+
     /** @property {string} Name used internally */
     name = "name.unset";
 
+    _caption = "caption.unset";
     /** @property {string} Name used externally in frontend */
-    caption = "caption.unset";
-    
+    get caption() { 
+        if(this._caption == "caption.unset")
+            return this.name.replace(/\{1\}/,this.repeatindex).trim() 
+        return this._caption;
+    };
+
     /** @property {string[]} Compatible types with this chart role */
     types = null;
 
@@ -22,22 +31,24 @@ class ChartRole {
 
     /** @property {string} Specific role for this chart role */
     role = "";
-    
+
     /** @property {ChartRole[]} Subroles compatible with this chart role */
     subroles = [];
 
     /** @property {string[]} Subrole names (used for generating copies) */
-    subrolenames = []; 
+    subrolenames = [];
 
     /** @property {boolean} If this chart role can be left unassigned */
-    optional = false; 
-    
+    optional = false;
+
     /** @property {boolean} If this chart role can appear multiple times */
     repeatable = false;
     /** @property {ChartRole[]} References to created copies of this chart role */
     copies = [];
     /** @property {ChartRole} Reference to parent of this chart role copy */
     owner = null;
+    /** @property {number} Index of this specific repeated instance */
+    repeatindex = 1;
 
     /** @property {string} Head of the currently selected SourceData column for this chart role */
     selectedColumn = "";
@@ -55,7 +66,7 @@ class ChartRole {
         this.manager = manager;
 
         if (srcObj["name"]) this.name = srcObj["name"];
-        if (srcObj["caption"]) this.caption = srcObj["caption"];
+        if (srcObj["caption"]) this._caption = srcObj["caption"];
         if (srcObj["types"]) {
             this.types = srcObj["types"];
             this.selectedType = this.types[0];
@@ -66,15 +77,15 @@ class ChartRole {
         if (srcObj["subrolenames"]) {
             this.subroles = [];
             this.subrolenames = srcObj["subrolenames"];
-            for(var subrolename of srcObj["subrolenames"]){
+            for (var subrolename of srcObj["subrolenames"]) {
                 this.subroles.push(ChartRole.createByRole(subrolename, manager));
             }
         }
-        
+
         this.selectedColumn = "";
         this.selectedFormat = "";
 
-        if(!manager){
+        if (!manager) {
             console.error("Manager not defined for a chartRole in:");
             console.log(this);
         }
@@ -92,7 +103,7 @@ class ChartRole {
             console.log(`Role ${rolename} not found`);
             return null;
         }
-        var role =  new ChartRole(roleData, manager)
+        var role = new ChartRole(roleData, manager)
         role.role = rolename;
         return role;
     }
@@ -117,10 +128,10 @@ class ChartRole {
      * @param {object[]} data 
      * @param {ChartManager} manager
      */
-    static createListByMixedContent(data, manager){
+    static createListByMixedContent(data, manager) {
         var arr = [];
-        for(let template of data){
-            if(template["role"])
+        for (let template of data) {
+            if (template["role"])
                 arr.push(ChartRole.createByRole(template["role"], manager))
             else
                 arr.push(ChartRole.createByData(template, manager))
@@ -132,11 +143,11 @@ class ChartRole {
      * Get repeat copy
      */
     getRepeatCopy() {
-        if(!this.repeatable){
+        if (!this.repeatable) {
             console.error("getRepeatCopy called on a non-repeatable chart role.");
             return null;
         }
-        var copy = new ChartRole(this,this.manager);
+        var copy = new ChartRole(this, this.manager);
         this.copies.push(copy);
         copy.parent = this;
         copy.optional = true;

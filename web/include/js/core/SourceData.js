@@ -1,7 +1,21 @@
+import tryParse from './Parser.js';
+
+console.log("Loaded SourceData.js");
+
 /**
  * Class responsible for parsing, holding and working with raw data.
  */
-class SourceData {
+export default class SourceData {
+
+    head = [];
+    data = [];
+
+    static Empty = (()=>{
+        let data = new SourceData("");
+        data.head = [];
+        data.data = [];
+        return data;
+    })()
 
     /**
      * Create instance from raw text, which will be split and cut appropriately.
@@ -34,22 +48,18 @@ class SourceData {
             let data = head_cut[i].trim();
             if (data[0] == '"' && data[data.length - 1] == '"') {
                 this.head.push(data.slice(1, -1));
-            }
-            else if (data[0] == '"') {
+            } else if (data[0] == '"') {
                 isBuff = true;
                 buff = data.substr(1);
-            }
-            else if (data[data.length - 1] == '"') {
+            } else if (data[data.length - 1] == '"') {
                 buff += data.slice(0, -1);
                 this.head.push(buff);
                 buff = "";
                 isBuff = false;
-            }
-            else {
+            } else {
                 if (isBuff) {
                     buff += data;
-                }
-                else {
+                } else {
                     this.head.push(data);
                 }
             }
@@ -62,22 +72,18 @@ class SourceData {
                 let row = data_row_raw[j].trim();
                 if (row[0] == '"' && row[row.length - 1] == '"') {
                     data_row.push(row.slice(1, -1));
-                }
-                else if (row[0] == '"') {
+                } else if (row[0] == '"') {
                     isBuff = true;
                     buff = row.substr(1);
-                }
-                else if (row[row.length - 1] == '"') {
+                } else if (row[row.length - 1] == '"') {
                     buff += row.slice(0, -1);
                     data_row.push(buff);
                     buff = "";
                     isBuff = false;
-                }
-                else {
+                } else {
                     if (isBuff) {
                         buff += row;
-                    }
-                    else {
+                    } else {
                         data_row.push(row);
                     }
                 }
@@ -112,8 +118,7 @@ class SourceData {
                 let parsed = tryParse(this.data[i][cols[j]], types[j], formats[j]);
                 if (parsed == null) {
                     return null;
-                }
-                else {
+                } else {
                     parsed_line.push(parsed);
                 }
             }
