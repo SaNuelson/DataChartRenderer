@@ -153,4 +153,16 @@ export default class ChartRole {
         copy.optional = true;
     }
 
+    saveConfigData() {
+        let obj = {
+            name : this.name, // should be remade into some kind of role identifier
+            owner : this.owner,
+            selectedColumn : this.selectedColumn,
+            selectedType : this.selectedType,
+            selectedFormat : this.selectedFormat
+        };
+        return obj;
+    }
+
+
 }

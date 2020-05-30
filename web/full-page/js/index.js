@@ -8,7 +8,9 @@ window.manager = manager;
 
 $(() => {
     // take care of any new input data
-    $("#source-file-input").change(function () { onFileSelected(this); })
+    $("#source-file-input").change(function () { onFileSelected(this, 'data'); })
+
+    $('#config-load-input').change(function () { onFileSelected(this, 'config'); })
 
     // take care of chart type
     $('#chart-type-select').on('change', e => setChartType(e.target.value));
@@ -19,14 +21,32 @@ $(() => {
     // bind chart drawing button
     $('#draw-chart-btn').on('click', () => manager.drawChart());
 
+    $('#save-json-file-btn').on('click', () => trySaveJSON());
+
+    $('#load-json-file-btn').on('click', () => $('#config-file-input'));
+
     // TODO: find a better solution ... like really.
     $('#file-helper-link').on('click', function () {
         setTimeout(() => { $('#file-dropdown-toggler').click(); }, 100);
     });
 
+    $('#chart-wrapper').resizable({
+        stop: function () {
+            $('#chart-div').empty();
+            manager.options = {
+                'width': $(this).width(),
+                'height': $(this).height()
+            }
+            manager.redrawChart()
+        }
+    })
+
+    // first time manager option set
+    manager.options = { 'width': $('#chart-wrapper').width(), 'height': $('#chart-wrapper').height() };
+
     // first time tutorial switch
-    $('#source-file-input').one('change', function () {$('#chart-type-help-btn').click()});
-    $('#chart-type-select').one('change', function () {$('#opts-help-btn').click()});
+    $('#source-file-input').one('change', function () { $('#chart-type-help-btn').click() });
+    $('#chart-type-select').one('change', function () { $('#opts-help-btn').click() });
     manager.setChartContainer('chart-div');
 });
 
@@ -59,15 +79,20 @@ $(document).on('onChartTypeDataLoaded', (e) => {
  * For when new data file is put in using the <input type="file"> element.
  * @param {HTMLElement} input file input element
  */
-function onFileSelected(input) {
+function onFileSelected(input, type) {
     console.log("Selected new source file: ", input.value);
     let reader = new FileReader();
     reader.onload = function (fileLoadedEvent) {
-        console.log("Reader loaded: ", fileLoadedEvent);
-        document.log("Data file successfully loaded.");
+        document.log("File successfully read.");
         let text = fileLoadedEvent.target.result;
-        manager.setDataValue(text);
-        loadDataPreview();
+        if(type == 'data'){
+            manager.loadDataFromRaw(text);    
+            loadDataPreview();
+        }
+        else if(type == 'config'){
+            let json = JSON.parse(text);
+            manager.loadConfigData(json);
+        }
     }
     reader.readAsText(input.files[0], 'utf-8');
 }
@@ -86,6 +111,20 @@ function loadDataPreview() {
     })
 
     $('#table-div').empty().append(table);
+}
+
+// just copied this. Didn't work with jQuery because why not...
+function trySaveJSON() {
+    // TODO check if json is valid.
+    let blob = new Blob([JSON.stringify(manager.saveConfigData())], { type: 'text/plain;charset=utf-8' });
+    let anchor = document.createElement('a');
+
+    anchor.download = "dcrconfig.json";
+    anchor.href = (window.webkitURL || window.URL).createObjectURL(blob);
+    anchor.dataset.downloadurl = ['text/plain', anchor.download, anchor.href].join(':');
+    anchor.click();
+
+    anchor.remove();
 }
 
 function setChartType(type) {
@@ -131,7 +170,9 @@ function getChartRoleConfig(role, isSubrole = false) {
         .addClass(['col-3', 'custom-input'])
 
     let role_config_wrapper = $('<div></div>')
-        .addClass('row');
+        .addClass('row')
+        .prop('id', 'roleConfigWrapper')
+        .on('change', '*', function () { manager.drawChart(false) });
 
     if (isSubrole)
         role_config_wrapper.addClass('subrole');

@@ -1,4 +1,4 @@
-console.log("Loaded ChartManager.js");
+console.log("Loaded core/ChartManager.js");
 
 import SourceData from './SourceData.js';
 import ChartRole from './ChartRole.js';
@@ -26,6 +26,7 @@ export default class ChartManager {
         this._sourceData = value;
         document.dispatchEvent(new CustomEvent("onCMSourceDataChange", { "detail": this }));
     }
+
     /**
      * Array holding current roles (unfilled and filled alike). 
      * @type {Object[]}
@@ -36,6 +37,7 @@ export default class ChartManager {
         this._chartRoles = value;
         document.dispatchEvent(new CustomEvent("onCMChartRolesChange", { "detail": this }));
     }
+
     /**
      * Element (div) onto which google chart should be rendered.
      * @type {HTMLElement}
@@ -46,6 +48,7 @@ export default class ChartManager {
         this._chartBoundElement = value;
         document.dispatchEvent(new CustomEvent("onCMBoundElementChange", { "detail": this }));
     }
+
     /**
      * Internal name of the chart used in GC.
      * @type {String}
@@ -60,6 +63,7 @@ export default class ChartManager {
         this._selectedChartTypeInternalName = value;
         document.dispatchEvent(new CustomEvent('onCMSelectedChartTypeInternalNameChange', { 'detal': this }));
     }
+
     /**
      * Name of chart type currently selected.
      * @type {string}
@@ -73,6 +77,10 @@ export default class ChartManager {
         document.dispatchEvent(new CustomEvent("onCMSelectedChartTypeNameChange", { "detail": this }));
     }
 
+    formattedData = null; // kept here for redrawing the chart
+
+    options = null; // TODO
+
     /* #endregion */
 
     /////////////////////////////////////////////////////////////////////////////////////////
@@ -80,11 +88,11 @@ export default class ChartManager {
     /* #region API Methods */
 
     /**
-     * Set a new data source for the by file URL.
+     * Set a new data source by file URL.
      * @param {String} url
      * @returns {Promise}
      */
-    setDataSource(url) {
+    loadDataFromUrl(url) {
         return fetch(url)
             .then(data => data.text())
             .then(text => this.SourceData = new SourceData(text))
@@ -95,7 +103,7 @@ export default class ChartManager {
      * Set a new data source directly by providing the data either in unsplit format (TODO: Versatility).
      * @param {(string)} data 
      */
-    setDataValue(data) {
+    loadDataFromRaw(data) {
         if (!data) {
             console.err("No data provided for new data source.")
         }
@@ -160,20 +168,27 @@ export default class ChartManager {
         return this.ChartRoles;
     }
 
+    redrawChart(){
+        if(this.formattedData)
+            new google.visualization[this.SelectedChartTypeInternalName](this.ChartBoundElement).draw(this.formattedData,this.options);
+    }
+
     /**
      * Call once everything is set up and ready for rendering.
      */
-    drawChart() {
+    drawChart(force = true) {
 
         // no source data
         if (!this.SourceData) {
-            console.error("No source data set, can't draw chart.");
+            if(force)
+                throw new Error("No source data set, can't draw chart.");
             return;
         }
 
         // invalid chart type
         if (!google.visualization[this.SelectedChartTypeInternalName]) {
-            console.error(`Invalid chart type ${this.SelectedChartTypeName}. Invalid state.`);
+            if(force)
+                throw new Error(`Invalid chart type ${this.SelectedChartTypeName}. Internal error.`);
             return;
         }
 
@@ -188,19 +203,22 @@ export default class ChartManager {
             if (!role.selectedColumn) {
                 // optional, skip
                 if (role.optional) {
-                    console.log(`Undefined optional role ${role.name}, skipping.`);
+                    if(force)
+                        console.warn(`Undefined optional role ${role.name}, skipping.`);
                     continue;
                 }
                 // mandatory, invalid state
                 else {
-                    console.error(`Role ${role.name} has no column selected despite being mandatory.`);
+                    if(force)
+                        throw new Error(`Role ${role.name} has no column selected despite being mandatory.`);
                     return;
                 }
             }
 
             // invalid selected column
             if (!this.SourceData.head.includes(role.selectedColumn)) {
-                console.error(`Role ${role.name} has invalid selected column ${role.selectedColumn}`);
+                if(force)
+                    throw new Error(`Role ${role.name} has invalid selected column ${role.selectedColumn}. Internal error.`);
                 return;
             }
 
@@ -225,7 +243,8 @@ export default class ChartManager {
                 if (!subrole.selectedColumn)
                     continue;
                 if (!this.SourceData.head.includes(subrole.selectedColumn)) {
-                    console.warning(`Role ${subrole.name} has invalid selected column ${subrole.selectedColumn}, skipping.`);
+                    if(force)
+                        console.warn(`Role ${subrole.name} has invalid selected column ${subrole.selectedColumn}, skipping.`);
                 }
                 dataTable.addColumn({
                     type: subrole.type,
@@ -244,9 +263,11 @@ export default class ChartManager {
                     // skip if unassigned
                     if (!copy.selectedColumn)
                         continue;
+                    
                     // warn and skip if invalid
                     if (!this.SourceData.head.includes(copy.selectedColumn)) {
-                        console.warning(`Role ${copy.name} has invalid selected column ${copy.selectedColumn}, skipping.`);
+                        if(force)
+                            console.warn(`Role ${copy.name} has invalid selected column ${copy.selectedColumn}, skipping.`);
                         continue;
                     }
 
@@ -269,7 +290,8 @@ export default class ChartManager {
                         if (!subrole.selectedColumn)
                             continue;
                         if (!this.SourceData.head.includes(subrole.selectedColumn)) {
-                            console.warning(`Role ${subrole.name} has invalid selected column ${subrole.selectedColumn}, skipping.`);
+                            if(force)
+                                console.warn(`Role ${subrole.name} has invalid selected column ${subrole.selectedColumn}, skipping.`);
                         }
                         dataTable.addColumn({
                             type: subrole.type,
@@ -287,9 +309,11 @@ export default class ChartManager {
         var formattedData = this.SourceData.getChartData(columns, types, formats);
         // TODO var options
         var chart = new google.visualization[this.SelectedChartTypeInternalName](this.ChartBoundElement);
-        console.log("DATA");
-        console.log(formattedData);
-        chart.draw(formattedData, null);
+        console.log("Formatted data: ", formattedData);
+        this.formattedData = formattedData;
+
+        chart.draw(formattedData, this.options);
+
     }
 
     /* #endregion */
@@ -306,7 +330,7 @@ export default class ChartManager {
 
     static checkChartTypeData() {
         if (!ChartManager.ChartTypeData) {
-            throw new Error("ChartTypeData is not defined. Please contact the developer.")
+            throw new Error("ChartTypeData is not defined. Internal error.")
         }
     }
 
@@ -329,5 +353,25 @@ export default class ChartManager {
     }
 
     /* #endregion */
+
+    saveConfigData() {
+        
+        let obj = {
+            SelectedChartTypeName : this.SelectedChartTypeName,
+            ChartRoles : []
+        };
+
+        for(let role of this.ChartRoles)
+            obj.ChartRoles.push(role.saveConfigData());
+
+        return obj;
+    }
+
+    loadConfigData(config) {
+        this.setChartType(config.SelectedChartTypeName);
+        for(let chartConfig of config.ChartRoles){
+            
+        }
+    }
 
 }

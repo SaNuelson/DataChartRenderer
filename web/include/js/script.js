@@ -29,7 +29,7 @@ function insertChartButtonAfter(element) {
 // GCCSV
 
 function setSource(srcUrl) {
-    manager.setDataSource(srcUrl).then(()=>{
+    manager.loadDataFromUrl(srcUrl).then(()=>{
         loadDataPreview();
         loadChartOpts();
     })

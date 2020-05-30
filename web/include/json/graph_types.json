@@ -426,7 +426,8 @@
                     "name": "Bar Label",
                     "types": [
                         "string"
-                    ]
+                    ],
+                    "optional": true
                 },
                 {
                     "role": "tooltip"
@@ -497,7 +498,8 @@
                     "name": "Style",
                     "types": [
                         "string"
-                    ]
+                    ],
+                    "optional": true
                 },
                 {
                     "name": "ID",
@@ -523,6 +525,7 @@
             "types": [
                 "string"
             ],
+            "optional": true,
             "default": ""
         },
         {
@@ -531,6 +534,7 @@
             "types": [
                 "string"
             ],
+            "optional": true,
             "default": ""
         },
         {
@@ -539,6 +543,7 @@
             "types": [
                 "boolean"
             ],
+            "optional": true,
             "default": true
         },
         {
@@ -547,6 +552,7 @@
             "types": [
                 "boolean"
             ],
+            "optional": true,
             "default": false
         },
         {
@@ -555,6 +561,7 @@
             "types": [
                 "number"
             ],
+            "optional": true,
             "default": null
         },
         {
@@ -563,6 +570,7 @@
             "types": [
                 "boolean"
             ],
+            "optional": true,
             "default": true
         },
         {
@@ -571,6 +579,7 @@
             "types": [
                 "object"
             ],
+            "optional": true,
             "default": null
         },
         {
@@ -579,6 +588,7 @@
             "types": [
                 "string"
             ],
+            "optional": true,
             "default": null
         },
         {
@@ -588,7 +598,8 @@
                 "string",
                 "date",
                 "number"
-            ]
+            ],
+            "optional": true
         }
     ]
 }
