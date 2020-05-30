@@ -1,4 +1,5 @@
 import ChartManager from './ChartManager.js';
+import TemplateManager from './TemplateManager.js';
 
 console.log("Loaded ChartRole.js");
 

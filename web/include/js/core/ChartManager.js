@@ -2,6 +2,7 @@ console.log("Loaded core/ChartManager.js");
 
 import SourceData from './SourceData.js';
 import ChartRole from './ChartRole.js';
+import TemplateManager from './TemplateManager.js';
 
 /**
  * Main class. Responsible for rendering chart using provided data.
@@ -29,7 +30,7 @@ export default class ChartManager {
 
     /**
      * Array holding current roles (unfilled and filled alike). 
-     * @type {Object[]}
+     * @type {ChartRole[]}
      */
     _chartRoles = []
     get ChartRoles() { return this._chartRoles; }
@@ -66,7 +67,7 @@ export default class ChartManager {
 
     /**
      * Name of chart type currently selected.
-     * @type {string}
+     * @type {String}
      */
     _selectedChartTypeName = null;
     get SelectedChartTypeName() {
@@ -136,27 +137,15 @@ export default class ChartManager {
     }
 
     /**
-     * Get a string array of names of valid Google Charts.
-     * @returns {string[]}
-     */
-    getChartTypes() {
-        let types = [];
-        for (let type of ChartManager.ChartTypeData["ChartTypes"])
-            types.push(type["name"])
-        return types;
-    }
-
-    /**
      * Select a chart type you wish to render. It has to be one of the strings provided by getChartTypes.
      * @param {string} value
      */
     setChartType(value) {
         console.log("setChartType: " + value);
-        ChartManager.checkChartTypeData();
-        if (this.getChartTypes().includes(value)) {
+        if (TemplateManager.getChartTemplateNames().includes(value)) {
             this.SelectedChartTypeName = value;
             this.SelectedChartTypeInternalName = ChartManager.ChartTypeData["ChartTypes"].find((type) => type["name"] === value)["internal-name"];
-            this.ChartRoles = ChartRole.createListByMixedContent(ChartManager.ChartTypeData["ChartTypes"].find(type => type.name === value)["roles"], this);
+            this.ChartRoles = ChartRole.createListByMixedContent(TemplateManager.getChartTemplate(value)["roles"], this);
             this.onDataChange('ChartTypeName');
             this.onDataChange('ChartTypeInternalName');
             this.onDataChange('ChartRoles');
@@ -166,21 +155,7 @@ export default class ChartManager {
             this.ChartRoles = [];
         }
     }
-
-    /**
-     * Get roles for currently selected chart type in format TODO FORMAT_ROLE_LIST.
-     * Pass by sharing enables you to make persistent changes, thus filling out columns in roles.
-     * @returns {object[]} 
-     */
-    getChartRoles() {
-        return this.ChartRoles;
-    }
-
-    redrawChart() {
-        if (this.formattedData)
-            new google.visualization[this.SelectedChartTypeInternalName](this.ChartBoundElement).draw(this.formattedData, this.options);
-    }
-
+    
     /**
      * Call once everything is set up and ready for rendering.
      */
@@ -324,40 +299,12 @@ export default class ChartManager {
 
     }
 
-    /* #endregion */
-
-    /////////////////////////////////////////////////////////////////////////////////////////
-
-    /* #region Manager */
-
     /**
-     * Parsed graph_types.json
-     * @type {Object}
+     * Draw again with no changes to the data.
      */
-    static ChartTypeData;
-
-    static checkChartTypeData() {
-        if (!ChartManager.ChartTypeData) {
-            throw new Error("ChartTypeData is not defined. Internal error.")
-        }
-    }
-
-    /**
-     * Get all role templates as objects.
-     * @returns {object[]}
-     */
-    static getChartRoleTemplates() {
-        ChartManager.checkChartTypeData();
-        return ChartManager.ChartTypeData["RoleDetails"];
-    }
-
-    /**
-     * Get a specific role template as object.
-     * @returns {object}
-     */
-    static getChartRoleTemplate(roleName) {
-        ChartManager.checkChartTypeData()
-        return ChartManager.ChartTypeData["RoleDetails"].find(role => role["name"] === roleName);
+    redrawChart() {
+        if (this.formattedData)
+            new google.visualization[this.SelectedChartTypeInternalName](this.ChartBoundElement).draw(this.formattedData, this.options);
     }
 
     /* #endregion */
