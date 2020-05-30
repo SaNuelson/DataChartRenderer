@@ -5,6 +5,7 @@ console.log("Javascript index file loaded.");
 
 var manager = new ChartManager();
 window.manager = manager;
+window.ChartManager = ChartManager; // TODO for debug only
 
 $(() => {
     // take care of any new input data
@@ -24,6 +25,8 @@ $(() => {
     $('#save-json-file-btn').on('click', () => trySaveJSON());
 
     $('#load-json-file-btn').on('click', () => $('#config-file-input'));
+
+    $('#load-demo-file-btn').on('click', () => manager.loadDataFromUrl('../res/data_type_debug.csv').then(() => loadDataPreview()));
 
     // TODO: find a better solution ... like really.
     $('#file-helper-link').on('click', function () {
@@ -85,11 +88,11 @@ function onFileSelected(input, type) {
     reader.onload = function (fileLoadedEvent) {
         document.log("File successfully read.");
         let text = fileLoadedEvent.target.result;
-        if(type == 'data'){
-            manager.loadDataFromRaw(text);    
+        if (type == 'data') {
+            manager.loadDataFromRaw(text);
             loadDataPreview();
         }
-        else if(type == 'config'){
+        else if (type == 'config') {
             let json = JSON.parse(text);
             manager.loadConfigData(json);
         }
@@ -137,7 +140,7 @@ function setChartType(type) {
 
     const wrapper_template = $(`
     <div class="col-12">
-        <div class="container list-group">
+        <div id="role-wrapper" class="container list-group">
         </div>
     </div>
     `);
@@ -154,36 +157,57 @@ function setChartType(type) {
 }
 
 function getChartRoleConfig(role, isSubrole = false) {
-    let label = $('<label></label>')
-        .addClass('col-3')
-        .text(role.caption);
 
-    document.roleTemp = role;
+    let label = $('<label></label>')
+        .addClass('col-2')
+        .text(role.caption);
 
     let col_selector = $(role.getColumnSelector("Select Column"))
         .addClass(['col-3', 'custom-select']);
 
     let type_selector = $(role.getTypeSelector())
-        .addClass(['col-3', 'custom-select']);
+        .addClass(['col-2', 'custom-select']);
 
     let format_input = $(role.getFormatInput("Role Format"))
         .addClass(['col-3', 'custom-input'])
 
-    let role_config_wrapper = $('<div></div>')
-        .addClass('row')
-        .prop('id', 'roleConfigWrapper')
-        .on('change', '*', function () { manager.drawChart(false) });
+    let disable_btn = !role.optional ? 
+        $('<div></div>')
+            .addClass('col-1') :
+        $('<button></button>')
+            .addClass(['col-1','btn', 'btn-light', 'align-self-center'])
+            .text('Off')
+            .on('click', function () { 
+                role_config_wrapper.toggleClass('disabled');
+                if(role.disabled){
+                    $(this).text('Off');
+                    role.disabled = false;
+                }
+                else {
+                    $(this).text('On');
+                    role.disabled = true;
+                }
+            });
 
-    if (isSubrole)
-        role_config_wrapper.addClass('subrole');
-    else
-        role_config_wrapper.addClass('role');
+    let repeat_btn = !role.repeatable ?
+        $('<div></div>')
+            .addClass('col-1') :
+        $(role.getRepeatButton((copy) => {$('#role-wrapper').append(getChartRoleConfig(copy))}))
+            .addClass(['col-1', 'btn', 'btn-light'])
+            .text('Copy')
+
+    let role_config_wrapper = $('<div></div>')
+        .addClass(['row', isSubrole ? 'subrole' : 'role'])
+        .on('change', '*', function () { manager.drawChart(false) });
 
     return role_config_wrapper
         .append(label)
         .append(col_selector)
         .append(type_selector)
-        .append(format_input);
+        .append(format_input)
+        .append(disable_btn)
+        .append(repeat_btn);
+
 }
 
 ////////////

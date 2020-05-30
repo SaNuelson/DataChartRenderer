@@ -24,7 +24,7 @@ export default class ChartManager {
     set SourceData(value) {
         // TODO validate source data
         this._sourceData = value;
-        document.dispatchEvent(new CustomEvent("onCMSourceDataChange", { "detail": this }));
+        this.onDataChange('SourceData');
     }
 
     /**
@@ -35,7 +35,7 @@ export default class ChartManager {
     get ChartRoles() { return this._chartRoles; }
     set ChartRoles(value) {
         this._chartRoles = value;
-        document.dispatchEvent(new CustomEvent("onCMChartRolesChange", { "detail": this }));
+        this.onDataChange('ChartRoles');
     }
 
     /**
@@ -46,7 +46,7 @@ export default class ChartManager {
     get ChartBoundElement() { return this._chartBoundElement; }
     set ChartBoundElement(value) {
         this._chartBoundElement = value;
-        document.dispatchEvent(new CustomEvent("onCMBoundElementChange", { "detail": this }));
+        this.onDataChange('ChartBoundElement');
     }
 
     /**
@@ -61,7 +61,7 @@ export default class ChartManager {
     }
     set SelectedChartTypeInternalName(value) {
         this._selectedChartTypeInternalName = value;
-        document.dispatchEvent(new CustomEvent('onCMSelectedChartTypeInternalNameChange', { 'detal': this }));
+        this.onDataChange('SelectedChartTypeInternalName');
     }
 
     /**
@@ -74,7 +74,7 @@ export default class ChartManager {
     }
     set SelectedChartTypeName(value) {
         this._selectedChartTypeName = value;
-        document.dispatchEvent(new CustomEvent("onCMSelectedChartTypeNameChange", { "detail": this }));
+        this.onDataChange('SelectedChartTypeName');
     }
 
     formattedData = null; // kept here for redrawing the chart
@@ -95,7 +95,10 @@ export default class ChartManager {
     loadDataFromUrl(url) {
         return fetch(url)
             .then(data => data.text())
-            .then(text => this.SourceData = new SourceData(text))
+            .then(text => {
+                this.SourceData = new SourceData(text);
+                this.onDataChange('SourceData');
+            })
             .catch(err => console.error(err))
     }
 
@@ -108,6 +111,7 @@ export default class ChartManager {
             console.err("No data provided for new data source.")
         }
         this.SourceData = new SourceData(data);
+        this.onDataChange('SourceData');
         console.log("Loaded new data source from direct data.")
     }
 
@@ -120,6 +124,7 @@ export default class ChartManager {
             var el = document.getElementById(elementId);
             if (el && el.tagName.toUpperCase() == "DIV") {
                 this.ChartBoundElement = el;
+                this.onDataChange('ChartBoundElement');
                 console.log("Successfully bound div with id " + elementId + " to the GC.");
                 return;
             } else {
@@ -150,8 +155,11 @@ export default class ChartManager {
         ChartManager.checkChartTypeData();
         if (this.getChartTypes().includes(value)) {
             this.SelectedChartTypeName = value;
-            this.SelectedChartTypeInternalName = ChartManager.ChartTypeData["ChartTypes"].find((type)=>type["name"] === value)["internal-name"];
+            this.SelectedChartTypeInternalName = ChartManager.ChartTypeData["ChartTypes"].find((type) => type["name"] === value)["internal-name"];
             this.ChartRoles = ChartRole.createListByMixedContent(ChartManager.ChartTypeData["ChartTypes"].find(type => type.name === value)["roles"], this);
+            this.onDataChange('ChartTypeName');
+            this.onDataChange('ChartTypeInternalName');
+            this.onDataChange('ChartRoles');
         } else {
             console.err("Please provide a valid chart type name from getChartTypes.");
             this.SelectedChartTypeName = "";
@@ -168,9 +176,9 @@ export default class ChartManager {
         return this.ChartRoles;
     }
 
-    redrawChart(){
-        if(this.formattedData)
-            new google.visualization[this.SelectedChartTypeInternalName](this.ChartBoundElement).draw(this.formattedData,this.options);
+    redrawChart() {
+        if (this.formattedData)
+            new google.visualization[this.SelectedChartTypeInternalName](this.ChartBoundElement).draw(this.formattedData, this.options);
     }
 
     /**
@@ -180,14 +188,14 @@ export default class ChartManager {
 
         // no source data
         if (!this.SourceData) {
-            if(force)
+            if (force)
                 throw new Error("No source data set, can't draw chart.");
             return;
         }
 
         // invalid chart type
         if (!google.visualization[this.SelectedChartTypeInternalName]) {
-            if(force)
+            if (force)
                 throw new Error(`Invalid chart type ${this.SelectedChartTypeName}. Internal error.`);
             return;
         }
@@ -203,13 +211,13 @@ export default class ChartManager {
             if (!role.selectedColumn) {
                 // optional, skip
                 if (role.optional) {
-                    if(force)
+                    if (force)
                         console.warn(`Undefined optional role ${role.name}, skipping.`);
                     continue;
                 }
                 // mandatory, invalid state
                 else {
-                    if(force)
+                    if (force)
                         throw new Error(`Role ${role.name} has no column selected despite being mandatory.`);
                     return;
                 }
@@ -217,7 +225,7 @@ export default class ChartManager {
 
             // invalid selected column
             if (!this.SourceData.head.includes(role.selectedColumn)) {
-                if(force)
+                if (force)
                     throw new Error(`Role ${role.name} has invalid selected column ${role.selectedColumn}. Internal error.`);
                 return;
             }
@@ -243,7 +251,7 @@ export default class ChartManager {
                 if (!subrole.selectedColumn)
                     continue;
                 if (!this.SourceData.head.includes(subrole.selectedColumn)) {
-                    if(force)
+                    if (force)
                         console.warn(`Role ${subrole.name} has invalid selected column ${subrole.selectedColumn}, skipping.`);
                 }
                 dataTable.addColumn({
@@ -263,10 +271,10 @@ export default class ChartManager {
                     // skip if unassigned
                     if (!copy.selectedColumn)
                         continue;
-                    
+
                     // warn and skip if invalid
                     if (!this.SourceData.head.includes(copy.selectedColumn)) {
-                        if(force)
+                        if (force)
                             console.warn(`Role ${copy.name} has invalid selected column ${copy.selectedColumn}, skipping.`);
                         continue;
                     }
@@ -290,7 +298,7 @@ export default class ChartManager {
                         if (!subrole.selectedColumn)
                             continue;
                         if (!this.SourceData.head.includes(subrole.selectedColumn)) {
-                            if(force)
+                            if (force)
                                 console.warn(`Role ${subrole.name} has invalid selected column ${subrole.selectedColumn}, skipping.`);
                         }
                         dataTable.addColumn({
@@ -355,13 +363,13 @@ export default class ChartManager {
     /* #endregion */
 
     saveConfigData() {
-        
+
         let obj = {
-            SelectedChartTypeName : this.SelectedChartTypeName,
-            ChartRoles : []
+            SelectedChartTypeName: this.SelectedChartTypeName,
+            ChartRoles: []
         };
 
-        for(let role of this.ChartRoles)
+        for (let role of this.ChartRoles)
             obj.ChartRoles.push(role.saveConfigData());
 
         return obj;
@@ -369,9 +377,13 @@ export default class ChartManager {
 
     loadConfigData(config) {
         this.setChartType(config.SelectedChartTypeName);
-        for(let chartConfig of config.ChartRoles){
-            
+        for (let chartConfig of config.ChartRoles) {
+
         }
+    }
+
+    onDataChange(propertyName) {
+        document.dispatchEvent(new CustomEvent('onDataChange', { detail: this, property: propertyName }));
     }
 
 }

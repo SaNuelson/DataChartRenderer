@@ -7,6 +7,25 @@ console.log("Loaded ChartRole.js");
  * 
  *      In example, Bubble Chart holds (among others) a role for "ID/Name" of each bubble node rendered on the chart.
  *      A ChartRole for this particular case would then hold all necessary information (name = "ID (name)", types = ["string"], corresponding CSV column = "c13").
+ * 
+ * 
+ *      For purposes of saving/loading config, a dedicated ID has to be set for easier repeated connection of saved JSON values with the actual chart roles.
+ *      This ID has to contain most of the information.
+ *      Name for dedicated roles.
+ *      -- Caption can be read from JSON.
+ *      -- Types can be read from JSON.
+ *      -- Defval can be read from JSON.
+ *      Role has to be kept for pre-defined roles.
+ *      -- Subroles can be read from JSON.
+ *      -- Subrolenames can be read from JSON.
+ *      -- Optional can be read from JSON.
+ *      -- Repeatable can be read from JSON.
+ *      -- Copies will be found either way.
+ *      Owner is necessary for connection.
+ *      -- Repeatindex isn't necessary. For one, the order should stay the same between save and load. Secondly, it matters little either way.
+ *      Selected type, format and column are absolutely necessary.
+ *      Manager isn't needed. Also can't be, cuz it breaks stuff with circle referencing. Fun.
+ *      
  */
 export default class ChartRole {
 
@@ -35,11 +54,10 @@ export default class ChartRole {
     /** @property {ChartRole[]} Subroles compatible with this chart role */
     subroles = [];
 
-    /** @property {string[]} Subrole names (used for generating copies) */
-    subrolenames = [];
-
     /** @property {boolean} If this chart role can be left unassigned */
     optional = false;
+    /** @property {boolean} If this role is forcefully disabled. Only valid if it's optional. */
+    disabled = false;
 
     /** @property {boolean} If this chart role can appear multiple times */
     repeatable = false;
@@ -76,7 +94,6 @@ export default class ChartRole {
         if (srcObj["repeatable"]) this.repeatable = srcObj["repeatable"];
         if (srcObj["subrolenames"]) {
             this.subroles = [];
-            this.subrolenames = srcObj["subrolenames"];
             for (var subrolename of srcObj["subrolenames"]) {
                 this.subroles.push(ChartRole.createByRole(subrolename, manager));
             }
@@ -141,16 +158,21 @@ export default class ChartRole {
 
     /**
      * Get repeat copy
+     * @returns {Object[]} Array of chart role config files (as repeated and subroles aren't kept directly in manager).
      */
     getRepeatCopy() {
         if (!this.repeatable) {
             console.error("getRepeatCopy called on a non-repeatable chart role.");
             return null;
         }
-        var copy = new ChartRole(this, this.manager);
+        console.log(this);
+        console.log(ChartManager.getChartRoleTemplate(this.name));
+        var copy = new ChartRole(ChartManager.getChartRoleTemplate(this.name), this.manager);
+        copy.owner = this;
+        copy.repeatindex = this.repeatindex + 1;
         this.copies.push(copy);
-        copy.parent = this;
         copy.optional = true;
+        return copy;
     }
 
     saveConfigData() {
