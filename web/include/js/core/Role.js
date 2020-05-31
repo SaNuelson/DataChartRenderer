@@ -1,13 +1,13 @@
-import ChartManager from './ChartManager.js';
-import TemplateManager from './TemplateManager.js';
+import Chart from './Chart.js';
+import Template from './Template.js';
 
-console.log("Loaded ChartRole.js");
+console.log("Loaded Role.js");
 
 /**
  * This class holds information about a specific role for a Google Chart.
  * 
  *      In example, Bubble Chart holds (among others) a role for "ID/Name" of each bubble node rendered on the chart.
- *      A ChartRole for this particular case would then hold all necessary information (name = "ID (name)", types = ["string"], corresponding CSV column = "c13").
+ *      A Role for this particular case would then hold all necessary information (name = "ID (name)", types = ["string"], corresponding CSV column = "c13").
  * 
  * 
  *      For purposes of saving/loading config, a dedicated ID has to be set for easier repeated connection of saved JSON values with the actual chart roles.
@@ -25,10 +25,10 @@ console.log("Loaded ChartRole.js");
  *      Owner is necessary for connection.
  *      -- Repeatindex isn't necessary. For one, the order should stay the same between save and load. Secondly, it matters little either way.
  *      Selected type, format and column are absolutely necessary.
- *      Manager isn't needed. Also can't be, cuz it breaks stuff with circle referencing. Fun.
+ *      chart isn't needed. Also can't be, cuz it breaks stuff with circle referencing. Fun.
  *      
  */
-export default class ChartRole {
+export default class Role {
 
     /* #region Properties */
 
@@ -52,7 +52,7 @@ export default class ChartRole {
     /** @property {string} Specific role for this chart role */
     role = "";
 
-    /** @property {ChartRole[]} Subroles compatible with this chart role */
+    /** @property {Role[]} Subroles compatible with this chart role */
     subroles = [];
 
     /** @property {boolean} If this chart role can be left unassigned */
@@ -62,33 +62,33 @@ export default class ChartRole {
 
     /** @property {boolean} If this chart role can appear multiple times */
     repeatable = false;
-    /** @property {ChartRole[]} References to created copies of this chart role */
+    /** @property {Role[]} References to created copies of this chart role */
     copies = [];
-    /** @property {ChartRole} Reference to parent of this chart role copy */
+    /** @property {Role} Reference to parent of this chart role copy */
     owner = null;
     /** @property {number} Index of this specific repeated instance */
     repeatindex = 1;
 
     /** @property {string} Head of the currently selected SourceData column for this chart role */
-    selectedColumn = "";
+    column = "";
     /** @property {string} Currently selected type from the types */
-    selectedType = "";
+    type = "";
     /** @property {string} Additional format information. Currently necessary only for date/time/datetime */
-    selectedFormat = "";
-    /** @property {ChartManager} associated with this chart role */
-    manager;
+    format = "";
+    /** @property {Chart} associated with this chart role */
+    chart;
 
     /* #endregion */
 
-    constructor(srcObj, manager) {
+    constructor(srcObj, chart) {
 
-        this.manager = manager;
+        this.chart = chart;
 
         if (srcObj["name"]) this.name = srcObj["name"];
         if (srcObj["caption"]) this._caption = srcObj["caption"];
         if (srcObj["types"]) {
             this.types = srcObj["types"];
-            this.selectedType = this.types[0];
+            this.type = this.types[0];
         }
         if (srcObj["default"]) this.defval = srcObj["default"];
         if (srcObj["optional"]) this.optional = srcObj["optional"];
@@ -96,15 +96,15 @@ export default class ChartRole {
         if (srcObj["subrolenames"]) {
             this.subroles = [];
             for (var subrolename of srcObj["subrolenames"]) {
-                this.subroles.push(ChartRole.createByRole(subrolename, manager));
+                this.subroles.push(Role.createByRole(subrolename, chart));
             }
         }
 
-        this.selectedColumn = "";
-        this.selectedFormat = "";
+        this.column = "";
+        this.format = "";
 
-        if (!manager) {
-            console.error("Manager not defined for a chartRole in:");
+        if (!chart) {
+            console.error("chart not defined for a Role in:");
             console.log(this);
         }
     }
@@ -112,16 +112,16 @@ export default class ChartRole {
     /**
      * Factory method, create by role in ChartTypeData
      * @param {string} role 
-     * @param {ChartManager} manager
-     * @returns {ChartRole}
+     * @param {Chart} chart
+     * @returns {Role}
      */
-    static createByRole(rolename, manager) {
-        let roleData = TemplateManager.role(rolename);
+    static createByRole(rolename, chart) {
+        let roleData = Template.role(rolename);
         if (!roleData) {
             console.log(`Role ${rolename} not found`);
             return null;
         }
-        var role = new ChartRole(roleData, manager)
+        var role = new Role(roleData, chart)
         role.role = rolename;
         return role;
     }
@@ -129,46 +129,43 @@ export default class ChartRole {
     /**
      * Factory method, create by object from ChartTypeData.ChartTypes[]
      * @param {Object} data
-     * @param {ChartManager} manager
-     * @returns {ChartRole} 
+     * @param {Chart} chart
+     * @returns {Role} 
      */
-    static createByData(data, manager) {
+    static createByData(data, chart) {
         if (!data) {
-            console.log(`Invalid data provided for ChartRole factory:`);
+            console.log(`Invalid data provided for Role factory:`);
             console.log(data);
             return null;
         }
-        return new ChartRole(data, manager);
+        return new Role(data, chart);
     }
 
     /**
      * Factory methods, create whole array from ChartTypeData.ChartTypes
      * @param {object[]} data 
-     * @param {ChartManager} manager
+     * @param {Chart} chart
      */
-    static createListByMixedContent(data, manager) {
+    static createListByMixedContent(data, chart) {
         var arr = [];
         for (let template of data) {
             if (template["role"])
-                arr.push(ChartRole.createByRole(template["role"], manager))
+                arr.push(Role.createByRole(template["role"], chart))
             else
-                arr.push(ChartRole.createByData(template, manager))
+                arr.push(Role.createByData(template, chart))
         }
         return arr;
     }
 
     /**
      * Get repeat copy
-     * @returns {Object[]} Array of chart role config files (as repeated and subroles aren't kept directly in manager).
+     * @returns {Object[]} Array of chart role config files (as repeated and subroles aren't kept directly in chart).
      */
     getRepeatCopy() {
         if (!this.repeatable) {
-            console.error("getRepeatCopy called on a non-repeatable chart role.");
-            return null;
+            throw new "getRepeatCopy called on a non-repeatable chart role.";
         }
-        console.log(this);
-        console.log(TemplateManager.role(this.name));
-        var copy = new ChartRole(TemplateManager.role(this.name), this.manager);
+        var copy = new Role(Template.chartRole(this.chart.name, this.name), this.chart);
         copy.owner = this;
         copy.repeatindex = this.repeatindex + 1;
         this.copies.push(copy);
@@ -180,9 +177,9 @@ export default class ChartRole {
         let obj = {
             name : this.name, // should be remade into some kind of role identifier
             owner : this.owner,
-            selectedColumn : this.selectedColumn,
-            selectedType : this.selectedType,
-            selectedFormat : this.selectedFormat
+            column : this.column,
+            type : this.type,
+            format : this.format
         };
         return obj;
     }

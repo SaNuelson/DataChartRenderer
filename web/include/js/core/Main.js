@@ -1,8 +1,8 @@
 console.log("Loaded core/Main.js");
 
-import TemplateManager from './TemplateManager.js';
-import ChartManager from './ChartManager.js';
-import ChartRole from './ChartRole.js';
+import Template from './Template.js';
+import Chart from './Chart.js';
+import Role from './Role.js';
 import SourceData from './SourceData.js';
 
 let googleChartsLoadedEvent = new CustomEvent('onGoogleChartsLoaded');
@@ -13,7 +13,7 @@ if(!rootPath)
 fetch(rootPath + "include/json/graph_types.json")
     .then((data) => data.json())
     .then((json) => {
-        TemplateManager.loadChartTemplates(json);
+        Template.loadChartTemplates(json);
         $(document).trigger('onChartTypeDataLoaded');
     })
     .catch((err) => console.warn(err))
@@ -23,4 +23,4 @@ google.charts.setOnLoadCallback(() => { document.dispatchEvent(googleChartsLoade
 
 /* #endregion */
 
-export { ChartManager, ChartRole, SourceData };
+export { Chart, Role, SourceData };

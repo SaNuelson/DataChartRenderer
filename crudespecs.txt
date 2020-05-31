@@ -21,21 +21,21 @@ UI Minimal:
 		>> internal function setDataValue(data : string | data : string [,])
 			-- when user has already split up data (eg. for compatibility with other file types)
 	- Select Binding Element
-		>> internal function setChartContainer(element : HTMLElement | elementId : string)
+		>> internal function setContainer(element : HTMLElement | elementId : string)
 			-- set internal variable used later
 	- Select Chart Type
 		<< internal function getChartTypes()
 			-- get types (top-most keys) from charttype json
-		>> internal function setChartType(value : string)
+		>> internal function setType(value : string)
 			-- sets current type based on string value input
 	- Select Columns, Types, Formats
 		<< internal function getChartTypeRoles() -- for current
 			-- return roles for current type in format F1.0
 		<< internal function getChartTypeRoles(type : string)
 			-- return roles for selected type in format F1.0
-		>> internal function setChartTypeRoles(data : [,])
+		>> internal function setTypeRoles(data : [,])
 			-- fills up roles using format F1.1
-		>> internal function setChartTypeRole(data : [])
+		>> internal function setTypeRole(data : [])
 			-- fills up specific role using format F1.2
 	- Select Options
 		-- NotYetImplemented

@@ -1,8 +1,8 @@
-console.log("Loaded core/TemplateManager.");
+console.log("Loaded core/Template.");
 
 let templateData;
 
-const TemplateManager = {
+const Template = {
 
     /**
      * Load Google Charts source JSON. It can only be done once and without users interaction.
@@ -48,6 +48,11 @@ const TemplateManager = {
     chartNames() { return templateData["ChartTypes"].map(template => template.name)},
 
     /**
+     * Get role of a specific chart by name.
+     */
+    chartRole(chartName, roleName) { return templateData["ChartRoles"].find(template => template.name === chartName)["roles"].find(role => role.name === roleName)},
+
+    /**
      * Get all role templates.
      * @returns {Object[]}
      */
@@ -74,4 +79,4 @@ const TemplateManager = {
 
 }
 
-export default TemplateManager;
+export default Template;

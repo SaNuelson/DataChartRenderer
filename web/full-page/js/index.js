@@ -1,12 +1,12 @@
-import { ChartManager, ChartRole, SourceData } from "../../include/js/core/Main.js";
+import { Chart, Role, SourceData } from "../../include/js/core/Main.js";
 import "../../include/js/uigen/Main.js";
-import TemplateManager from '../../include/js/core/TemplateManager.js';
+import Template from '../../include/js/core/Template.js';
 
 console.log("Javascript index file loaded.");
 
-var manager = new ChartManager();
+var manager = new Chart();
 window.manager = manager;
-window.ChartManager = ChartManager; // TODO for debug only
+window.Chart = Chart; // TODO for debug only
 
 $(() => {
     // take care of any new input data
@@ -15,13 +15,13 @@ $(() => {
     $('#config-load-input').change(function () { onFileSelected(this, 'config'); })
 
     // take care of chart type
-    $('#chart-type-select').on('change', e => setChartType(e.target.value));
+    $('#chart-type-select').on('change', e => setType(e.target.value));
 
     // load-flie list item calls <input type="file"/> hidden on site
     $("#load-local-file-btn").on('click', () => $('#source-file-input').click());
 
     // bind chart drawing button
-    $('#draw-chart-btn').on('click', () => manager.drawChart());
+    $('#draw-chart-btn').on('click', () => manager.draw());
 
     $('#save-json-file-btn').on('click', () => trySaveJSON());
 
@@ -41,7 +41,7 @@ $(() => {
                 'width': $(this).width(),
                 'height': $(this).height()
             }
-            manager.redrawChart()
+            manager.redraw()
         }
     })
 
@@ -51,7 +51,7 @@ $(() => {
     // first time tutorial switch
     $('#source-file-input').one('change', function () { $('#chart-type-help-btn').click() });
     $('#chart-type-select').one('change', function () { $('#opts-help-btn').click() });
-    manager.setChartContainer('chart-div');
+    manager.setContainer('chart-div');
 });
 
 $(document).on('onGoogleChartsLoaded', (e) => {
@@ -66,7 +66,7 @@ $(document).on('onChartTypeDataLoaded', (e) => {
     document.log("Chart Type data successfully loaded.");
 
     // populate chart type list menu
-    TemplateManager.chartNames().forEach(chartType => {
+    Template.chartNames().forEach(chartType => {
         $("#chart-type-select")
             .append(
                 $('<option></option>')
@@ -131,13 +131,13 @@ function trySaveJSON() {
     anchor.remove();
 }
 
-function setChartType(type) {
+function setType(type) {
     if (manager.SourceData == SourceData.Empty) {
         document.err("Unable to select chart type because there's no source data loaded.");
         return;
     }
 
-    manager.setChartType(type);
+    manager.setType(type);
 
     const wrapper_template = $(`
     <div class="col-12">
@@ -148,16 +148,16 @@ function setChartType(type) {
 
     let opt_wrapper = wrapper_template.clone();
     let opt_holder = opt_wrapper.children('div');
-    $.each(manager.ChartRoles, function (_, role) {
-        opt_holder.append(getChartRoleConfig(role));
+    $.each(manager.Roles, function (_, role) {
+        opt_holder.append(getRoleConfig(role));
         $.each(role.subroles, function (_, subrole) {
-            opt_holder.append(getChartRoleConfig(subrole, true));
+            opt_holder.append(getRoleConfig(subrole, true));
         })
     })
     $('#opts-div').empty().append(opt_wrapper);
 }
 
-function getChartRoleConfig(role, isSubrole = false) {
+function getRoleConfig(role, isSubrole = false) {
 
     let label = $('<label></label>')
         .addClass('col-2')
@@ -193,13 +193,13 @@ function getChartRoleConfig(role, isSubrole = false) {
     let repeat_btn = !role.repeatable ?
         $('<div></div>')
             .addClass('col-1') :
-        $(role.getRepeatButton((copy) => {$('#role-wrapper').append(getChartRoleConfig(copy))}))
+        $(role.getRepeatButton((copy) => {$('#role-wrapper').append(getRoleConfig(copy))}))
             .addClass(['col-1', 'btn', 'btn-light'])
             .text('Copy')
 
     let role_config_wrapper = $('<div></div>')
         .addClass(['row', isSubrole ? 'subrole' : 'role'])
-        .on('change', '*', function () { manager.drawChart(false) });
+        .on('change', '*', function () { manager.draw(false) });
 
     return role_config_wrapper
         .append(label)

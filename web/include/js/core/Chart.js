@@ -1,14 +1,14 @@
-console.log("Loaded core/ChartManager.js");
+console.log("Loaded core/Chart.js");
 
 import SourceData from './SourceData.js';
-import ChartRole from './ChartRole.js';
-import TemplateManager from './TemplateManager.js';
+import Role from './Role.js';
+import Template from './Template.js';
 
 /**
  * Main class. Responsible for rendering chart using provided data.
  * Wrapped into class for the user to be able to use multiple instances for multiple charts.
  */
-export default class ChartManager {
+export default class Chart {
 
     /* #region Properties */
 
@@ -25,13 +25,13 @@ export default class ChartManager {
 
     /**
      * Array holding current roles (unfilled and filled alike). 
-     * @type {ChartRole[]}
+     * @type {Role[]}
      */
-    _chartRoles = []
-    get ChartRoles() { return this._chartRoles; }
-    set ChartRoles(value) {
-        this._chartRoles = value;
-        this.onDataChange('ChartRoles');
+    _roles = []
+    get Roles() { return this._roles; }
+    set Roles(value) {
+        this._roles = value;
+        this.onDataChange('Roles');
     }
 
     /**
@@ -49,28 +49,28 @@ export default class ChartManager {
      * Internal name of the chart used in GC.
      * @type {String}
      */
-    _selectedChartTypeInternalName = null;
-    get SelectedChartTypeInternalName() {
-        if (this._selectedChartTypeInternalName)
-            return this._selectedChartTypeInternalName;
-        return this._selectedChartTypeName;
+    _internalName = null;
+    get InternalName() {
+        if (this._internalName)
+            return this._internalName;
+        return this._name;
     }
-    set SelectedChartTypeInternalName(value) {
-        this._selectedChartTypeInternalName = value;
-        this.onDataChange('SelectedChartTypeInternalName');
+    set InternalName(value) {
+        this._internalName = value;
+        this.onDataChange('InternalName');
     }
 
     /**
      * Name of chart type currently selected.
      * @type {String}
      */
-    _selectedChartTypeName = null;
-    get SelectedChartTypeName() {
-        return this._selectedChartTypeName;
+    _name = null;
+    get Name() {
+        return this._name;
     }
-    set SelectedChartTypeName(value) {
-        this._selectedChartTypeName = value;
-        this.onDataChange('SelectedChartTypeName');
+    set Name(value) {
+        this._name = value;
+        this.onDataChange('Name');
     }
 
     formattedData = null; // kept here for redrawing the chart
@@ -106,7 +106,7 @@ export default class ChartManager {
         if (!data) {
             console.err("No data provided for new data source.")
         }
-        this.SourceData = new SourceData(data);
+        this._sourceData = new SourceData(data);
         this.onDataChange('SourceData');
         console.log("Loaded new data source from direct data.")
     }
@@ -115,7 +115,7 @@ export default class ChartManager {
      * Set a div in which the chart should be rendered either by providing the elementId.
      * @param {string} element
      */
-    setChartContainer(elementId) {
+    setContainer(elementId) {
         if (elementId) {
             var el = document.getElementById(elementId);
             if (el && el.tagName.toUpperCase() == "DIV") {
@@ -135,28 +135,27 @@ export default class ChartManager {
      * Select a chart type you wish to render. It has to be one of the strings provided by getChartTypes.
      * @param {string} name
      */
-    setChartType(name) {
-        console.log("setChartType: " + name);
-        if (TemplateManager.hasChart(name)) {
-            let template = TemplateManager.chart(name);
-            this.SelectedChartTypeName = name;
-            this.SelectedChartTypeInternalName = template["internal-name"];
-            this.ChartRoles = ChartRole.createListByMixedContent(template["roles"], this);
+    setType(name) {
+        if (Template.hasChart(name)) {
+            let template = Template.chart(name);
+            this.Name = name;
+            this.InternalName = template["internal-name"];
+            this.Roles = Role.createListByMixedContent(template["roles"], this);
 
             this.onDataChange('ChartTypeName');
             this.onDataChange('ChartTypeInternalName');
-            this.onDataChange('ChartRoles');
+            this.onDataChange('Roles');
         } else {
             console.err("Please provide a valid chart type name from getChartTypes.");
-            this.SelectedChartTypeName = "";
-            this.ChartRoles = [];
+            this.Name = "";
+            this.Roles = [];
         }
     }
     
     /**
      * Call once everything is set up and ready for rendering.
      */
-    drawChart(force = true) {
+    draw(force = true) {
 
         // no source data
         if (!this.SourceData) {
@@ -166,9 +165,9 @@ export default class ChartManager {
         }
 
         // invalid chart type
-        if (!google.visualization[this.SelectedChartTypeInternalName]) {
+        if (!google.visualization[this.InternalName]) {
             if (force)
-                throw new Error(`Invalid chart type ${this.SelectedChartTypeName}. Internal error.`);
+                throw new Error(`Invalid chart type ${this.Name}. Internal error.`);
             return;
         }
 
@@ -177,10 +176,10 @@ export default class ChartManager {
         var types = [];
         var formats = []
 
-        for (let role of this.ChartRoles) {
+        for (let role of this.Roles) {
 
             // undefined role
-            if (!role.selectedColumn) {
+            if (!role.column) {
                 // optional, skip
                 if (role.optional) {
                     if (force)
@@ -196,43 +195,43 @@ export default class ChartManager {
             }
 
             // invalid selected column
-            if (!this.SourceData.head.includes(role.selectedColumn)) {
+            if (!this.SourceData.head.includes(role.column)) {
                 if (force)
-                    throw new Error(`Role ${role.name} has invalid selected column ${role.selectedColumn}. Internal error.`);
+                    throw new Error(`Role ${role.name} has invalid selected column ${role.column}. Internal error.`);
                 return;
             }
 
             // assign column
             if (!role.optional) {
-                dataTable.addColumn(role.selectedType, role.name);
+                dataTable.addColumn(role.type, role.name);
             } else {
                 dataTable.addColumn({
-                    type: role.selectedType,
+                    type: role.type,
                     role: role.role
                 });
             }
 
             // push column to the list for later data formatting
-            columns.push(this.SourceData.head.indexOf(role.selectedColumn)); // TODO: Redo selectedColumn & selectedType to indexes
-            types.push(role.selectedType);
-            formats.push(role.selectedFormat);
+            columns.push(this.SourceData.head.indexOf(role.column)); // TODO: Redo column & type to indexes
+            types.push(role.type);
+            formats.push(role.format);
 
             // repeat for subroles
             for (let subrole of role.subroles) {
                 // all subroles are optional
-                if (!subrole.selectedColumn)
+                if (!subrole.column)
                     continue;
-                if (!this.SourceData.head.includes(subrole.selectedColumn)) {
+                if (!this.SourceData.head.includes(subrole.column)) {
                     if (force)
-                        console.warn(`Role ${subrole.name} has invalid selected column ${subrole.selectedColumn}, skipping.`);
+                        console.warn(`Role ${subrole.name} has invalid selected column ${subrole.column}, skipping.`);
                 }
                 dataTable.addColumn({
                     type: subrole.type,
                     role: subrole.role
                 })
-                columns.push(this.SourceData.head.indexOf(subrole.selectedColumn));
-                types.push(subrole.selectedType);
-                formats.push(subrole.selectedFormat);
+                columns.push(this.SourceData.head.indexOf(subrole.column));
+                types.push(subrole.type);
+                formats.push(subrole.format);
             }
 
             // and finally check any copies
@@ -241,45 +240,45 @@ export default class ChartManager {
                     // any copy automatically optional
 
                     // skip if unassigned
-                    if (!copy.selectedColumn)
+                    if (!copy.column)
                         continue;
 
                     // warn and skip if invalid
-                    if (!this.SourceData.head.includes(copy.selectedColumn)) {
+                    if (!this.SourceData.head.includes(copy.column)) {
                         if (force)
-                            console.warn(`Role ${copy.name} has invalid selected column ${copy.selectedColumn}, skipping.`);
+                            console.warn(`Role ${copy.name} has invalid selected column ${copy.column}, skipping.`);
                         continue;
                     }
 
                     // assign column
                     if (!role.optional) {
-                        dataTable.addColumn(copy.selectedType, copy.name);
+                        dataTable.addColumn(copy.type, copy.name);
                     } else {
                         dataTable.addColumn({
-                            type: copy.selectedType,
+                            type: copy.type,
                             role: copy.role
                         });
                     }
-                    columns.push(this.SourceData.head.indexOf(copy.selectedColumn));
-                    types.push(copy.selectedType);
-                    formats.push(copy.selectedFormat);
+                    columns.push(this.SourceData.head.indexOf(copy.column));
+                    types.push(copy.type);
+                    formats.push(copy.format);
 
                     // and add any subroles of the copy
                     for (let subrole of role.subroles) {
                         // all subroles are optional
-                        if (!subrole.selectedColumn)
+                        if (!subrole.column)
                             continue;
-                        if (!this.SourceData.head.includes(subrole.selectedColumn)) {
+                        if (!this.SourceData.head.includes(subrole.column)) {
                             if (force)
-                                console.warn(`Role ${subrole.name} has invalid selected column ${subrole.selectedColumn}, skipping.`);
+                                console.warn(`Role ${subrole.name} has invalid selected column ${subrole.column}, skipping.`);
                         }
                         dataTable.addColumn({
                             type: subrole.type,
                             role: subrole.role
                         })
-                        columns.push(this.SourceData.head.indexOf(subrole.selectedColumn));
-                        types.push(subrole.selectedType);
-                        formats.push(subrole.selectedFormat);
+                        columns.push(this.SourceData.head.indexOf(subrole.column));
+                        types.push(subrole.type);
+                        formats.push(subrole.format);
                     }
                 }
             }
@@ -288,7 +287,7 @@ export default class ChartManager {
         // let the source data format itself using the columns and types
         var formattedData = this.SourceData.getChartData(columns, types, formats);
         // TODO var options
-        var chart = new google.visualization[this.SelectedChartTypeInternalName](this.ChartBoundElement);
+        var chart = new google.visualization[this.InternalName](this.ChartBoundElement);
         console.log("Formatted data: ", formattedData);
         this.formattedData = formattedData;
 
@@ -299,9 +298,9 @@ export default class ChartManager {
     /**
      * Draw again with no changes to the data.
      */
-    redrawChart() {
+    redraw() {
         if (this.formattedData)
-            new google.visualization[this.SelectedChartTypeInternalName](this.ChartBoundElement).draw(this.formattedData, this.options);
+            new google.visualization[this.InternalName](this.ChartBoundElement).draw(this.formattedData, this.options);
     }
 
     /* #endregion */
@@ -309,19 +308,19 @@ export default class ChartManager {
     saveConfigData() {
 
         let obj = {
-            SelectedChartTypeName: this.SelectedChartTypeName,
-            ChartRoles: []
+            Name: this.Name,
+            Roles: []
         };
 
-        for (let role of this.ChartRoles)
-            obj.ChartRoles.push(role.saveConfigData());
+        for (let role of this.Roles)
+            obj.Roles.push(role.saveConfigData());
 
         return obj;
     }
 
     loadConfigData(config) {
-        this.setChartType(config.SelectedChartTypeName);
-        for (let chartConfig of config.ChartRoles) {
+        this.setType(config.Name);
+        for (let chartConfig of config.Roles) {
 
         }
     }
