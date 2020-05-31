@@ -50,7 +50,7 @@ const Template = {
     /**
      * Get role of a specific chart by name.
      */
-    chartRole(chartName, roleName) { return templateData["ChartRoles"].find(template => template.name === chartName)["roles"].find(role => role.name === roleName)},
+    chartRole(chartName, roleName) { return templateData["ChartTypes"].find(template => template.name === chartName)["roles"].find(role => role.name === roleName)},
 
     /**
      * Get all role templates.

@@ -179,106 +179,106 @@ export default class Chart {
         for (let role of this.Roles) {
 
             // undefined role
-            if (!role.column) {
+            if (!role.Column) {
                 // optional, skip
-                if (role.optional) {
+                if (role.Optional) {
                     if (force)
-                        console.warn(`Undefined optional role ${role.name}, skipping.`);
+                        console.warn(`Undefined optional role ${role.Name}, skipping.`);
                     continue;
                 }
                 // mandatory, invalid state
                 else {
                     if (force)
-                        throw new Error(`Role ${role.name} has no column selected despite being mandatory.`);
+                        throw new Error(`Role ${role.Name} has no column selected despite being mandatory.`);
                     return;
                 }
             }
 
             // invalid selected column
-            if (!this.SourceData.head.includes(role.column)) {
+            if (!this.SourceData.head.includes(role.Column)) {
                 if (force)
-                    throw new Error(`Role ${role.name} has invalid selected column ${role.column}. Internal error.`);
+                    throw new Error(`Role ${role.Name} has invalid selected column ${role.Column}. Internal error.`);
                 return;
             }
 
             // assign column
             if (!role.optional) {
-                dataTable.addColumn(role.type, role.name);
+                dataTable.addColumn(role.Type, role.Name);
             } else {
                 dataTable.addColumn({
-                    type: role.type,
-                    role: role.role
+                    type: role.Type,
+                    role: role.Role
                 });
             }
 
             // push column to the list for later data formatting
-            columns.push(this.SourceData.head.indexOf(role.column)); // TODO: Redo column & type to indexes
-            types.push(role.type);
-            formats.push(role.format);
+            columns.push(this.SourceData.head.indexOf(role.Column)); // TODO: Redo column & type to indexes
+            types.push(role.Type);
+            formats.push(role.Format);
 
             // repeat for subroles
-            for (let subrole of role.subroles) {
+            for (let subrole of role.Subroles) {
                 // all subroles are optional
-                if (!subrole.column)
+                if (!subrole.Column)
                     continue;
-                if (!this.SourceData.head.includes(subrole.column)) {
+                if (!this.SourceData.head.includes(subrole.Column)) {
                     if (force)
-                        console.warn(`Role ${subrole.name} has invalid selected column ${subrole.column}, skipping.`);
+                        console.warn(`Role ${subrole.Name} has invalid selected column ${subrole.Column}, skipping.`);
                 }
                 dataTable.addColumn({
-                    type: subrole.type,
-                    role: subrole.role
+                    type: subrole.Type,
+                    role: subrole.Role
                 })
-                columns.push(this.SourceData.head.indexOf(subrole.column));
-                types.push(subrole.type);
-                formats.push(subrole.format);
+                columns.push(this.SourceData.head.indexOf(subrole.Column));
+                types.push(subrole.Type);
+                formats.push(subrole.Format);
             }
 
             // and finally check any copies
             if (role.repeatable) {
-                for (let copy of role.copies) {
+                for (let copy of role.Copies) {
                     // any copy automatically optional
 
                     // skip if unassigned
-                    if (!copy.column)
+                    if (!copy.Column)
                         continue;
 
                     // warn and skip if invalid
-                    if (!this.SourceData.head.includes(copy.column)) {
+                    if (!this.SourceData.head.includes(copy.Column)) {
                         if (force)
-                            console.warn(`Role ${copy.name} has invalid selected column ${copy.column}, skipping.`);
+                            console.warn(`Role ${copy.Name} has invalid selected column ${copy.Column}, skipping.`);
                         continue;
                     }
 
                     // assign column
-                    if (!role.optional) {
-                        dataTable.addColumn(copy.type, copy.name);
+                    if (!role.Optional) {
+                        dataTable.addColumn(copy.Type, copy.Name);
                     } else {
                         dataTable.addColumn({
-                            type: copy.type,
-                            role: copy.role
+                            type: copy.Type,
+                            role: copy.Role
                         });
                     }
                     columns.push(this.SourceData.head.indexOf(copy.column));
-                    types.push(copy.type);
-                    formats.push(copy.format);
+                    types.push(copy.Type);
+                    formats.push(copy.Format);
 
                     // and add any subroles of the copy
-                    for (let subrole of role.subroles) {
+                    for (let subrole of role.Subroles) {
                         // all subroles are optional
-                        if (!subrole.column)
+                        if (!subrole.Column)
                             continue;
-                        if (!this.SourceData.head.includes(subrole.column)) {
+                        if (!this.SourceData.head.includes(subrole.Column)) {
                             if (force)
-                                console.warn(`Role ${subrole.name} has invalid selected column ${subrole.column}, skipping.`);
+                                console.warn(`Role ${subrole.Name} has invalid selected column ${subrole.Column}, skipping.`);
                         }
                         dataTable.addColumn({
-                            type: subrole.type,
-                            role: subrole.role
+                            type: subrole.Type,
+                            role: subrole.Role
                         })
                         columns.push(this.SourceData.head.indexOf(subrole.column));
-                        types.push(subrole.type);
-                        formats.push(subrole.format);
+                        types.push(subrole.Type);
+                        formats.push(subrole.Format);
                     }
                 }
             }
@@ -320,8 +320,8 @@ export default class Chart {
 
     loadConfigData(config) {
         this.setType(config.Name);
-        for (let chartConfig of config.Roles) {
-
+        for (let roleConfig of config.Roles) {
+            this.Roles.find(role => role.Name == roleConfig['name']).loadConfigData(roleConfig);
         }
     }
 

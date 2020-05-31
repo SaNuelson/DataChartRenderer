@@ -35,8 +35,8 @@ const RoleUIMixin = {
             select.options.add(empty);
         }
 
-        select.fillSelect(this.chart.SourceData.head, false);
-        select.onchange = () => this.column = select.value;
+        select.fillSelect(this.Chart.SourceData.head, false);
+        select.onchange = () => this.Column = select.value;
         return select;
     },
 
@@ -45,10 +45,10 @@ const RoleUIMixin = {
      */
     getTypeSelector(){
         var select = document.createElement('select');
-        if(this.types.length == 1)
+        if(this.Types.length == 1)
             select.disabled = true;
-        select.onchange = () => this.type = select.value;
-        return select.fillSelect(this.types);
+        select.onchange = () => this.Type = select.value;
+        return select.fillSelect(this.Types);
     },
 
     /**
@@ -57,7 +57,7 @@ const RoleUIMixin = {
     getFormatInput(placeholder){
         var input = document.createElement("input")
         input.placeholder = placeholder;
-        input.onchange = () => this.format = input.value;
+        input.onchange = () => this.Format = input.value;
         return input;
     },
         
@@ -68,15 +68,24 @@ const RoleUIMixin = {
      * @returns {Role}
      */
     getRepeatButton(callback){
-        if(!this.repeatable){
-            console.error("Role.prototype.getRepeatButton called on a non-repeatable chart role.");
-            return null; 
-        }
+        if(!this.Repeatable)
+            throw "Role.prototype.getRepeatButton called on a non-repeatable chart role.";
 
         var button = document.createElement("button");
         button.innerHTML = "+";
         button.onclick = () => callback(this.getRepeatCopy());
         return button;
+    },
+
+    getCopyDeleteButton(callback) {
+        if(!this.Owner)
+            throw "Role.prototype.getCopyDeleteButton called on a non-copied chart role.";
+        var button = document.createElement('button');
+        button.innerHTML = "-";
+        button.onclick = () => {
+            callback(this);
+            this.detach();
+        }    
     }
 }
 

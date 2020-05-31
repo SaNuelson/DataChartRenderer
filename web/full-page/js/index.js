@@ -12,7 +12,7 @@ $(() => {
     // take care of any new input data
     $("#source-file-input").change(function () { onFileSelected(this, 'data'); })
 
-    $('#config-load-input').change(function () { onFileSelected(this, 'config'); })
+    $('#config-file-input').change(function () { onFileSelected(this, 'config'); })
 
     // take care of chart type
     $('#chart-type-select').on('change', e => setType(e.target.value));
@@ -25,9 +25,11 @@ $(() => {
 
     $('#save-json-file-btn').on('click', () => trySaveJSON());
 
-    $('#load-json-file-btn').on('click', () => $('#config-file-input'));
+    $('#load-json-file-btn').on('click', () => $('#config-file-input').click());
 
     $('#load-demo-file-btn').on('click', () => manager.loadDataFromUrl('../res/data_type_debug.csv').then(() => loadDataPreview()));
+
+    $('#load-people-demo-file-btn').on('click', () => manager.loadDataFromUrl('../res/people.csv').then(()=> loadDataPreview()));
 
     // TODO: find a better solution ... like really.
     $('#file-helper-link').on('click', function () {
@@ -94,6 +96,7 @@ function onFileSelected(input, type) {
             loadDataPreview();
         }
         else if (type == 'config') {
+            console.log("loading config");
             let json = JSON.parse(text);
             manager.loadConfigData(json);
         }
@@ -150,18 +153,36 @@ function setType(type) {
     let opt_holder = opt_wrapper.children('div');
     $.each(manager.Roles, function (_, role) {
         opt_holder.append(getRoleConfig(role));
-        $.each(role.subroles, function (_, subrole) {
-            opt_holder.append(getRoleConfig(subrole, true));
+        $.each(role.Subroles, function (_, subrole) {
+            opt_holder.append(getRoleConfig(subrole, { subrole: true }));
         })
     })
     $('#opts-div').empty().append(opt_wrapper);
 }
 
-function getRoleConfig(role, isSubrole = false) {
+function appendCopyConfig(role) {
+    let opt_holder = $('#role-wrapper');
+    opt_holder.append(getRoleConfig(role, { copy: true }));
+    $.each(role.Subroles, function (_, subrole) {
+        opt_holder.append(getRoleConfig(subrole, { subrole: true }));
+    })
+}
+
+function getRoleConfig(role, flags) {
+
+    let isSubrole = false;
+    let isCopy = false;
+
+    if(flags) {
+        if(flags['subrole'])
+            isSubrole = flags['subrole'];
+        if(flags['copy'])
+            isCopy = flags['copy'];
+    }
 
     let label = $('<label></label>')
         .addClass('col-2')
-        .text(role.caption);
+        .text(role.Caption);
 
     let col_selector = $(role.getColumnSelector("Select Column"))
         .addClass(['col-3', 'custom-select']);
@@ -172,28 +193,35 @@ function getRoleConfig(role, isSubrole = false) {
     let format_input = $(role.getFormatInput("Role Format"))
         .addClass(['col-3', 'custom-input'])
 
-    let disable_btn = !role.optional ? 
-        $('<div></div>')
-            .addClass('col-1') :
-        $('<button></button>')
-            .addClass(['col-1','btn', 'btn-light', 'align-self-center'])
+    let disable_btn;
+
+    if (role.Optional)
+        disable_btn = $('<button></button>')
+            .addClass(['col-1', 'btn', 'btn-light', 'align-self-center'])
             .text('Off')
-            .on('click', function () { 
+            .on('click', function () {
                 role_config_wrapper.toggleClass('disabled');
-                if(role.disabled){
+                if (role.Disabled) {
                     $(this).text('Off');
-                    role.disabled = false;
+                    role.Disabled = false;
                 }
                 else {
                     $(this).text('On');
-                    role.disabled = true;
+                    role.Disabled = true;
                 }
             });
+    else if (isCopy)
+        disable_btn = $(role.getCopyDeleteButton(() => { }))
+            .addClass(['col-1', 'btn', 'btn-light', 'align-self-center'])
+            .text('Del');
+    else
+        disable_btn = $('<div></div>')
+            .addClass('col-1');
 
-    let repeat_btn = !role.repeatable ?
+    let repeat_btn = !role.Repeatable ?
         $('<div></div>')
             .addClass('col-1') :
-        $(role.getRepeatButton((copy) => {$('#role-wrapper').append(getRoleConfig(copy))}))
+        $(role.getRepeatButton((copy) => appendCopyConfig(role)))
             .addClass(['col-1', 'btn', 'btn-light'])
             .text('Copy')
 

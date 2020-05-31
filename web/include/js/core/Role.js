@@ -23,7 +23,7 @@ console.log("Loaded Role.js");
  *      -- Repeatable can be read from JSON.
  *      -- Copies will be found either way.
  *      Owner is necessary for connection.
- *      -- Repeatindex isn't necessary. For one, the order should stay the same between save and load. Secondly, it matters little either way.
+ *      -- RepeatIndex isn't necessary. For one, the order should stay the same between save and load. Secondly, it matters little either way.
  *      Selected type, format and column are absolutely necessary.
  *      chart isn't needed. Also can't be, cuz it breaks stuff with circle referencing. Fun.
  *      
@@ -33,75 +33,75 @@ export default class Role {
     /* #region Properties */
 
     /** @property {string} Name used internally */
-    name = "name.unset";
+    Name = "name.unset";
 
     _caption = "caption.unset";
     /** @property {string} Name used externally in frontend */
-    get caption() { 
-        if(this._caption == "caption.unset")
-            return this.name.replace(/\{1\}/,this.repeatindex).trim() 
+    get Caption() {
+        if (this._caption == "caption.unset")
+            return this.Name.replace(/\{1\}/, this.RepeatIndex).trim()
         return this._caption;
     };
 
     /** @property {string[]} Compatible types with this chart role */
-    types = null;
+    Types = null;
 
     /** @property {string} Default value */
-    defval = "defval.unset";
+    Defval = "defval.unset";
 
     /** @property {string} Specific role for this chart role */
-    role = "";
+    Role = "";
 
     /** @property {Role[]} Subroles compatible with this chart role */
-    subroles = [];
+    Subroles = [];
 
     /** @property {boolean} If this chart role can be left unassigned */
-    optional = false;
+    Optional = false;
     /** @property {boolean} If this role is forcefully disabled. Only valid if it's optional. */
-    disabled = false;
+    Disabled = false;
 
     /** @property {boolean} If this chart role can appear multiple times */
-    repeatable = false;
+    Repeatable = false;
     /** @property {Role[]} References to created copies of this chart role */
-    copies = [];
+    Copies = [];
     /** @property {Role} Reference to parent of this chart role copy */
-    owner = null;
+    Owner = null;
     /** @property {number} Index of this specific repeated instance */
-    repeatindex = 1;
+    RepeatIndex = 1;
 
     /** @property {string} Head of the currently selected SourceData column for this chart role */
-    column = "";
+    Column = "";
     /** @property {string} Currently selected type from the types */
-    type = "";
+    Type = "";
     /** @property {string} Additional format information. Currently necessary only for date/time/datetime */
-    format = "";
+    Format = "";
     /** @property {Chart} associated with this chart role */
-    chart;
+    Chart;
 
     /* #endregion */
 
     constructor(srcObj, chart) {
 
-        this.chart = chart;
+        this.Chart = chart;
 
-        if (srcObj["name"]) this.name = srcObj["name"];
+        if (srcObj["name"]) this.Name = srcObj["name"];
         if (srcObj["caption"]) this._caption = srcObj["caption"];
         if (srcObj["types"]) {
-            this.types = srcObj["types"];
-            this.type = this.types[0];
+            this.Types = srcObj["types"];
+            this.Type = this.Types[0];
         }
-        if (srcObj["default"]) this.defval = srcObj["default"];
-        if (srcObj["optional"]) this.optional = srcObj["optional"];
-        if (srcObj["repeatable"]) this.repeatable = srcObj["repeatable"];
+        if (srcObj["default"]) this.Defval = srcObj["default"];
+        if (srcObj["optional"]) this.Optional = srcObj["optional"];
+        if (srcObj["repeatable"]) this.Repeatable = srcObj["repeatable"];
         if (srcObj["subrolenames"]) {
-            this.subroles = [];
+            this.Subroles = [];
             for (var subrolename of srcObj["subrolenames"]) {
-                this.subroles.push(Role.createByRole(subrolename, chart));
+                this.Subroles.push(Role.createByRole(subrolename, chart));
             }
         }
 
-        this.column = "";
-        this.format = "";
+        this.Column = "";
+        this.Format = "";
 
         if (!chart) {
             console.error("chart not defined for a Role in:");
@@ -122,7 +122,7 @@ export default class Role {
             return null;
         }
         var role = new Role(roleData, chart)
-        role.role = rolename;
+        role.Role = rolename;
         return role;
     }
 
@@ -162,27 +162,69 @@ export default class Role {
      * @returns {Object[]} Array of chart role config files (as repeated and subroles aren't kept directly in chart).
      */
     getRepeatCopy() {
-        if (!this.repeatable) {
-            throw new "getRepeatCopy called on a non-repeatable chart role.";
+        if (!this.Repeatable) {
+            throw "getRepeatCopy called on a non-repeatable chart role. Internal error.";
         }
-        var copy = new Role(Template.chartRole(this.chart.name, this.name), this.chart);
-        copy.owner = this;
-        copy.repeatindex = this.repeatindex + 1;
-        this.copies.push(copy);
-        copy.optional = true;
+        var copy = new Role(Template.chartRole(this.Chart.Name, this.Name), this.Chart);
+        copy.Owner = this;
+        copy.RepeatIndex = this.getFreeRepeatIndex();
+        this.Copies.push(copy);
+        copy.Optional = true;
         return copy;
+    }
+
+    getFreeRepeatIndex() {
+        let repeatIndex = 1;
+        while (this.Copies.some(copy => copy.RepeatIndex === repeatIndex))
+            repeatIndex++;
+        return repeatIndex;
+    }
+
+    detach() {
+        if (!this.Owner)
+            throw "Cannot remove a non-repeated role.";
+
+        this.Owner.Copies = this.Owner.Copies.splice(this.Owner.Copies.indexOf(this));
+        this.Owner = null;
     }
 
     saveConfigData() {
         let obj = {
-            name : this.name, // should be remade into some kind of role identifier
-            owner : this.owner,
-            column : this.column,
-            type : this.type,
-            format : this.format
+            name: this.Name, // should be remade into some kind of role identifier
+            owner: this.Owner,
+            column: this.Column,
+            type: this.Type,
+            format: this.Format,
+            disabled: this.Disabled
         };
         return obj;
     }
 
+    loadConfigData(roleConfig) {
+        if (this.Name != roleConfig["name"])
+            throw `Incompatible role config of ${roleConfig["name"]} for role of name ${this.Name}.`;
+
+        if (!roleConfig["column"])
+            console.warn(`Unset column for role ${this.Name}.`);
+        this.Column = roleConfig["column"];
+        if (!roleConfig["format"])
+            console.warn(`Unset format for role ${this.Name}.`);
+        this.Format = roleConfig["format"];
+        if (!roleConfig["type"])
+            console.warn(`Unset type for role ${this.Name}.`);
+        this.Type = roleConfig["type"];
+        if (!this.Optional)
+            console.warn(`Disabled non-optional role ${this.Name}.`);
+        this.Disabled = roleConfig["disabled"];
+        if (roleConfig["owner"]) {
+            if(!this.Repeatable)
+                console.warn(`Copy of non-repeatable role ${this.Name}.`);
+
+            this.Owner = roleConfig["owner"];
+            this.Owner.Copies.push(this);
+            this.RepeatIndex = this.Owner.getFreeRepeatIndex();
+        }
+
+    }
 
 }
