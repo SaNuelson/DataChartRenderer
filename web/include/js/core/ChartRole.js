@@ -116,7 +116,7 @@ export default class ChartRole {
      * @returns {ChartRole}
      */
     static createByRole(rolename, manager) {
-        let roleData = ChartManager.getChartRoleTemplate(rolename);
+        let roleData = TemplateManager.role(rolename);
         if (!roleData) {
             console.log(`Role ${rolename} not found`);
             return null;
@@ -167,8 +167,8 @@ export default class ChartRole {
             return null;
         }
         console.log(this);
-        console.log(ChartManager.getChartRoleTemplate(this.name));
-        var copy = new ChartRole(ChartManager.getChartRoleTemplate(this.name), this.manager);
+        console.log(TemplateManager.role(this.name));
+        var copy = new ChartRole(TemplateManager.role(this.name), this.manager);
         copy.owner = this;
         copy.repeatindex = this.repeatindex + 1;
         this.copies.push(copy);

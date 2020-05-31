@@ -6,7 +6,7 @@ import TemplateManager from './TemplateManager.js';
 
 /**
  * Main class. Responsible for rendering chart using provided data.
- * Wrapped into class for the user to be able to use multiple instances for multiple charts (eg. when comparing).
+ * Wrapped into class for the user to be able to use multiple instances for multiple charts.
  */
 export default class ChartManager {
 
@@ -22,11 +22,6 @@ export default class ChartManager {
             return SourceData.Empty;
         return this._sourceData;
     }
-    set SourceData(value) {
-        // TODO validate source data
-        this._sourceData = value;
-        this.onDataChange('SourceData');
-    }
 
     /**
      * Array holding current roles (unfilled and filled alike). 
@@ -40,7 +35,7 @@ export default class ChartManager {
     }
 
     /**
-     * Element (div) onto which google chart should be rendered.
+     * Element (div) into which google chart should be rendered.
      * @type {HTMLElement}
      */
     _chartBoundElement = null;
@@ -138,14 +133,16 @@ export default class ChartManager {
 
     /**
      * Select a chart type you wish to render. It has to be one of the strings provided by getChartTypes.
-     * @param {string} value
+     * @param {string} name
      */
-    setChartType(value) {
-        console.log("setChartType: " + value);
-        if (TemplateManager.getChartTemplateNames().includes(value)) {
-            this.SelectedChartTypeName = value;
-            this.SelectedChartTypeInternalName = ChartManager.ChartTypeData["ChartTypes"].find((type) => type["name"] === value)["internal-name"];
-            this.ChartRoles = ChartRole.createListByMixedContent(TemplateManager.getChartTemplate(value)["roles"], this);
+    setChartType(name) {
+        console.log("setChartType: " + name);
+        if (TemplateManager.hasChart(name)) {
+            let template = TemplateManager.chart(name);
+            this.SelectedChartTypeName = name;
+            this.SelectedChartTypeInternalName = template["internal-name"];
+            this.ChartRoles = ChartRole.createListByMixedContent(template["roles"], this);
+
             this.onDataChange('ChartTypeName');
             this.onDataChange('ChartTypeInternalName');
             this.onDataChange('ChartRoles');

@@ -1,5 +1,6 @@
 import { ChartManager, ChartRole, SourceData } from "../../include/js/core/Main.js";
 import "../../include/js/uigen/Main.js";
+import TemplateManager from '../../include/js/core/TemplateManager.js';
 
 console.log("Javascript index file loaded.");
 
@@ -65,7 +66,7 @@ $(document).on('onChartTypeDataLoaded', (e) => {
     document.log("Chart Type data successfully loaded.");
 
     // populate chart type list menu
-    manager.getChartTypes().forEach(chartType => {
+    TemplateManager.chartNames().forEach(chartType => {
         $("#chart-type-select")
             .append(
                 $('<option></option>')
@@ -147,7 +148,7 @@ function setChartType(type) {
 
     let opt_wrapper = wrapper_template.clone();
     let opt_holder = opt_wrapper.children('div');
-    $.each(manager.getChartRoles(), function (_, role) {
+    $.each(manager.ChartRoles, function (_, role) {
         opt_holder.append(getChartRoleConfig(role));
         $.each(role.subroles, function (_, subrole) {
             opt_holder.append(getChartRoleConfig(subrole, true));

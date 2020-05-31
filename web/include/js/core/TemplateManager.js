@@ -2,7 +2,7 @@ console.log("TemplateManager loaded.");
 
 let templateData;
 
-export const TemplateManager = {
+const TemplateManager = {
 
     /**
      * Load Google Charts source JSON. It can only be done once and without users interaction.
@@ -19,13 +19,13 @@ export const TemplateManager = {
      * Get ALL the data in the template JSON.
      * @returns {Object}
      */
-    getChartTemplateData() { return templateData }, 
+    all() { return templateData }, 
 
     /**
      * Get all chart templates in the template JSON.
      * @returns {Object[]}
      */
-    getChartTemplates() { return templateData["ChartTypes"]},
+    charts() { return templateData["ChartTypes"]},
 
     /**
      * Get specific chart template.
@@ -33,31 +33,45 @@ export const TemplateManager = {
      * @returns {Object}
      * TODO Will most likely change to ID in near future. 
      */
-    getChartTemplate(name) { return templateData["ChartTypes"].find(template => template.name === name)},
+    chart(name) { return templateData["ChartTypes"].find(template => template.name === name)},
+
+    /**
+     * Contains a chart template of specified name
+     * @returns {boolean}
+     */
+    hasChart(name) { return templateData["ChartTypes"].some(template => template.name === name)},
 
     /**
      * Get names of all chart templates.
      * @returns {String[]}
      */
-    getChartTemplateNames() { return templateData["ChartTypes"].map(template => template.name)},
+    chartNames() { return templateData["ChartTypes"].map(template => template.name)},
 
     /**
      * Get all role templates.
      * @returns {Object[]}
      */
-    getRoleTemplates() { return templateData["RoleDetails"]},
+    roles() { return templateData["RoleDetails"]},
 
     /**
      * Get role template for a specific role.
      * @param {String} role name
      * @returns {Object}
      */
-    getRoleTemplate(name) { return templateData["RoleDetails"].find(template => template.name === name)},
+    role(name) { return templateData["RoleDetails"].find(template => template.name === name)},
+
+    /**
+     * Contains a role template of specified name
+     * @returns {boolean}
+     */
+    hasRole(name) { return templateData["RoleDetails"].some(template => template.name === name)},
 
     /**
      * Get names of all role templates.
      * @returns {String[]}
      */
-    getRoleTemplateNames() { return templateData["RoleDetails"].map(template => template.name)}
+    roleNames() { return templateData["RoleDetails"].map(template => template.name)}
 
 }
+
+export default TemplateManager;
