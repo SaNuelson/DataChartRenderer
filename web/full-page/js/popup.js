@@ -18,20 +18,20 @@ document.err = message => showPopup(message, 2);
 
 // CONSOLE.LOG EXTENSION
 if (true) {
-    let log = console.log;
     let warn = console.warn;
     let error = console.error;
-    console.log = function (msg) {
-        document.log(msg);
-        log(msg);
-    }
+    let err = console.err;
     console.warn = function (msg) {
         document.warn(msg);
         warn(msg);
     }
-    console.err = function (msg) {
+    console.error = function (msg) {
         document.err(msg);
         error(msg);
+    }
+    console.err = function(msg) {
+        document.err(msg);
+        err(msg);
     }
 }
 
@@ -59,7 +59,7 @@ getPopup = function (message, type) {
         <div class="container popup ${typeClass}">
             <div class="row">
                 <div class="col-3 m-auto">
-                    <img src="../img/${typeClass}-icon.png" />
+                    <img src="img/${typeClass}-icon.png" />
                 </div>
                 <div class="col-9">
                     <h4>${typeClass[0].toUpperCase() + typeClass.slice(1)}</h4>

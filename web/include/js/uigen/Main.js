@@ -36,7 +36,7 @@ const ChartRoleUIMixin = {
         }
 
         select.fillSelect(this.manager.SourceData.head, false);
-        select.onchange = function() { this.selectedColumn = select.value; }.bind(this);
+        select.onchange = () => this.selectedColumn = select.value;
         return select;
     },
 
@@ -47,8 +47,7 @@ const ChartRoleUIMixin = {
         var select = document.createElement('select');
         if(this.types.length == 1)
             select.disabled = true;
-        // TODO: shouldn't using arrow function fix the binding?
-        select.onchange = function() { this.selectedType = select.value; }.bind(this);
+        select.onchange = () => this.selectedType = select.value;
         return select.fillSelect(this.types);
     },
 
@@ -58,10 +57,10 @@ const ChartRoleUIMixin = {
     getFormatInput(placeholder){
         var input = document.createElement("input")
         input.placeholder = placeholder;
-        input.onchange = function() { this.selectedFormat = input.value; }.bind(this);
+        input.onchange = () => this.selectedFormat = input.value;
         return input;
     },
-
+        
     /**
      * Generate a repeat button bound to the "this" chartRole.
      * Upon clicking it generates a deep copy (with increased counter).
@@ -76,7 +75,7 @@ const ChartRoleUIMixin = {
 
         var button = document.createElement("button");
         button.innerHTML = "+";
-        button.onclick = function(){ callback(this.getRepeatCopy()); }.bind(this);
+        button.onclick = () => callback(this.getRepeatCopy());
         return button;
     }
 }

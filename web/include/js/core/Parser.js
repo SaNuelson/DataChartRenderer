@@ -1,4 +1,4 @@
-export default function tryParse(source, type, format){
+export function tryParse(source, type, format){
 	switch(type){
 		case "string":
 			return source;
@@ -13,6 +13,10 @@ export default function tryParse(source, type, format){
 		case "timeofday":
 			return parseTimeOfday(source,format);
 	}
+}
+
+export function determineType(source) {
+	
 }
 
 function parseNum(source){

@@ -1,4 +1,4 @@
-import tryParse from './Parser.js';
+import {tryParse, determineType} from './Parser.js';
 
 console.log("Loaded SourceData.js");
 
@@ -39,9 +39,23 @@ export default class SourceData {
         this.head = [];
         this.data = [];
 
-        let lines = text.split('\n');
+        // Split by generic line breaks since there's not that many options.
+        let lines = text.split(/\r?\n/);
 
-        let head_cut = lines[0].split(',');
+        // Considering there's at least two items per row, and each row has the same amount
+        // Try all "sane" delimiters by how probable they are.
+        const possibleDelimiters = [';','\t'];
+        let delimiter = ',';
+        possibleDelimiters.some((del)=>{
+            if((lines[0].match(del) || []).length > 0){
+                delimiter = del;
+                console.warn(`It seems the item delimiter isn't a simple comma. Instead, ${del} has been detected.`);
+                return true;
+            }
+            return false;
+        })
+
+        let head_cut = lines[0].split(delimiter);
         let isBuff = false;
         let buff = "";
         for (let i = 0; i < head_cut.length; i++) {
@@ -66,7 +80,7 @@ export default class SourceData {
         }
 
         for (let i = 1; i < lines.length; i++) {
-            let data_row_raw = lines[i].split(',');
+            let data_row_raw = lines[i].split(delimiter);
             let data_row = []
             for (let j = 0; j < data_row_raw.length; j++) {
                 let row = data_row_raw[j].trim();
@@ -100,12 +114,17 @@ export default class SourceData {
 
     }
 
+    determineFormats() {
+        console.log("Trying to determine possible data formats.");
+        for(let col = 0; col < this.data.length; col++) {
+            console.log("For column ", this.head[col]);
+            let columnData = this.data.reduce(function(acc,curr){acc.push(curr[col])},[]);
+            let possibleTypes = determineType(columnData);
+            console.log("Possible data types for column ", this.head[col], " are: ", possibleTypes);
+        }
+    }
+
     getChartData(cols, types, formats) {
-
-        console.log(cols);
-        console.log(types);
-        console.log(formats);
-
         let parsed_data = new google.visualization.DataTable();
 
         for (let i = 0; i < cols.length; i++) {

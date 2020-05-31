@@ -1,14 +1,18 @@
 import { ChartManager, ChartRole, SourceData } from "../../include/js/core/Main.js";
 import "../../include/js/uigen/Main.js";
+import TemplateManager from '../../include/js/core/TemplateManager.js';
 
 console.log("Javascript index file loaded.");
 
 var manager = new ChartManager();
 window.manager = manager;
+window.ChartManager = ChartManager; // TODO for debug only
 
 $(() => {
     // take care of any new input data
-    $("#source-file-input").change(function () { onFileSelected(this); })
+    $("#source-file-input").change(function () { onFileSelected(this, 'data'); })
+
+    $('#config-load-input').change(function () { onFileSelected(this, 'config'); })
 
     // take care of chart type
     $('#chart-type-select').on('change', e => setChartType(e.target.value));
@@ -19,14 +23,34 @@ $(() => {
     // bind chart drawing button
     $('#draw-chart-btn').on('click', () => manager.drawChart());
 
+    $('#save-json-file-btn').on('click', () => trySaveJSON());
+
+    $('#load-json-file-btn').on('click', () => $('#config-file-input'));
+
+    $('#load-demo-file-btn').on('click', () => manager.loadDataFromUrl('../res/data_type_debug.csv').then(() => loadDataPreview()));
+
     // TODO: find a better solution ... like really.
     $('#file-helper-link').on('click', function () {
         setTimeout(() => { $('#file-dropdown-toggler').click(); }, 100);
     });
 
+    $('#chart-wrapper').resizable({
+        stop: function () {
+            $('#chart-div').empty();
+            manager.options = {
+                'width': $(this).width(),
+                'height': $(this).height()
+            }
+            manager.redrawChart()
+        }
+    })
+
+    // first time manager option set
+    manager.options = { 'width': $('#chart-wrapper').width(), 'height': $('#chart-wrapper').height() };
+
     // first time tutorial switch
-    $('#source-file-input').one('change', function () {$('#chart-type-help-btn').click()});
-    $('#chart-type-select').one('change', function () {$('#opts-help-btn').click()});
+    $('#source-file-input').one('change', function () { $('#chart-type-help-btn').click() });
+    $('#chart-type-select').one('change', function () { $('#opts-help-btn').click() });
     manager.setChartContainer('chart-div');
 });
 
@@ -42,7 +66,7 @@ $(document).on('onChartTypeDataLoaded', (e) => {
     document.log("Chart Type data successfully loaded.");
 
     // populate chart type list menu
-    manager.getChartTypes().forEach(chartType => {
+    TemplateManager.chartNames().forEach(chartType => {
         $("#chart-type-select")
             .append(
                 $('<option></option>')
@@ -59,15 +83,20 @@ $(document).on('onChartTypeDataLoaded', (e) => {
  * For when new data file is put in using the <input type="file"> element.
  * @param {HTMLElement} input file input element
  */
-function onFileSelected(input) {
+function onFileSelected(input, type) {
     console.log("Selected new source file: ", input.value);
     let reader = new FileReader();
     reader.onload = function (fileLoadedEvent) {
-        console.log("Reader loaded: ", fileLoadedEvent);
-        document.log("Data file successfully loaded.");
+        document.log("File successfully read.");
         let text = fileLoadedEvent.target.result;
-        manager.setDataValue(text);
-        loadDataPreview();
+        if (type == 'data') {
+            manager.loadDataFromRaw(text);
+            loadDataPreview();
+        }
+        else if (type == 'config') {
+            let json = JSON.parse(text);
+            manager.loadConfigData(json);
+        }
     }
     reader.readAsText(input.files[0], 'utf-8');
 }
@@ -88,6 +117,20 @@ function loadDataPreview() {
     $('#table-div').empty().append(table);
 }
 
+// just copied this. Didn't work with jQuery because why not...
+function trySaveJSON() {
+    // TODO check if json is valid.
+    let blob = new Blob([JSON.stringify(manager.saveConfigData())], { type: 'text/plain;charset=utf-8' });
+    let anchor = document.createElement('a');
+
+    anchor.download = "dcrconfig.json";
+    anchor.href = (window.webkitURL || window.URL).createObjectURL(blob);
+    anchor.dataset.downloadurl = ['text/plain', anchor.download, anchor.href].join(':');
+    anchor.click();
+
+    anchor.remove();
+}
+
 function setChartType(type) {
     if (manager.SourceData == SourceData.Empty) {
         document.err("Unable to select chart type because there's no source data loaded.");
@@ -98,14 +141,14 @@ function setChartType(type) {
 
     const wrapper_template = $(`
     <div class="col-12">
-        <div class="container list-group">
+        <div id="role-wrapper" class="container list-group">
         </div>
     </div>
     `);
 
     let opt_wrapper = wrapper_template.clone();
     let opt_holder = opt_wrapper.children('div');
-    $.each(manager.getChartRoles(), function (_, role) {
+    $.each(manager.ChartRoles, function (_, role) {
         opt_holder.append(getChartRoleConfig(role));
         $.each(role.subroles, function (_, subrole) {
             opt_holder.append(getChartRoleConfig(subrole, true));
@@ -115,34 +158,57 @@ function setChartType(type) {
 }
 
 function getChartRoleConfig(role, isSubrole = false) {
-    let label = $('<label></label>')
-        .addClass('col-3')
-        .text(role.caption);
 
-    document.roleTemp = role;
+    let label = $('<label></label>')
+        .addClass('col-2')
+        .text(role.caption);
 
     let col_selector = $(role.getColumnSelector("Select Column"))
         .addClass(['col-3', 'custom-select']);
 
     let type_selector = $(role.getTypeSelector())
-        .addClass(['col-3', 'custom-select']);
+        .addClass(['col-2', 'custom-select']);
 
     let format_input = $(role.getFormatInput("Role Format"))
         .addClass(['col-3', 'custom-input'])
 
-    let role_config_wrapper = $('<div></div>')
-        .addClass('row');
+    let disable_btn = !role.optional ? 
+        $('<div></div>')
+            .addClass('col-1') :
+        $('<button></button>')
+            .addClass(['col-1','btn', 'btn-light', 'align-self-center'])
+            .text('Off')
+            .on('click', function () { 
+                role_config_wrapper.toggleClass('disabled');
+                if(role.disabled){
+                    $(this).text('Off');
+                    role.disabled = false;
+                }
+                else {
+                    $(this).text('On');
+                    role.disabled = true;
+                }
+            });
 
-    if (isSubrole)
-        role_config_wrapper.addClass('subrole');
-    else
-        role_config_wrapper.addClass('role');
+    let repeat_btn = !role.repeatable ?
+        $('<div></div>')
+            .addClass('col-1') :
+        $(role.getRepeatButton((copy) => {$('#role-wrapper').append(getChartRoleConfig(copy))}))
+            .addClass(['col-1', 'btn', 'btn-light'])
+            .text('Copy')
+
+    let role_config_wrapper = $('<div></div>')
+        .addClass(['row', isSubrole ? 'subrole' : 'role'])
+        .on('change', '*', function () { manager.drawChart(false) });
 
     return role_config_wrapper
         .append(label)
         .append(col_selector)
         .append(type_selector)
-        .append(format_input);
+        .append(format_input)
+        .append(disable_btn)
+        .append(repeat_btn);
+
 }
 
 ////////////

@@ -13,7 +13,7 @@
     <link rel="stylesheet" href="css/popup.css">
 </head>
 
-<body class="bg-dark text-white">
+<body class="bg-dark text-white" style="height:2000px">
     <nav class="navbar navbar-expand-md navbar-dark bg-primary">
 
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
@@ -25,7 +25,7 @@
 
             <div class="d-md-none container text-center">
                 <a href="#" class="d-inline d-md-none navbar-brand">
-                    <img src="../img/logo.png" class="logo img-fluid" />
+                    <img src="img/logo.png" class="logo img-fluid" />
                 </a>
             </div>
 
@@ -36,7 +36,8 @@
                         File
                     </a>
                     <ul class="dropdown-menu">
-                        <a id="load-local-file-btn" href="#" class="dropdown-item">Load New Datafile</a>
+                        <li><a id="load-local-file-btn" href="#" class="dropdown-item">Load New Datafile</a></li>
+                        <li><a id="load-demo-file-btn" href="#" class="dropdown-item">Load Demo Datafile</a></li>
                     </ul>
                 </li>
                 <li class="nav-item dropdown">
@@ -44,7 +45,8 @@
                         Chart
                     </a>
                     <ul class="dropdown-menu">
-                        <li><a href="#" class="dropdown-item">Save Options as JSON...</a></li>
+                        <li><a id="save-json-file-btn" href="#" class="dropdown-item">Save Options as JSON...</a></li>
+                        <li><a id="load-json-file-btn" href="#" class="dropdown-item">Load Options from JSON...</a></li>
                     </ul>
                 </li>
                 <li class="nav-item dropdown">
@@ -60,14 +62,14 @@
                             class="dropdown-item toggle">Toggle Chart</a>
                         <a id="toggle-help-btn" href="#" data-toggle="collapse" data-target="#help-div"
                             class="dropdown-item toggle">Toggle Help</a>
-                        <a id="toggle-log-btn" href="#" data-toggle="collapse" data-target="#log-div"
+                        <a id="toggle-log-btn" href="#" data-toggle="collapse" data-target="#popup-div"
                             class="dropdown-item toggle">Toggle Logger</a>
                     </ul>
                 </li>
             </ul>
 
             <div class="d-none d-md-block container text-center text-center">
-                <img src="../img/logo.png" class="logo img-fluid" />
+                <img src="img/logo.png" class="logo img-fluid" />
             </div>
 
             <ul class="navbar-nav navbar-right ml-auto">
@@ -85,21 +87,24 @@
     </nav>
 
     <input id="source-file-input" style="display:none" type="file" />
+    <input id="config-file-input" style="display:none" type="file" />
 
     <div id="body-wrapper" class="container-fluid">
         <div id="help-div" class="row row-collapse m-3 show">
             <div class="col-4 col-lg-2">
                 <div class="list-group" id="list-tab" role="tablist">
-                    <a id="general-help-btn" class="list-group-item list-group-item-action active" data-toggle="list" href="#general-help"
-                        role="tab">0. Get familiar with the site</a>
-                    <a id="data-help-btn" class="list-group-item list-group-item-action" data-toggle="list" href="#data-help" role="tab">1.
+                    <a id="general-help-btn" class="list-group-item list-group-item-action active" data-toggle="list"
+                        href="#general-help" role="tab">0. Get familiar with the site</a>
+                    <a id="data-help-btn" class="list-group-item list-group-item-action" data-toggle="list"
+                        href="#data-help" role="tab">1.
                         Load your data file</a>
-                    <a id="chart-type-help-btn" class="list-group-item list-group-item-action" data-toggle="list" href="#chart-type-help"
-                        role="tab">2. Pick a chart type</a>
-                    <a id="opts-help-btn" class="list-group-item list-group-item-action" data-toggle="list" href="#opts-help" role="tab">3.
+                    <a id="chart-type-help-btn" class="list-group-item list-group-item-action" data-toggle="list"
+                        href="#chart-type-help" role="tab">2. Pick a chart type</a>
+                    <a id="opts-help-btn" class="list-group-item list-group-item-action" data-toggle="list"
+                        href="#opts-help" role="tab">3.
                         Configurate the chart</a>
-                    <a id="chart-help-btn" class="list-group-item list-group-item-action" data-toggle="list" href="#chart-help"
-                        role="tab">4. Render it and save it</a>
+                    <a id="chart-help-btn" class="list-group-item list-group-item-action" data-toggle="list"
+                        href="#chart-help" role="tab">4. Render it and save it</a>
                 </div>
             </div>
             <div class="col-8 col-lg-10">
@@ -152,11 +157,13 @@
         </div>
         <div id="opts-div" class="row m-4 show">
         </div>
-        <div id="chart-div" class="row m-4 show">
+        <div id="chart-wrapper" style="min-height:200px" class="row m-4 show">
+            <div id="chart-div">
+            </div>
         </div>
     </div>
 
-    <div id="popup-div" class="col-10 col-sm-8 col-md-5 col-lg-3">
+    <div id="popup-div" class="col-10 col-sm-8 col-md-5 col-lg-3 collapse show">
     </div>
 
     <!-- JQuery -->
