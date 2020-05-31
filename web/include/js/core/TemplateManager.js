@@ -1,4 +1,4 @@
-console.log("TemplateManager loaded.");
+console.log("Loaded core/TemplateManager.");
 
 let templateData;
 

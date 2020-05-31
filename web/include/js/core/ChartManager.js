@@ -92,7 +92,7 @@ export default class ChartManager {
         return fetch(url)
             .then(data => data.text())
             .then(text => {
-                this.SourceData = new SourceData(text);
+                this._sourceData = new SourceData(text);
                 this.onDataChange('SourceData');
             })
             .catch(err => console.error(err))
