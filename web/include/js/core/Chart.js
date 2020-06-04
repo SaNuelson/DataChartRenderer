@@ -10,6 +10,13 @@ import Template from './Template.js';
  */
 export default class Chart {
 
+    /**
+     * @param {Object} obj
+     */
+    constructor(obj) {
+        this.params = obj;
+    }
+
     /* #region Properties */
 
     /**
@@ -22,6 +29,11 @@ export default class Chart {
             return SourceData.Empty;
         return this._sourceData;
     }
+    set SourceData(value) {
+        let old = this._sourceData;
+        this._sourceData = value;
+        this.triggerHandler("sourceChange",old);
+    }
 
     /**
      * Array holding current roles (unfilled and filled alike). 
@@ -29,10 +41,7 @@ export default class Chart {
      */
     _roles = []
     get Roles() { return this._roles; }
-    set Roles(value) {
-        this._roles = value;
-        this.onDataChange('Roles');
-    }
+    set Roles(value) { this._roles = value; }
 
     /**
      * Element (div) into which google chart should be rendered.
@@ -41,8 +50,9 @@ export default class Chart {
     _chartBoundElement = null;
     get ChartBoundElement() { return this._chartBoundElement; }
     set ChartBoundElement(value) {
+        let old = this._chartBoundElement;
         this._chartBoundElement = value;
-        this.onDataChange('ChartBoundElement');
+        this.triggerHandler("boundElementChange",old);
     }
 
     /**
@@ -57,12 +67,12 @@ export default class Chart {
     }
     set InternalName(value) {
         this._internalName = value;
-        this.onDataChange('InternalName');
     }
 
     /**
      * Name of chart type currently selected.
      * @type {String}
+     * 
      */
     _name = null;
     get Name() {
@@ -70,7 +80,6 @@ export default class Chart {
     }
     set Name(value) {
         this._name = value;
-        this.onDataChange('Name');
     }
 
     formattedData = null; // kept here for redrawing the chart
@@ -92,8 +101,7 @@ export default class Chart {
         return fetch(url)
             .then(data => data.text())
             .then(text => {
-                this._sourceData = new SourceData(text);
-                this.onDataChange('SourceData');
+                this.SourceData = new SourceData(text);
             })
             .catch(err => console.error(err))
     }
@@ -106,9 +114,7 @@ export default class Chart {
         if (!data) {
             console.err("No data provided for new data source.")
         }
-        this._sourceData = new SourceData(data);
-        this.onDataChange('SourceData');
-        console.log("Loaded new data source from direct data.")
+        this.SourceData = new SourceData(data);
     }
 
     /**
@@ -120,14 +126,12 @@ export default class Chart {
             var el = document.getElementById(elementId);
             if (el && el.tagName.toUpperCase() == "DIV") {
                 this.ChartBoundElement = el;
-                this.onDataChange('ChartBoundElement');
-                console.log("Successfully bound div with id " + elementId + " to the GC.");
                 return;
             } else {
-                console.err("Element with id " + elementId + "does not exist or is not a div.");
+                throw "Element with id " + elementId + "does not exist or is not a div.";
             }
         } else {
-            console.err("Please provide a valid div id.");
+            throw "Please provide a valid div id.";
         }
     }
 
@@ -138,17 +142,13 @@ export default class Chart {
     setType(name) {
         if (Template.hasChart(name)) {
             let template = Template.chart(name);
+            let old = this.Name;
             this.Name = name;
             this.InternalName = template["internal-name"];
             this.Roles = Role.createListByMixedContent(template["roles"], this);
-
-            this.onDataChange('ChartTypeName');
-            this.onDataChange('ChartTypeInternalName');
-            this.onDataChange('Roles');
+            this.triggerHandler('typeChange',old);
         } else {
-            console.err("Please provide a valid chart type name from getChartTypes.");
-            this.Name = "";
-            this.Roles = [];
+            throw "Please provide a valid chart type name from getChartTypes. Aborting operation...";
         }
     }
     
@@ -325,8 +325,9 @@ export default class Chart {
         }
     }
 
-    onDataChange(propertyName) {
-        document.dispatchEvent(new CustomEvent('onDataChange', { detail: this, property: propertyName }));
+    triggerHandler(type, ...params) {
+        console.log("Trying to trigger handler for " , type, " with params " , params);
+        if(this.params && this.params[type])
+            this.params[type](...params);
     }
-
 }

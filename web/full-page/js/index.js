@@ -2,9 +2,15 @@ import { Chart, Role, SourceData } from "../../include/js/core/Main.js";
 import "../../include/js/uigen/Main.js";
 import Template from '../../include/js/core/Template.js';
 
+///////// This page only works with a single instance.
+///////// Multiple instance chart workers are on their way.
+
 console.log("Javascript index file loaded.");
 
-var manager = new Chart();
+var manager = new Chart({
+    sourceChange: () => loadDataPreview(),
+    typeChange: () => { $('#chart-type-select').prop('value', manager.Name); loadOptions(); }
+});
 window.manager = manager;
 window.Chart = Chart; // TODO for debug only
 
@@ -15,7 +21,7 @@ $(() => {
     $('#config-file-input').change(function () { onFileSelected(this, 'config'); })
 
     // take care of chart type
-    $('#chart-type-select').on('change', e => setType(e.target.value));
+    $('#chart-type-select').on('change', e => manager.setType(e.target.value));
 
     // load-flie list item calls <input type="file"/> hidden on site
     $("#load-local-file-btn").on('click', () => $('#source-file-input').click());
@@ -29,7 +35,7 @@ $(() => {
 
     $('#load-demo-file-btn').on('click', () => manager.loadDataFromUrl('../res/data_type_debug.csv').then(() => loadDataPreview()));
 
-    $('#load-people-demo-file-btn').on('click', () => manager.loadDataFromUrl('../res/people.csv').then(()=> loadDataPreview()));
+    $('#load-people-demo-file-btn').on('click', () => manager.loadDataFromUrl('../res/people.csv').then(() => loadDataPreview()));
 
     // TODO: find a better solution ... like really.
     $('#file-helper-link').on('click', function () {
@@ -54,6 +60,14 @@ $(() => {
     $('#source-file-input').one('change', function () { $('#chart-type-help-btn').click() });
     $('#chart-type-select').one('change', function () { $('#opts-help-btn').click() });
     manager.setContainer('chart-div');
+
+    ////
+    // Backend Event Handlers.
+    ////
+
+    $(document)
+        .on('ChartTypeChange', (e) => { loadOptions(); $('#chart-type-select').prop('value', e.detail.Name); });
+
 });
 
 $(document).on('onGoogleChartsLoaded', (e) => {
@@ -93,7 +107,6 @@ function onFileSelected(input, type) {
         let text = fileLoadedEvent.target.result;
         if (type == 'data') {
             manager.loadDataFromRaw(text);
-            loadDataPreview();
         }
         else if (type == 'config') {
             console.log("loading config");
@@ -102,6 +115,10 @@ function onFileSelected(input, type) {
         }
     }
     reader.readAsText(input.files[0], 'utf-8');
+
+    // reset inputs to be able to select same file multiple times.
+    $('#source-file-input').prop('value', '');
+    $('#config-file-input').prop('value', '');
 }
 
 function loadDataPreview() {
@@ -130,17 +147,16 @@ function trySaveJSON() {
     anchor.href = (window.webkitURL || window.URL).createObjectURL(blob);
     anchor.dataset.downloadurl = ['text/plain', anchor.download, anchor.href].join(':');
     anchor.click();
-
     anchor.remove();
 }
 
-function setType(type) {
+function loadOptions() {
+    console.log("loadOptions");
+
     if (manager.SourceData == SourceData.Empty) {
         document.err("Unable to select chart type because there's no source data loaded.");
         return;
     }
-
-    manager.setType(type);
 
     const wrapper_template = $(`
     <div class="col-12">
@@ -173,10 +189,10 @@ function getRoleConfig(role, flags) {
     let isSubrole = false;
     let isCopy = false;
 
-    if(flags) {
-        if(flags['subrole'])
+    if (flags) {
+        if (flags['subrole'])
             isSubrole = flags['subrole'];
-        if(flags['copy'])
+        if (flags['copy'])
             isCopy = flags['copy'];
     }
 

@@ -32,51 +32,97 @@ export default class Role {
 
     /* #region Properties */
 
+    _name;
     /** @property {string} Name used internally */
-    Name = "name.unset";
+    get Name() { return this._name ? this._name : "name.unset" }
+    set Name(value) { this._name = value }
 
-    _caption = "caption.unset";
-    /** @property {string} Name used externally in frontend */
-    get Caption() {
-        if (this._caption == "caption.unset")
-            return this.Name.replace(/\{1\}/, this.RepeatIndex).trim()
-        return this._caption;
-    };
+    _caption;
+    /** @property {string} Name readonly, used externally in frontend */
+    get Caption() { return this._caption ? this._caption : this.Name.replace(/\{1\}/, this.RepeatIndex).trim() }
+    set Caption(value) { this._caption = value }
 
+    _types = [];
     /** @property {string[]} Compatible types with this chart role */
-    Types = null;
+    get Types() { return this._types }
+    set Types(value) { this._types = value }
 
+    _defval;
     /** @property {string} Default value */
-    Defval = "defval.unset";
+    get Defval() { return this._defval }
+    set Defval(value) { this._defval = value }
 
+    _role;
     /** @property {string} Specific role for this chart role */
-    Role = "";
+    get Role() { return this._role }
+    set Role(value) { this._role = value }
 
+    _subroles = [];
     /** @property {Role[]} Subroles compatible with this chart role */
-    Subroles = [];
+    get Subroles() { return this._subroles }
+    set Subroles(value) { this._subroles = value }
 
+    _optional = false;
     /** @property {boolean} If this chart role can be left unassigned */
-    Optional = false;
+    get Optional() { return this._optional }
+    set Optional(value) { this._optional = value }
+
+    _disabled = false;
     /** @property {boolean} If this role is forcefully disabled. Only valid if it's optional. */
-    Disabled = false;
+    get Disabled() { return this._disabled }
+    set Disabled(value) { this._disabled = value }
 
+    _repeatable = false;
     /** @property {boolean} If this chart role can appear multiple times */
-    Repeatable = false;
-    /** @property {Role[]} References to created copies of this chart role */
-    Copies = [];
-    /** @property {Role} Reference to parent of this chart role copy */
-    Owner = null;
-    /** @property {number} Index of this specific repeated instance */
-    RepeatIndex = 1;
+    get Repeatable() { return this._repeatable }
+    set Repeatable(value) { this._repeatable = value }
 
+    _copies = [];
+    /** @property {Role[]} References to created copies of this chart role */
+    get Copies() { return this._copies }
+    set Copies(value) { this._copies = value }
+
+    _owner;
+    /** @property {Role} Reference to parent of this chart role copy */
+    get Owner() { return this._owner }
+    set Owner(value) { this._owner = value }
+
+    _repeatIndex = 1;
+    /** @property {number} Index of this specific repeated instance */
+    get RepeatIndex() { return this._repeatIndex }
+    set RepeatIndex(value) { this._repeatIndex = value }
+
+    _column;
     /** @property {string} Head of the currently selected SourceData column for this chart role */
-    Column = "";
+    get Column() { return this._column }
+    set Column(value) {
+        let old = this._column;
+        this._column = value;
+        this.triggerHandler('columnChange', old);
+    }
+
+    _type;
     /** @property {string} Currently selected type from the types */
-    Type = "";
+    get Type() { return this._type }
+    set Type(value) {
+        let old = this._type;
+        this._type = value;
+        this.triggerHandler('typeChange', old);
+    }
+
+    _format;
     /** @property {string} Additional format information. Currently necessary only for date/time/datetime */
-    Format = "";
+    get Format() { return this._format }
+    set Format(value) {
+        let old = this._format;
+        this._format = value;
+        this.triggerHandler('formatChange', old);
+    }
+
+    _chart;
     /** @property {Chart} associated with this chart role */
-    Chart;
+    get Chart() { return this._chart }
+    set Chart(value) { this._chart = value }
 
     /* #endregion */
 
@@ -217,14 +263,26 @@ export default class Role {
             console.warn(`Disabled non-optional role ${this.Name}.`);
         this.Disabled = roleConfig["disabled"];
         if (roleConfig["owner"]) {
-            if(!this.Repeatable)
+            if (!this.Repeatable)
                 console.warn(`Copy of non-repeatable role ${this.Name}.`);
 
             this.Owner = roleConfig["owner"];
             this.Owner.Copies.push(this);
             this.RepeatIndex = this.Owner.getFreeRepeatIndex();
         }
+    }
 
+    // TOOD: not overwrite, rather replace or something.
+    handlers(obj) {
+        if (!this.params) this.params = {};
+        for (let key in obj)
+            this.params[key] = obj[key];
+    }
+
+    triggerHandler(type, ...params) {
+        console.log("Trying to trigger handler for ", type, " with params ", params);
+        if (this.params && this.params[type])
+            this.params[type](...params);
     }
 
 }
