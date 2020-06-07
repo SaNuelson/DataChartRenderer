@@ -14,6 +14,24 @@ export default class Chart {
      * @param {Object} obj
      */
     constructor(callbacks) {
+        if (callbacks) {
+            for (let key in callbacks) {
+                if (this.callbacks[key])
+                    this.callbacks[key].push(callbacks[key]);
+                else
+                    this.callbacks[key] = [callbacks[key]];
+            }
+        }
+    }
+
+    callbacks = {};
+    handlers(callbacks) {
+        for (let key in callbacks) {
+            if (this.callbacks[key])
+                this.callbacks[key].push(callbacks[key]);
+            else
+                this.callbacks[key] = [callbacks[key]];
+        }
     }
 
     /* #region Properties */
@@ -204,6 +222,7 @@ export default class Chart {
             if (!role.Optional) {
                 dataTable.addColumn(role.Type, role.Name);
             } else {
+                if (role.Disabled)
                     continue;
 
                 dataTable.addColumn({
@@ -229,6 +248,7 @@ export default class Chart {
 
                 if (subrole.Disabled)
                     continue;
+
                 dataTable.addColumn({
                     type: subrole.Type,
                     role: subrole.Role
@@ -261,6 +281,7 @@ export default class Chart {
 
                         if (role.Disabled)
                             continue;
+
                         dataTable.addColumn({
                             type: copy.Type,
                             role: copy.Role
