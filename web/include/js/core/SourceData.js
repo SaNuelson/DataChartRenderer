@@ -125,6 +125,7 @@ export default class SourceData {
     }
 
     getChartData(cols, types, formats) {
+        console.log("GetChartData ", cols, types, formats);
         let parsed_data = new google.visualization.DataTable();
 
         for (let i = 0; i < cols.length; i++) {
@@ -136,7 +137,10 @@ export default class SourceData {
             for (let j = 0; j < cols.length; j++) {
                 let parsed = tryParse(this.data[i][cols[j]], types[j], formats[j]);
                 if (parsed == null) {
-                    return null;
+                    throw "In column " + this.head[cols[j]] + 
+                          " Could not parse value " + this.data[i][cols[j]] + 
+                          " into type " + types[j] +
+                          " using format " + formats[j];
                 } else {
                     parsed_line.push(parsed);
                 }

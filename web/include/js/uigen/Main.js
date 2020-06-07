@@ -3,7 +3,7 @@ import Role from '../core/Role.js';
 console.log("Loaded uigen.js");
 
 jQuery.fn.extend({
-    fillWithOptions: function (options, clear = true) {
+    fillWithOptions: function (options, clear = false) {
         if (clear)
             this.empty();
         $.each(options, (_, option) => this.append(
@@ -22,15 +22,20 @@ const RoleUIMixin = {
      */
     getColumnSelector(placeholder = "Select Column") {
         let role = this;
+
+        let placeholderOption = $('<option></option>')
+            .prop('disabled', true)
+            .prop('selected', true)
+            .prop('value', null)
+            .text(placeholder);
+
         let select = $('<select></select>')
-            .append($('<option></option>')
-                .prop('disabled', true)
-                .prop('value', null)
-                .text(placeholder))
+            .append(placeholderOption)
             .fillWithOptions(role.Chart.SourceData.head)
             .on('change', function (e) { role.Column = e.target.value });
 
         role.handlers({ columnChange: () => select.prop('value', role.Column) });
+        role.Chart.handlers({ sourceChange: () => {console.log("abrakadabra"); select.empty().append(placeholderOption).fillWithOptions(role.Chart.SourceData.head)} });
 
         return select;
     },
@@ -46,6 +51,7 @@ const RoleUIMixin = {
             .on('change', function (e) { role.Type = e.target.value });
 
         role.handlers({ typeChange: () => select.prop('value', role.Type) });
+        role.Chart.handlers({ sourceChange: () => select.empty().fillWithOptions(role.Types) });
 
         return select;
     },
@@ -59,7 +65,8 @@ const RoleUIMixin = {
             .prop('placeholder', placeholder)
             .on('change', function (e) { role.Format = e.target.value });
 
-        role.handlers({ formatChange: () => {console.log("Triggering format change to", role.Format); input.prop('value', role.Format)} });
+        role.handlers({ formatChange: () => { input.prop('value', role.Format) } });
+        role.Chart.handlers({ sourceChange: () => { input.prop('value', '') } });
 
         return input;
     },

@@ -243,7 +243,8 @@ function getRoleConfig(role, flags) {
 
     let role_config_wrapper = $('<div></div>')
         .addClass(['row', isSubrole ? 'subrole' : 'role'])
-        .on('change', '*', function () { manager.draw(false) });
+        .on('change', '*', function () { manager.draw(false) })
+        .on('click', 'button', function () { manager.draw(false) });
 
     return role_config_wrapper
         .append(label)

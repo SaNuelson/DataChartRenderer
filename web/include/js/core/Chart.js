@@ -13,8 +13,7 @@ export default class Chart {
     /**
      * @param {Object} obj
      */
-    constructor(obj) {
-        this.params = obj;
+    constructor(callbacks) {
     }
 
     /* #region Properties */
@@ -32,7 +31,7 @@ export default class Chart {
     set SourceData(value) {
         let old = this._sourceData;
         this._sourceData = value;
-        this.triggerHandler("sourceChange",old);
+        this.triggerHandler("sourceChange", old);
     }
 
     /**
@@ -52,7 +51,7 @@ export default class Chart {
     set ChartBoundElement(value) {
         let old = this._chartBoundElement;
         this._chartBoundElement = value;
-        this.triggerHandler("boundElementChange",old);
+        this.triggerHandler("boundElementChange", old);
     }
 
     /**
@@ -146,12 +145,12 @@ export default class Chart {
             this.Name = name;
             this.InternalName = template["internal-name"];
             this.Roles = Role.createListByMixedContent(template["roles"], this);
-            this.triggerHandler('typeChange',old);
+            this.triggerHandler('typeChange', old);
         } else {
             throw "Please provide a valid chart type name from getChartTypes. Aborting operation...";
         }
     }
-    
+
     /**
      * Call once everything is set up and ready for rendering.
      */
@@ -202,9 +201,11 @@ export default class Chart {
             }
 
             // assign column
-            if (!role.optional) {
+            if (!role.Optional) {
                 dataTable.addColumn(role.Type, role.Name);
             } else {
+                    continue;
+
                 dataTable.addColumn({
                     type: role.Type,
                     role: role.Role
@@ -225,6 +226,9 @@ export default class Chart {
                     if (force)
                         console.warn(`Role ${subrole.Name} has invalid selected column ${subrole.Column}, skipping.`);
                 }
+
+                if (subrole.Disabled)
+                    continue;
                 dataTable.addColumn({
                     type: subrole.Type,
                     role: subrole.Role
@@ -235,7 +239,7 @@ export default class Chart {
             }
 
             // and finally check any copies
-            if (role.repeatable) {
+            if (role.Repeatable) {
                 for (let copy of role.Copies) {
                     // any copy automatically optional
 
@@ -254,6 +258,9 @@ export default class Chart {
                     if (!role.Optional) {
                         dataTable.addColumn(copy.Type, copy.Name);
                     } else {
+
+                        if (role.Disabled)
+                            continue;
                         dataTable.addColumn({
                             type: copy.Type,
                             role: copy.Role
@@ -276,7 +283,7 @@ export default class Chart {
                             type: subrole.Type,
                             role: subrole.Role
                         })
-                        columns.push(this.SourceData.head.indexOf(subrole.column));
+                        columns.push(this.SourceData.head.indexOf(subrole.Column));
                         types.push(subrole.Type);
                         formats.push(subrole.Format);
                     }
@@ -326,8 +333,8 @@ export default class Chart {
     }
 
     triggerHandler(type, ...params) {
-        console.log("Trying to trigger handler for " , type, " with params " , params);
-        if(this.params && this.params[type])
-            this.params[type](...params);
+        console.log("Trying to trigger handler for ", type, " with params ", params);
+        if (this.callbacks && this.callbacks[type])
+            this.callbacks[type].forEach((callback) => callback(params));
     }
 }
