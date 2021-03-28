@@ -1,6 +1,7 @@
-import { Chart, Role, SourceData, Init as CoreInit } from '/lib/js/core/Main.js';
+import { Chart, SourceData, Init as CoreInit } from '/lib/js/core/Main.js';
 import { Template } from '/lib/js/core/Template.js';
 import { Init as UiInit } from '/lib/js/uigen/Main.js';
+import '/lib/js/debug.js';
 
 ///////// This page only works with a single instance.
 ///////// Multiple instance chart workers are on their way.
@@ -9,10 +10,9 @@ console.log("Javascript index file loaded.");
 
 //#region Initialization
 
-window.manager = new Chart({
-    sourceChange: () => sourceChangeHandler(),
-    typeChange: () => { $('#chart-type-select').prop('value', manager.Name); loadOptions(); }
-});
+window.manager = new Chart()
+    .on('dataChanged', sourceChangeHandler)
+    .on('chartTypeChanged', () => { $('#chart-type-select').prop('value', manager.Name); loadOptions()});
 
 $(() => {
     CoreInit({
@@ -25,9 +25,9 @@ $(() => {
     });
     
     // LOAD local data files
-    $("#source-file-input").change(function () { fileSelectedHandler(this, 'data'); })
-    $('#config-file-input').change(function () { fileSelectedHandler(this, 'config'); })
-    $("#load-local-file-btn").on('click', () => $('#source-file-input').click());
+    $("#source-file-input").on('change', function () { fileSelectedHandler(this, 'data'); })
+    $('#config-file-input').on('change', function () { fileSelectedHandler(this, 'config'); })
+    $("#load-local-file-btn").on('click', () => $('#source-file-input').trigger('click'))
 
     // LOAD DEMO data files
     $('#load-demo-file-btn').on('click', () => manager.loadDataFromUrl('../res/data_type_debug.csv'));
