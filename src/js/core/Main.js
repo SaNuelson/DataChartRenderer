@@ -5,15 +5,13 @@ import { Chart, eventHandles as ChartEventHandles } from './Chart.js';
 import { Role } from './Role.js';
 import { SourceData } from './SourceData.js';
 
-let googleChartsLoadedEvent = new CustomEvent('onGoogleChartsLoaded');
-
 /**
  * @param {object} opts 
  * @param {function(): void} opts.onChartTemplatesLoaded
  * @param {function(): void} opts.onGoogleChartsLoaded
  */
 export function Init(opts) {
-    fetch("/lib/json/graph_types.json")
+    fetch("/dist/res/graph_types.json")
         .then((data) => data.json())
         .then((json) => {
             Template.loadChartTemplates(json);

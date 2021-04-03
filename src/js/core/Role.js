@@ -32,67 +32,67 @@ export class Role {
 
     /* #region Properties */
 
-    _name;
+    _name
     /** @property {string} Name used internally */
     get Name() { return this._name ? this._name : "name.unset" }
     set Name(value) { this._name = value }
 
-    _caption;
+    _caption
     /** @property {string} Name readonly, used externally in frontend */
     get Caption() { return this._caption ? this._caption : this.Name.replace(/\{1\}/, this.RepeatIndex).trim() }
     set Caption(value) { this._caption = value }
 
-    _types = [];
+    _types = []
     /** @property {string[]} Compatible types with this chart role */
     get Types() { return this._types }
     set Types(value) { this._types = value }
 
-    _defval;
+    _defval
     /** @property {string} Default value */
     get Defval() { return this._defval }
     set Defval(value) { this._defval = value }
 
-    _role;
+    _role
     /** @property {string} Specific role for this chart role */
     get Role() { return this._role }
     set Role(value) { this._role = value }
 
-    _subroles = [];
+    _subroles = []
     /** @property {Role[]} Subroles compatible with this chart role */
     get Subroles() { return this._subroles }
     set Subroles(value) { this._subroles = value }
 
-    _optional = false;
+    _optional = false
     /** @property {boolean} If this chart role can be left unassigned */
     get Optional() { return this._optional }
     set Optional(value) { this._optional = value }
 
-    _disabled = false;
+    _disabled = false
     /** @property {boolean} If this role is forcefully disabled. Only valid if it's optional. */
     get Disabled() { return this._disabled }
     set Disabled(value) { this._disabled = value }
 
-    _repeatable = false;
+    _repeatable = false
     /** @property {boolean} If this chart role can appear multiple times */
     get Repeatable() { return this._repeatable }
     set Repeatable(value) { this._repeatable = value }
 
-    _copies = [];
+    _copies = []
     /** @property {Role[]} References to created copies of this chart role */
     get Copies() { return this._copies }
     set Copies(value) { this._copies = value }
 
-    _owner;
+    _owner
     /** @property {Role} Reference to parent of this chart role copy */
     get Owner() { return this._owner }
     set Owner(value) { this._owner = value }
 
-    _repeatIndex = 1;
+    _repeatIndex = 1
     /** @property {number} Index of this specific repeated instance */
     get RepeatIndex() { return this._repeatIndex }
     set RepeatIndex(value) { this._repeatIndex = value }
 
-    _column;
+    _column
     /** @property {string} Head of the currently selected SourceData column for this chart role */
     get Column() { return this._column }
     set Column(value) {
@@ -101,7 +101,7 @@ export class Role {
         this.triggerHandler('columnChange', old);
     }
 
-    _type;
+    _type
     /** @property {string} Currently selected type from the types */
     get Type() { return this._type }
     set Type(value) {
@@ -110,7 +110,7 @@ export class Role {
         this.triggerHandler('typeChange', old);
     }
 
-    _format;
+    _format
     /** @property {string} Additional format information. Currently necessary only for date/time/datetime */
     get Format() { return this._format }
     set Format(value) {
@@ -119,7 +119,7 @@ export class Role {
         this.triggerHandler('formatChange', old);
     }
 
-    _chart;
+    _chart
     /** @property {Chart} associated with this chart role */
     get Chart() { return this._chart }
     set Chart(value) { this._chart = value }

@@ -23,15 +23,15 @@ export class Chart {
      * class SourceData instance, holds currently loaded CSV
      * @type {SourceData}
      */
-    #sourceData = null;
+    _sourceData;
     get SourceData() {
-        if (!this.#sourceData || this.#sourceData == null)
+        if (!this._sourceData || this._sourceData == null)
             return SourceData.Empty;
-        return this.#sourceData;
+        return this._sourceData;
     }
     set SourceData(value) {
-        let old = this.#sourceData;
-        this.#sourceData = value;
+        let old = this._sourceData;
+        this._sourceData = value;
         this.triggerEvent(eventHandles.sourceChange, this, old);
     }
 
@@ -39,23 +39,23 @@ export class Chart {
      * Array holding current roles (unfilled and filled alike). 
      * @type {Role[]}
      */
-    #roles = []
+    _roles = []
     get Roles() { 
-        return this.#roles; 
+        return this._roles; 
     }
     set Roles(value) { 
-        this.#roles = value; 
+        this._roles = value; 
     }
 
     /**
      * Element (div) into which google chart should be rendered.
      * @type {HTMLElement}
      */
-    #chartBoundElement = null;
-    get ChartBoundElement() { return this.#chartBoundElement; }
+    _chartBoundElement
+    get ChartBoundElement() { return this._chartBoundElement; }
     set ChartBoundElement(value) {
-        let old = this.#chartBoundElement;
-        this.#chartBoundElement = value;
+        let old = this._chartBoundElement;
+        this._chartBoundElement = value;
         this.triggerEvent(eventHandles.boundElementChange, this, old);
     }
 
@@ -63,14 +63,14 @@ export class Chart {
      * Internal name of the chart used in GC.
      * @type {String}
      */
-    #internalName = null;
+    _internalName
     get InternalName() {
-        if (this.#internalName)
-            return this.#internalName;
+        if (this._internalName)
+            return this._internalName;
         return this._name;
     }
     set InternalName(value) {
-        this.#internalName = value;
+        this._internalName = value;
     }
 
     /**
@@ -78,17 +78,17 @@ export class Chart {
      * @type {String}
      * 
      */
-    #name = null;
+    _name
     get Name() {
-        return this.#name;
+        return this._name;
     }
     set Name(value) {
-        this.#name = value;
+        this._name = value;
     }
 
-    formattedData = null; // kept here for redrawing the chart
+    formattedData  // kept here for redrawing the chart
 
-    options = null; // TODO
+    options // TODO
 
     //#endregion
 
