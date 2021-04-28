@@ -1,134 +1,249 @@
-import { Number } from './usetype.js';
+import { Number as NumUsetype } from './usetype.js';
 import { getCutPattern } from '../utils/patterns.js';
+import { indexesOf } from '../utils/utils.js';
 
 /**
  * Try to recognize possible formats of string-represented numbers in source array.
  * @param {string[]} source strings upon which format should be determined
- * @returns {string[]} possible number formats of specified strings
+ * @returns {NumUsetype[]} possible number formats of specified strings
  */
-export function recognizeNumNew(source) {
+export function recognizeNum(source) {
+	// TODO
+	const extractorChunkSize = 5;
+	const usetypePrecision = .95;
+
 	if (!source || source.length === 0) {
 		return [];
 	}
-	
-	let args = {};
-	const possibleDels = ['.',',',' '];
-	for (let i = 0; i < source.length; i++) {
-		// TODO
+
+	let nuts = extractPossibleFormats(source.slice(0,extractorChunkSize));
+	let matches = nuts.map(()=>0);
+	let disabled = 0;
+	for (let i = 0, il = source.length; i < il; i++) {
+		let token = source[i];
+		for (let j = 0, jl = nuts.length; j < jl; j++) {
+			if (!nuts[j].disabled) {
+				let num = nuts[j].deformat(token);
+				if (num) {
+					matches[j]++;
+					if (nuts[j].max < num) nuts[j].max = num;
+					if (nuts[j].min > num) nuts[j].min = num;
+				}
+				else if (matches[j] < usetypePrecision * (i + 1)) {
+					nuts[j].disabled = true;
+					disabled++;
+				}
+			}
+		}
+		if (disabled === nuts.length)
+			return [];
 	}
+	nuts = nuts.filter(nut => !nut.disabled);
+
+	return nuts;
 }
 
-export function recognizeNum(source) {
-	if (source.length === 0)
-		return [];
-	
-	let dDels = [];
-	let tDels = [];
-	let delCs = [];
-	let addDel = (td, dd) => {
-		let idx = dDels.indexOf(dd);
-		if (idx === -1) {
-			dDels.push(dd);
-			tDels.push(td);
-			delCs.push(1);
-		}
-		if (tDels[idx] === td)
-			delCs[idx]++;
+/**
+ * @param {string[]} source formats (possibly a subset of one passed in)
+ * @returns {NumUsetype[]} possible numutypes
+ */
+function extractPossibleFormats(source) {
+	const log = (line, msg) => {
+		console.warn(`Number Recognizer (CSV line ${line} = ${source[line]}): ${msg}`);
 	}
 
-	let errs = 0;
-	for (let i = 0; i < source.length; i++){
+	let args = {};
+	const possibleDels = ['.', ',', ' '];
+	const cutPattern = getCutPattern({
+		numbers: true,
+		rest: true
+	})
 
-		if (errs > 5)
-			return [];
+	let memory = {
+		prefixes: [],
+		suffixes: [],
+		delims: [],
+		validCtr: 0,
+		addPrefix: function (p) {
+			if (this.prefixes[p])
+				this.prefixes[p] += 1;
+			else
+				this.prefixes[p] = 1;
+		},
+		addSuffix: function (s) {
+			if (this.suffixes[s])
+				this.suffixes[s] += 1;
+			else
+				this.suffixes[s] = 1; 
+		},
+		addDelims: function (kd, dd, md) {
+			let key = kd + "|" + dd + "|" + md;
+			if (this.delims[key])
+				this.delims[key] += 1;
+			else
+				this.delims[key] = 1;
+		},
+		addValid: function () {
+			this.validCtr++;
+		},
+		addNum: function (num) {
+			this.minVal = Math.min(this.minVal, num);
+			this.maxVal = Math.max(this.maxVal, num) ;
+		}
+	};
 
-		let trimmed = source[i].replace(/\s/g,'');
-		let digits = trimmed.match(/\d+/g) || [];
-		
-		// no digits present OR digit sequences in the middle don't have length of 3
-		if (digits.length === 0 || !digits.slice(1, -1).every((digs => digs.length === 3))){
-			errs++;
+	for (let i = 0, upto = source.length; i < upto; i++) {
+
+		let split = [...source[i].trim().matchAll(cutPattern)].map(match => match.groups);
+
+		if (split.every(s => !s.numbers)) {
+			log(i, "String contains no digits");
 			continue;
 		}
 
-		let dels = trimmed.match(/\D+/g) || [];
-		
-		if (dels.length === 0)
-			addDel(null, null);
-
-		if (trimmed.startsWith(dels[0]))
-			dels = dels.slice(1);
-		if (trimmed.endsWith(dels[dels.length - 1]))
-			dels = dels.slice(0, -1);
-		
-		if (dels.length === 1){
-			
-			// eg. 120.000 (pieces)
-			if (digits[0].length <= 3 && digits[1].length === 3 && !digits[0].startsWith('0')){}
-				addDel(dels[0], null);
-			
-			// eg. $3.95
-			addDel(null, dels[0]);
+		// PREFIX extraction
+		if (split[0].rest) {
+			memory.addPrefix(split[0].rest);
+			split.splice(0, 1);
 		}
+
+		// SUFFIX extraction
+		if (split[split.length - 1].rest) {
+			memory.addSuffix(split[split.length - 1].rest);
+			split.splice(-1, 1);
+		}
+
+		let delims = split.filter(token => token.rest).map(token => token.rest);
+		console.log(source[i], split, delims);
+
+		// FORMAT
+		// N - number sequence
+		// N3 - 3 digits
+		// D - delimiter sequence
+		// $Di - value of delims[i]
+
+		// FORMAT 
+		// 	(N)
+		if (delims.length === 0) {
+			memory.addValid();
+			memory.addDelims("", "", "");
+
+		}
+		// FORMAT 
+		// 	(N)(D)(N)
+		else if (delims.length === 1) {
+			memory.addValid();
+			memory.addDelims("", delims[0], "");
+			if (split[2].numbers.length === 3)
+				memory.addDelims(delims[0], "", "");
+		}
+		// FORMAT
+		//  (N)(D)(N)((D)(N))+
 		else {
-
-			if (dels.slice(0, -1).every(d => d === dels[0])) {
-				
-				// eg. 125,383.75 (revenue)
-				if (dels[0] !== dels[dels.length - 1])
-					addDel(dels[0], dels[dels.length - 1]);
-
-				// eg. 137.254.376
+			let counts = delims.reduce((acc, delim) => {
+				if (acc[delim]) 
+					acc[delim] += 1;
 				else
-					addDel(dels[0], null);
+					acc[delim] = 1; 
+				return acc }, {});
+			let delimkeys = Object.keys(counts);
 
-			}
-			else {
-				errs++;
+			if (delimkeys.length !== 2) {
+				log(i, `Too many unique delimiters ${delimkeys}`);
 				continue;
 			}
 
+			if (counts[delimkeys[0]] > 1 && counts[delimkeys[1]] > 1) {
+				log(i, `No delimiter ${delimkeys} recognized as decimal`);
+				continue;
+			}
+
+			// FORMAT 
+			//  (N)($Dx)(N3)($Dy)(N)
+			if (counts[delimkeys[0]] === 1 && counts[delimkeys[1]] === 1) {
+				if (split[2].numbers.length !== 3) {
+					log(i, `Between delimiters ${delimkeys}, there should be 3 digits`);
+					continue;
+				}
+				memory.addValid();
+				memory.addDelims(split[1].rest, split[3].rest, "");
+				memory.addDelims("", split[1].rest, split[3].rest);
+			}
+			// FORMAT 
+			//  (N)(($Dx)(N))*($Dy)(N)(($Dx)(N))+
+			//  (N)(($Dx)(N))+($Dy)(N)(($Dx)(N))*
+			else {
+				// all non-border digit sequences have to be of length 3
+				for (let j = 2, lnidx = split.length - 2; j < lnidx; j += 2) {
+					if (split[j].numbers.length !== 3) {
+						log(i, `Number sequence ${split[j].numbers} has invalid length`);
+						continue;
+					}
+				}
+				// first digit sequence hasto be at most 3
+				if (split[0].numbers.length > 3) {
+					log(i, `First digit sequence is longer than 3`);
+					continue;
+				}
+
+				// determine which delimiter is which
+				let dd, td;
+				if (counts[delimkeys[0]] === 1) {
+					dd = delimkeys[0];
+					td = delimkeys[1];
+				}
+				else if (counts[delimkeys[1]] === 1) {
+					dd = delimkeys[1];
+					td = delimkeys[0];
+				}
+
+				// FORMAT 
+				//  (N)((td)(N))+(dd)(N)
+				if (split[split.length - 2].rest === dd) {
+					memory.addValid();
+					memory.addDelims(td, dd);
+				}
+				// FORMAT 
+				//  (N)(($Dx)(N))*($Dy)(N)(($Dx)(N))+
+				else {
+					// last sequence can be longer (if there are no mili-delimiters)
+					if (split[split.length - 1].numbers.length > 3 && split[split.length - 2].rest !== dd) {
+						log(i, `Last digit sequence is longer than 3 while using mili-delimiter`);
+						continue;
+					}
+
+					memory.addValid();
+					memory.addDelims(td, dd, td);
+				}
+			}
 		}
 	}
 
-	let argmax = delCs.indexOf(Math.max(...delCs));
+	let numutypes = [];
+	for (let delimset in memory.delims) {
+		let delims = delimset.split('|');
+		console.log(delims, delims[1] === '');
+		numutypes.push(new NumUsetype({
+			prefix: Object.keys(memory.prefixes),
+			suffix: Object.keys(memory.suffixes),
+			thousandSeparator: delims[0],
+			decimalSeparator: delims[1],
+			separateDecimalThousands: delims[2] !== '',
+			integral: delims[1] === ''
+		}));
+	}
 
-	let errorTooLarge = false;
-	if (errorTooLarge)
-		return null;
-
-	return new Number({
-		
-	})
-
-	// TODO Check if untrue formats ain't too large
-	return errs > 5 ? [] : [tDels[argmax], dDels[argmax]];
+	return numutypes;
 }
 
 /**
  * Try to parse a number based on provided format
  * @param {string} source 
- * @param {string[]} format in form [thousands_delimiter, decimal delimiter]
+ * @param {import('./usetype.js').Number} format Usetype.Number instance containing format info
  * @returns Parsed num if possible, NaN otherwise
  */
-export function parseNum(source, format = []) {
-	let trimmed = source.replace(/\s/g, '');
-	let dels = trimmed.match(/\D+/g);
-	let nums = trimmed.match(/[0-9]+/g);
-
-	if (trimmed.startsWith(dels[0]))
-		trimmed = trimmed.replace(dels[0], '');
-	if (trimmed.endsWith(dels[dels.length - 1]))
-		trimmed = trimmed.replace(dels[dels.length - 1], '');
-
-	if (format) {
-		if (format[0])
-			trimmed = trimmed.replace(format[0], '');
-		if (format[1])
-			trimmed = trimmed.replace(format[1], '.');
-		return +trimmed;
-	}
-	else {
-		return +trimmed;
-	}
+export function parseNum(source,format) {
+	if (source.length)
+		return source.map(format.deformat);
+	return format.deformat(source);
 }

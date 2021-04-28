@@ -3,8 +3,7 @@ console.log("Loaded core/Chart.js");
 import { SourceData } from './SourceData.js';
 import { Role } from './Role.js';
 import { Template } from './Template.js';
-import { bindEventSystemMixin } from '../utils/events.js';
-import { Recognizer } from './recognizer.js';
+import { bindEventSystemMixin } from '../utils/events.js';  
 
 /**
  * Main class. Responsible for rendering chart using provided data.
@@ -12,9 +11,9 @@ import { Recognizer } from './recognizer.js';
  */
 export class Chart {
 
+    _debugArgs = {};
     constructor (opts) {
-        if (opts && opts.useRecognizer)
-            this.useRecognizer = opts.useRecognizer;
+        this._debugArgs = opts;
     }
 
     //#region Properties
@@ -104,10 +103,7 @@ export class Chart {
         return fetch(url)
             .then(data => data.text())
             .then(text => {
-                if (this.useRecognizer)
-                    this.SourceData = new Recognizer(text);
-                else
-                    this.SourceData = new SourceData(text);
+                this.SourceData = new SourceData(text);
             });
     }
 
@@ -119,11 +115,7 @@ export class Chart {
         if (!data) {
             console.err("No data provided for new data source.")
         }
-        
-        if (this.useRecognizer)
-            this.SourceData = new Recognizer(data);
-        else
-            this.SourceData = new SourceData(data);
+        this.SourceData = new SourceData(data);
     }
 
     /**

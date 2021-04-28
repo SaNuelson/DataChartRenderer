@@ -1,3 +1,6 @@
+import { escapeRegExp } from '../utils/string.js';
+import * as TimestampMethods from '../parser/parse.timestamp.js';
+
 /**
  * @file Manages usetype classes.
  * These are returned from respective parsers.
@@ -83,11 +86,225 @@ const TimestampToken = {
     millisecondShort: 'n'
 }
 
+// TODO: Multilang support?
+const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+const monthAbbrevs = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const weekDays = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+const weekDayAbbrevs = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+const TimestampCategory = {
+    Year: 1,
+    Month: 2, 
+    Day: 3,
+    Hour: 4,
+    Minute: 5,
+    Second: 6,
+    Millisecond: 7,
+    Era: 8,
+    Meridiem: 9,
+    DayOfWeek: 10
+}
+const TimestampTokenDetails = {
+
+    /** e.g. year 50 BC */
+    era: {
+        label: '{EE}',
+        regexBit: '((?:AD)|(?:BC))',
+        category: TimestampCategory.Era,
+        // apply is valid since one can expect year preceding era in a format (BC 1500 makes little sense)
+        apply: (date, val) => date.getFullYear() > 0 && val === 'BC' && date.setFullYear(-date.getFullYear()),
+        extract: (date) => date.getFullYear() >= 0 ? 'AD' : 'BC'
+    },
+
+    /** e.g. 3.1.1998 */
+    yearFull: {
+        label: '{YYYY}',
+        regexBit: '([0-9]{4,})',
+        category: TimestampCategory.Year,
+        apply: (date, val) => date.setFullYear(+val),
+        extract: (date) => date.getFullYear().toString().padStart(4,"0")
+    },
+
+    /** e.g. 3.1.'98 */
+    yearShort: {
+        label: '{YY}',
+        regexBit: '([0-9]{2})',
+        category: TimestampCategory.Year,
+        apply: (date, val) => date.setFullYear(1900 + +val),
+        extract: (date) => date.getFullYear().toString()
+    },
+    
+    /** e.g. 03.01.1998 */
+    monthFull: {
+        label: '{MM}',
+        regexBit: '([0-9]{2})',
+        category: TimestampCategory.Month,
+        apply: (date, val) => date.setMonth(+val),
+        extract: (date) => date.getMonth().toString().padStart(2, "0")
+    },
+
+    /** e.g. 3.1.1998 */
+    monthShort: {
+        label: '{M}',
+        regexBit: '([0-9]{,2})',
+        category: TimestampCategory.Month,
+        apply: (date, val) => date.setMonth(+val),
+        extract: (date) => date.getMonth().toString()
+    },
+
+    /** e.g. January 3rd 1998 */
+    monthName: {
+        label: '{NN}',
+        regexBit: '(' + monthNames.map(m => '(?:' + m + ')').join('|') + ')',
+        category: TimestampCategory.Month,
+        apply: (date, val) => date.setMonth(monthNames.indexOf(+val)),
+        extract: (date) => monthNames[date.getMonth()]
+    },
+
+    /** e.g. Jan 3rd, 1998 */
+    monthAbbrev: {
+        label: '{N}',
+        regexBit: '(' + monthAbbrevs.map(m => '(?:' + m + ')').join('|') + ')',
+        category: TimestampCategory.Month,
+        apply: (date, val) => date.setMonth(monthAbbrevs.indexOf(+val)),
+        extract: (date) => monthAbbrevs[date.getMonth()]
+    },
+    
+    /** e.g. 03.01.1998 */
+    dayFull: {
+        label: '{DD}',
+        regexBit: '([0-9]{2}',
+        category: TimestampCategory.Day,
+        apply: (date, val) => date.setDate(+val),
+        extract: (date) => date.getDate().toString().padStart(2, "0")
+    },
+
+    /** e.g. 3.1.1998 */
+    dayShort: {
+        label: '{D}',
+        regexBit: '([0-9]{,2}',
+        category: TimestampCategory.Day,
+        apply: (date, val) => date.setDate(+val),
+        extract: (date) => date.getDate().toString()
+    },
+
+    /** e.g. Saturday 3.1. 1998 */
+    dayOfWeekFull: {
+        label: '{WW}',
+        regexBit: '(' + weekDays.map(d => '(?:' + d + ')').join('|') + ')',
+        apply: (date, val) => console.warn("Apply dayOfWeekFull called, undefined behaviour"),
+        extract: (date) => weekDays[date.getDay()]
+    },
+
+    /** e.g. Sat 3.1. 1998 */
+    dayOfWeekShort: {
+        label: '{W}',
+        regexBit: '(' + weekDayAbbrevs.map(d => '(?:' + d + ')').join('|') + ')',
+        apply: (date, val) => console.warn("Apply dayOfWeekFull called, undefined behaviour"),
+        extract: (date) => weekDayAbbrevs[date.getDay()]
+    },
+
+    /** e.g. 7:30 AM */
+    meridiem: {
+        label: '{RR}',
+        regexBit: '((?:AM)(?:PM))',
+        category: TimestampCategory.Meridiem,
+        // same like era, it should be safe to assume meridiem won't be preceding hours (e.g. AM 7:30)
+        apply: (date, val) => {
+            let hours = date.getHours();
+            if (val === 'PM' && hours < 12)
+                date.setHours(hours + 12); // all after noon
+            else if (val === 'AM' && hours === 12)
+                cate.setHours(0); // midnight
+        },
+        extract: (date) => date.getHours() < 12 || date.getHours() === 0 ? 'AM' : 'PM'
+    },
+
+    /** e.g. 07:05:32 */
+    hourFull: {
+        label: '{hh}',
+        regexBit: '([0-9]{2})',
+        category: TimestampCategory.Hour,
+        apply: (date, val) => date.setHours(val),
+        extract: (date) => date.getHours().toString().padStart(2, '0')
+    },
+
+    /** e.g. 7:05 AM */
+    hourShort: {
+        label: '{h}',
+        regexBit: '([0-9]{,2}',
+        category: TimestampCategory.Hour,
+        apply: (date, val) => date.setHours(val),
+        extract: (date) => date.getHours().toString()
+    },
+
+    /** e.g. 07:05:32 */
+    minuteFull: {
+        label: '{mm}',
+        regexBit: '([0-9]{2})',
+        category: TimestampCategory.Minute,
+        apply: (date, val) => date.setMinutes(val),
+        extract: (date) => date.getMinutes().toString().padStart(2, '0')
+    },
+
+    /** e.g. 5m 32s */
+    minuteShort: {
+        label: '{m}',
+        regexBit: '([0-9]{,2}',
+        category: TimestampCategory.Minute,
+        apply: (date, val) => date.setMinutes(val),
+        extract: (date) => date.getMinutes().toString()
+    },
+
+    /** e.g. 14:15:08 */
+    secondFull: {
+        label: '{ss}',
+        regexBit: '([0-9]{2})',
+        category: TimestampCategory.Second,
+        apply: (date, val) => date.setSeconds(val),
+        extract: (date) => date.getSeconds().toString().padStart(2, '0')
+    },
+
+    /** e.g. 6.32 s */
+    secondShort: {
+        label: 's',
+        regexBit: '([0-9]{,2})',
+        category: TimestampCategory.Second,
+        apply: (date, val) => date.setSeconds(val),
+        extract: (date) => date.getSeconds().toString()
+    },
+
+    /** e.g. 35.027s */
+    millisecondFull: {
+        label: '{nnn}',
+        regexBit: '([0-9]{3})',
+        category: TimestampCategory.Millisecond,
+        apply: (date, val) => date.setMilliseconds(val),
+        extract: (date) => date.getMilliseconds().toString().padStart(3, '0')
+    },
+
+    /** e.g. 35s 27ms */
+    millisecondShort: {
+        label: 'n',
+        regexBit: '([0-9]{,3})',
+        category: TimestampCategory.Millisecond,
+        apply: (date, val) => date.setMilliseconds(val),
+        extract: (date) => date.getMilliseconds().toString()
+    }
+}
+const TimestampTokenRevs = (() => {
+    let rev = {};
+    for (let type in TimestampTokenDetails) {
+        let label = TimestampTokenDetails[type].label;
+        rev[label] = type;
+    }
+    return rev;
+})()
 /**
  * @typedef DatetimeUsetypeArgs
  * @property {Date} min minimal value
  * @property {Date} max maximal value
- * @property {(TimestampToken|String)[]} format array specifying timestamp 
+ * @property {(TimestampToken|String)[]} formatting array specifying timestamp 
  * format drawing from {@see TimestampToken}, also delimiters and affixes 
  */
 
@@ -113,20 +330,75 @@ export class Usetype {
     toString = () => "{undefined}";
     toFormatString = () => "";
     toDebugString = () => "Usetype.Base()";
+   
+    /** 
+     * Possible underlying types for this Usetype subclass.
+     * @type {string}
+     * @todo Set as static
+     */
+    compatibleTypes = [];
+
+    /**
+     * Underlying type for this Usetype instance.
+     * @type {string}
+     */
+    type = "undefined";
+}
+
+export class String extends Usetype {
+    constructor(args) {super()}
+
+    /** 
+     * Transform value of underlying type using self 
+     * @param {string}
+     * @returns {string}
+     */
+    format = (x) => x;
+    /** 
+     * Transform self-formatted string to value 
+     * @param {string}
+     * @returns {string}
+     */
+    deformat = (x) => x;
+
+    toString = () => "{string}";
+    toFormatString = () => "";
+    toDebugString = () => "Usetype.Base()";
+   
+    /** 
+     * Possible underlying types for this Usetype subclass.
+     * @type {string}
+     * @todo Set as static
+     */
+    compatibleTypes = ["string"];
+
+    /**
+     * Underlying type for this Usetype instance.
+     * @type {string}
+     */
+    type = "string";
 }
 
 export class Enum extends Usetype {
+    
+    domain = [];
+    
     /**
      * @param {EnumUsetypeArgs} args
      */
     constructor(args) {
         super();
-        Object.assign(this, args);
+        this.domain = args.domain ?? [];
     }
 
-    size = () => values.length;
-    toString = () => `{[${this.values}]}`;
-    toDebugString = () => `Usetype.Enum([${this.values}])`;
+    format = (string) => this.domain.includes(string) ? string : undefined;
+    deformat = (value) => this.domain.includes(value) ? value : undefined;
+
+    size = () => domain.length;
+    toString = () => `{[${this.domain}]}`;
+    toDebugString = () => `Usetype.Enum([${this.domain}])`;
+    compatibleTypes = ["string"];
+    type = "string";
 }
 
 export class Number extends Usetype {
@@ -134,24 +406,32 @@ export class Number extends Usetype {
     /**
      * @param {NumberUsetypeArgs} args 
      */
-    constructor(args) {
+    constructor({
+        min = null,
+        max = null,
+        sample = null,
+        decimalSeparator = ".",
+        thousandSeparator = "",
+        prefix = "",
+        suffix = "",
+        integerPlaces = 0,
+        decimalPlaces = 0,
+        integral = true
+    }) {
         super();
-        Object.assign(this, args);
-
-        if (args.decimalPlaces) {
-            this.integral = args.decimalPlaces === 0;
-        }
-        else if (args.integral === true) {
-            this.decimalPlaces = 0;
-        }
-        else if (!args.decimalPlaces && !args.integral) {
-            let min = args.min % 1 == 0 ? 0 : args.min.toString().split(".")[1].length;
-            let max = args.max % 1 == 0 ? 0 : args.min.toString().split(".")[1].length;
-            this.decimalPlaces = Math.max(min, max);
-            this.integral = this.decimalPlaces === 0;
-        }
+        this.min = min;
+        this.max = max;
+        if (!min && !max)
+            this.min = sample;
+        this.decimalSeparator = decimalSeparator;
+        this.thousandSeparator = thousandSeparator;
+        this.prefix = prefix;
+        this.suffix = suffix;
+        this.integerPlaces = integerPlaces;
+        this.decimalPlaces = decimalPlaces;
+        this.integral = integral;
     }
-
+    
     //#region Defaults
     min = null;
     max = null;
@@ -167,13 +447,13 @@ export class Number extends Usetype {
 
     toString = () => {
 
-        if (this.min && this.max) {
+        if (this.min !== null && this.max !== null) {
             let min = this.format(this.min);
             let max = this.format(this.max);
             return `{[${min}][${max}]}`;
         }
-        else if (this.min || this.max) {
-            let sample = this.format(this.min ?? this.max);
+        else if (this.min !== null || this.max !== null) {
+            let sample = this.format(this.min ? this.min : this.max);
             return `{${sample}}`;
         }
         else {
@@ -183,7 +463,7 @@ export class Number extends Usetype {
     }
 
     toFormatString = () => {
-        let sample = (this.max ?? this.min ?? 12345.6789);
+        let sample = this.max ? this.max : this.min ? this.min : 12345.6789;
         let formatted = this.format(sample);
         let parts = formatted.split(this.decimalSeparator);
         if (parts.length === 1)
@@ -215,10 +495,10 @@ export class Number extends Usetype {
         if (numParts.length > 1)
             decimalPart = numParts[1];
     
-        if (decimalPlaces > 0 && numParts[1].length < decimalPlaces)
+        if (this.decimalPlaces > 0 && numParts[1].length < this.decimalPlaces)
             decimalPart = decimalPart + "0".repeat(this.decimalPlaces - decimalPart.length);
     
-        if (separateDecimalThousands)
+        if (this.separateDecimalThousands)
             decimalPart = this._addSeparator(numParts[1], this.thousandSeparator, true);
     
         return this.prefix + wholePart + this.decimalSeparator + decimalPart + this.suffix;
@@ -230,14 +510,25 @@ export class Number extends Usetype {
      * @returns {number} Value of formatted string passed in
      */
     deformat = (string) => {
-        if (string.startsWith(this.prefix) && string.endsWith(this.suffix)) {
-            let stripped = string
-                .slice(this.prefix.length, string.length - this.prefix.length - this.suffix.length)
-                .replace(new RegExp(this.thousandSeparator,'g'))
-                .replace(new RegExp(this.decimalSeparator, 'g'));
-            if (!isNaN(stripped))
-                return +stripped;
-        }
+        let stripped = string;
+        this.prefix.forEach(p => {
+            if (stripped.startsWith(p))
+                stripped = stripped.slice(p.length);
+        });
+        this.suffix.forEach(s => {
+            if (stripped.endsWith(s))
+                stripped = stripped.slice(-s.length);
+        })
+        if (this.thousandSeparator)
+            stripped = stripped
+                .split(this.thousandSeparator)
+                .join("");
+        if (this.decimalSeparator)
+            stripped = stripped
+                .split(this.decimalSeparator)
+                .join(".");
+        if (!isNaN(stripped))
+            return +stripped;
         return null;
     }
     
@@ -252,9 +543,12 @@ export class Number extends Usetype {
             str.match(/.{1,3}(?=(.{3})*$)/g)
         return bits.join(sep);
     }
+
+    compatibleTypes = ["number"];
+    type = "number";
 }
 
-export class Timestamp extends Usetype {
+export class TimestampNew extends Usetype {
 
     /**
      * 
@@ -262,8 +556,122 @@ export class Timestamp extends Usetype {
      */
     constructor(args) {
         super();
-        Object.assign(this, args);
+        
+        var minType = 0;
+        if (args.min) {
+            if (args.min instanceof Date)
+                minType = 1;
+            else if (args.min instanceof Array && args.min.length < 5) {
+                minType = 2;
+            }
+            else {
+                throw "Timestamp ctor @ min " + args.min + "unrecognized type";
+            }
+            this.min = args.min;
+        }
+        if (args.max) {
+            if (args.max instanceof Date) {
+                if (minType === 2) {
+                    throw `Timestamp ctor, max (${args.max}) of type Date, min (${args.min}) of type Timeofday.`;
+                }
+                minType = 1;
+            }
+            else if (args.max instanceof Array && args.max.length < 5) {
+                if (minType === 1) {
+                    throw `Timestamp ctor, max (${args.max}) of type Timeofday, min (${args.min}) of type Date.`;
+                }
+                minType = 2;
+            }
+            this.max = args.max;
+        }
+
+
+        this.formatting = args.formatting;
+
+        // format(date)
+        // extract all bits from date, join them
+        
+        // deformat(string)
+        // match with regex (which extracts all important groups)
+        // apply those using appliers
+
+        let regBits = [];
+        let appliers = [];
+        let extractors = [];
+        this.formatting.forEach(bit => {
+            if (TimestampTokenRevs[bit]) {
+                let token = TimestampTokenDetails[TimestampTokenRevs[bit]];
+                regBits.push(token.regexBit);
+                appliers.push(token.apply);
+                extractors.push(token.extract);
+            }
+            else {
+                regBits.push(escapeRegExp(str));
+                extractors.push(() => str);
+            }
+        });
+        let pattern = new RegExp(regBits.join(''));
+        this.format = (date) => extractors.map(ex => ex(date)).join('');
+        this.deformat = (string) => {
+            let date = new Date();
+            let match = string.match(pattern);
+            if (!match)
+                return null;
+            appliers.forEach((app, idx) => app(date, match[i + 1]));
+            return date;
+        }
     }
 
-    
+    min = null;
+    max = null;
+    formatting = null;
+    type = "none";
+    pattern = null;
+    replacement = null;
+    type = "timestamp";
+
+    toString() {
+        let ret = '';
+        if (this.min && this.max)
+            ret = this.deformat(this.min) + "-" + this.deformat(this.max);
+        else if (this.min || this.max)
+            ret = this.deformat(this.min ? this.min : this.max);
+        else
+            ret = this.deformat(Date.now());
+        return "{" + ret + "}";
+    }
+
+    format(date) {throw "Timestamp format not rewritten."}
+    deformat(string) {throw "Timestamp deformat not rewritten."}
+}
+
+export class Timestamp extends Usetype {
+    constructor(format) {
+        super();
+        this.formatting = format;
+        let containsTime = format.match(/[hmsq]/);
+        let containsDate = format.match(/[DMY]/);
+        if (containsTime && containsDate) {
+            this.type = "datetime";
+        }
+        else if (containsTime) {
+            this.type = "timeofday";
+        }
+        else if (containsDate) {
+            this.type = "date";
+        }
+        else {
+            throw "Invalid format of dummy Timestamp " + format;
+        }
+    }
+
+    formatting = "none";
+
+    format = (date) => date.toString();
+
+    deformat = (string) => TimestampMethods.parseTimestamp(string, this.formatting);
+
+    toString = () => "{" + this.formatting + "}";
+
+    compatibleTypes = ["timeofday", "time", "date", "datetime"]
 }

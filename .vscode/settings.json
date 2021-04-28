@@ -1,5 +1,3 @@
 {
-    "files.exclude": {
-        "node_modules/": true
-    }
+    "liveServer.settings.multiRootWorkspaceName": "DCRN"
 }

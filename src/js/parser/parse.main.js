@@ -2,7 +2,7 @@ import * as utils from '../utils/utils.js';
 import { parseNum, recognizeNum } from './parse.num.js';
 import { parseTimestamp, recognizeTimestamp } from './parse.timestamp.js';
 import { recognizeEnumset } from './parse.enum.js';
-
+import { String as StringUsetype } from './usetype.js';
 
 /**
  * Try to parse string into specified type using optional format.
@@ -35,49 +35,36 @@ export function tryParse(source, type, format) {
 /**
  * Try to recognize possible types of provided strings in data array.
  * @param {string[]} data array of strings to recognize, usually column from SourceData
- * @returns {[string[], string[]]} tuple in form (types, formats)
+ * @returns {import('./usetype.js').Usetype} list of possible usetypes
  */
 export function determineType(data) {
+	let debug = window.app.manager._debugArgs.verbose
+	if (debug)
+		console.groupCollapsed(`detemineType(${data.length > 0 ? data[0] + "..." : []})`);
 
-	let types = [];
-	let formats = [];
-	let params = {};
+	let args = {}
 
-	let enumSet = recognizeEnumset(data);
-	console.log("enumSet = ", enumSet);
-	if (enumSet && enumSet.length > 0) {
-		if (enumSet.length === 1)
-		{
-			console.log("Recognized NOVAL indicator: ", enumSet[0]);
-			params.noval = enumSet[0];
-		}
-		else
-		{
-			console.log("Recognized enum set: ", enumSet);
-			types.push("enum");
-			formats.push(enumSet);
-		}
+	let enumUsetypes = recognizeEnumset(data, args);
+	if (debug)
+		console.log("detemineEnumset = ", enumUsetypes);
+
+	if (enumUsetypes.length > 0 && enumUsetypes[0].domain.length === 1) {
+		args.noval = enumUsetypes[0].domain[0];
+		EnumUsetypeArgs = [];
 	}
 
-	let [tsTypes, tsFormats] = recognizeTimestamp(data, params);
-	if (tsTypes && tsTypes.length > 0) {
-		console.log("Recognized timestamp formats: ", utils.zip(tsTypes, tsFormats));
-		types.push(tsTypes);
-		formats.push(tsFormats);
-	}
+	let numUsetypes = recognizeNum(data, args);
+	if (debug)
+		console.log("recognizeNum = ", numUsetypes);
 
-	let numberdata = recognizeNum(data, params);
-	if (numberdata && numberdata.length > 0) {
-		console.log("Recognized number formats: ", numberdata);
-		types.push("number");
-		formats.push(numberdata);
-	}
+	let timestampUsetypes = recognizeTimestamp(data, args);
+	if (debug)
+		console.log("timestampUsetypes = ", timestampUsetypes);
 
-	if (!types)
-		console.log("Couldn't determine any known data type for source data, returning string.");
-	
-	types.push("string");
-	formats.push("");
-	console.log("=>", types, formats);
-	return [types, formats];
+	if (debug) console.groupEnd();
+
+	let rets = [].concat(enumUsetypes, numUsetypes, timestampUsetypes);
+	if (rets.length === 0)
+		return [new StringUsetype()];
+	return rets;
 }

@@ -1,6 +1,10 @@
-import { Chart, Init as CoreInit } from '/lib/js/core/Main.js';
-import { Template } from '/lib/js/core/Template.js';
-import '/lib/js/debug.js';
+// TODO: Absolute paths and all from Main.js
+import { Init as CoreInit } from '../../../src/js/core/Main.js';
+import { Chart } from '../../../src/js/core/Chart.js';
+import { Template } from '../../../src/js/core/Template.js';
+import * as Utils from '../../../src/js/utils/utils.js';
+import '/src/js/debug.js';
+import { populateHeader, populateData } from '../../../src/nmjs/ui.js';
 
 ///////// This page only works with a single instance.
 ///////// Multiple instance chart workers are on their way.
@@ -9,18 +13,19 @@ console.log("Javascript index file loaded.");
 
 //#region Initialization
 
-window.manager = new Chart({useRecognizer: true})
+/** @type {Chart} */
+let manager = new Chart({ verbose: true })
     .on('dataChanged', sourceChangeHandler);
 
 
 window.app = {
-    manager: window.manager,
+    manager: manager,
     template: Template
 }
 
 $(() => {
     CoreInit({
-        onGoogleChartsLoaded: googleChartsLoadedHandler 
+        onGoogleChartsLoaded: googleChartsLoadedHandler
     });
 
     // LOAD local data files
@@ -43,18 +48,6 @@ $(() => {
 
     // SHOW LOAD file
     $('#file-helper-link').on('click', () => (setTimeout(() => { $('#file-dropdown-toggler').click(); }, 100)));
-
-
-    $('#chart-wrapper').resizable({
-        stop: function () {
-            $('#chart-div').empty();
-            manager.options = {
-                'width': $(this).width(),
-                'height': $(this).height()
-            }
-            manager.redraw()
-        }
-    })
 
     // first time manager option set
     manager.options = { 'width': $('#chart-wrapper').width(), 'height': $('#chart-wrapper').height() };
@@ -79,19 +72,23 @@ function sourceChangeHandler() {
 /**
  * Clear and repopulate table with header and preview rows of the new SourceData.
  */
- function loadDataPreview() {
+function loadDataPreview() {
     let table = $('<table></table>')
         .prop('id', 'preview-table')
-        .addClass(['table', 'table-dark']);
+        .addClass(['table', 'table-dark', 'table-bordered', 'table-striped']);
+    let thead = $('<thead></thead>');
     let header = $('<tr></tr>');
 
     manager.SourceData.head.forEach(h => header.append($('<th></th>').text(h)));
-    table.append(header);
+    thead.append(header);
+    table.append(thead);
 
+    let tbody = $('<tbody></tbody>');
+    table.append(tbody);
     manager.SourceData.rowr(0, 5).forEach(line => {
         let row = $('<tr></tr>');
         line.forEach(d => row.append($('<td></td>').text(d)));
-        table.append(row);
+        tbody.append(row);
     })
 
     $('#table-div')
@@ -104,59 +101,124 @@ function sourceChangeHandler() {
  */
 function loadDataRecognition() {
     let table = $('<table></table>')
-        .prop('id','recog-table')
+        .prop('id', 'recog-table')
         .addClass(['table', 'table-dark', 'table-bordered']);
 
-    let utinfo = manager.SourceData.usetypeof();
-    let utts = utinfo.map(u => u[0]);
-    let utfs = utinfo.map(u => u[1]);
+    let utinfo = manager.SourceData.usetyper();
+    let height = utinfo.reduce((max, next) => Math.max(max, next.length), 0);
 
+    let thead = $('<thead></thead>');
     let header = $('<tr></tr>');
-    for (let i = 0; i < utts.length; i++) {
-        header.append($('<th></th>')  
-            .prop('colspan', utts[i].length)
-            .text(manager.SourceData.header(i)));
-    }
-    table.append(header);
 
-    let trow = $('<tr></tr>');
-    let frow = $('<tr></tr>');
-    for (let i = 0; i < utfs.length; i++) {
-        for (let j = 0; j < utfs[i].length; j++) {
-            trow.append($('<td></td>').text(utts[i][j]));
-            frow.append($('<td></td>').text(utfs[i][j]));
+    manager.SourceData.head.forEach(h => header.append($('<th></th>').text(h)));
+    thead.append(header);
+    table.append(thead);
+
+
+    let tbody = $('<tbody></tbody>');
+    for (let i = 0; i < height; i++) {
+        let row = $('<tr></tr>');
+        for (let j = 0; j < utinfo.length; j++) {
+            if (utinfo[j][i])
+                row.append($('<td></td>').text(utinfo[j][i].toString()));
+            else
+                row.append($('<td></td>'));
         }
+        tbody.append(row);
     }
-    table.append(trow);
-    table.append(frow);
+    table.append(tbody);
 
     $('#recog-div').append(table);
 }
 
 // TODO definitely gotta move this elsewhere
 function loadChartMapping() {
-    var types;
-    {
-        let temp = manager.SourceData.usetypeof();
-        types = temp.map(([ts, _]) => ts);
-    }
+    var types = manager.SourceData.usetyper();
 
     var charts = Template.all().ChartTypes;
 
-    /**
-     * @param {string[][]} typesets 
-     * @param {import("../../include/js/core/Template").ChartTemplate} chart 
-     */
-    const isMappable = (typesets, chart) => {
-        // filter roles since they're not important now
-        /** @type {import('../../include/js/core/Template.js.js').ValueRoleTemplate}  */
-        let roles = chart.roles.filter(role => role.name);
-        // allow single column to multiple features
-        const repeatable = false;
-        
-        
-    }
+    console.log("loadChartMapping...");
+    console.log("types", types);
+    console.log("charts", charts);
 
+    let mappings = [];
+    for (let chart of charts) {
+        let mapping = Utils.mappingBrute(types, chart.roles, (usetypeset, role) => {
+            let against;
+            if (role.types) {
+                against = role.types;
+            }
+            else {
+                against = Template.role(role.role).types;
+            }
+            return usetypeset.some(usetype => against.some(ag => usetype.compatibleTypes.includes(ag)));
+        });
+        if (mapping)
+            mappings.push([chart.name, mapping]);
+    }
+    drawPossibleCharts(mappings);
+}
+
+function drawPossibleCharts(mappings) {
+    let wrapper = $('#chart-wrapper');
+
+    let pills = $('<ul class="nav nav-tabs mb-3" id="chart-pills" role="tablist"></ul>');
+    let content = $('<div class="tab-content" id="chart-content"></div>');
+
+    wrapper
+        .empty()
+        .append(pills)
+        .append(content);
+
+    let first = true;
+    let idCtr = 0;
+
+    for (let [chartName, colIdxs] of mappings) {
+        let chartData = manager.SourceData.getUsetypedData(colIdxs);
+        let chartTemplate = Template.chart(chartName);
+        let name = chartTemplate['internal-name'] ?? chartTemplate['name'];
+
+        let pill = $('<li></li>')
+            .addClass('nav-item')
+            .attr('role', 'presentation');
+        let pillLink = $('<button></button>')
+            .addClass('nav-link')
+            .text(chartName)
+            .prop({
+                'id': `pill-${name}-tab`,
+                'type': 'button',
+                'role': 'tab'
+            })
+            .attr({
+                'data-bs-toggle': 'pill',
+                'data-bs-target': `#pill-${name}`
+            });
+        let pillContent = $('<div></div>')
+            .addClass('tab-pane fade')
+            .attr('role', 'tabpanel')
+            .prop({
+                'id': `pill-${chartName}`
+            });
+        pills.append(pill.append(pillLink));
+        content.append(pillContent);
+
+        let chart = new google.visualization[name](pillContent[0]);
+        if (first) {
+            pillLink.addClass('active');
+            pillContent.addClass('active show');
+            first = false;
+            drawChart();
+        }
+        else {
+            let drawn = false;
+            pillLink.one('shown.bs.tab', drawChart);
+        }
+
+        function drawChart() {
+            chart.draw(chartData);
+            pillContent.removeClass('container'); // disgusting but has to be done
+        }
+    }
 }
 
 //#endregion
@@ -203,106 +265,5 @@ function trySaveJSON() {
     anchor.click();
     anchor.remove();
 }
-
-//#endregion
-
-//#region Helpers
-
-/**
- * Create (and append to config. table) a copy of a role config.
- * @param {string} role 
- * @param {object} flags
- * @param {boolean} flags.subrole 
- * @param {boolean} flags.copy
- */
-function getRoleConfig(role, flags) {
-
-    let isSubrole = false;
-    let isCopy = false;
-
-    if (flags) {
-        if (flags['subrole'])
-            isSubrole = flags['subrole'];
-        if (flags['copy'])
-            isCopy = flags['copy'];
-    }
-
-    let label = $('<label></label>')
-        .addClass('col-2')
-        .text(role.Caption);
-
-    let col_selector = $(role.getColumnSelector("Select Column"))
-        .addClass(['col-3', 'custom-select']);
-
-    let type_selector = $(role.getTypeSelector())
-        .addClass(['col-2', 'custom-select']);
-
-    let format_input = $(role.getFormatInput("Role Format"))
-        .addClass(['col-3', 'custom-input'])
-
-    let disable_btn;
-
-    if (role.Optional)
-        disable_btn = $('<button></button>')
-            .addClass(['col-1', 'btn', 'btn-light', 'align-self-center'])
-            .text('Off')
-            .on('click', function () {
-                role_config_wrapper.toggleClass('disabled');
-                if (role.Disabled) {
-                    $(this).text('Off');
-                    role.Disabled = false;
-                }
-                else {
-                    $(this).text('On');
-                    role.Disabled = true;
-                }
-            });
-    else if (isCopy)
-        disable_btn = $(role.getCopyDeleteButton(() => { }))
-            .addClass(['col-1', 'btn', 'btn-light', 'align-self-center'])
-            .text('Del');
-    else
-        disable_btn = $('<div></div>')
-            .addClass('col-1');
-
-    let repeat_btn = !role.Repeatable ?
-        $('<div></div>')
-            .addClass('col-1') :
-        $(role.getRepeatButton((copy) => appendCopyConfig(role)))
-            .addClass(['col-1', 'btn', 'btn-light'])
-            .text('Copy')
-
-    let role_config_wrapper = $('<div></div>')
-        .addClass(['row', isSubrole ? 'subrole' : 'role'])
-        .on('change', '*', function () { manager.draw(false) })
-        .on('click', 'button', function () { manager.draw(false) });
-
-    return role_config_wrapper
-        .append(label)
-        .append(col_selector)
-        .append(type_selector)
-        .append(format_input)
-        .append(disable_btn)
-        .append(repeat_btn);
-
-}
-
-/**
- * Append role copy to configuration table
- * @param {string} role 
- */
- function appendCopyConfig(role) {
-    let opt_holder = $('#role-wrapper');
-    opt_holder.append(getRoleConfig(role, { copy: true }));
-    $.each(role.Subroles, function (_, subrole) {
-        opt_holder.append(getRoleConfig(subrole, { subrole: true }));
-    })
-}
-
-//#endregion
-
-//#region Autorecognizer
-
-
 
 //#endregion

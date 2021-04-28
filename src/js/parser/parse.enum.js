@@ -1,34 +1,29 @@
+import { Enum as EnumUsetype } from './usetype.js';
+import * as arr from '../utils/array.js';
+
+/**
+ * Try to recognize possible formats of string-represented enums in source array.
+ * @param {string[]} source strings upon which format should be determined
+ * @returns {EnumUsetype[]} possible enum formats of specified strings
+ */
 export function recognizeEnumset(source) {
 	if (!source || source.length === 0)
 		return [];
 
-	
-	var counts = {};
-	var max = 0;
-	var maxval = "";
-	for (var i = 0; i < source.length; i++) {
-		let temp = counts[source[i]] || 0;
-		counts[source[i]] = 1 + temp;
-		if (max < temp) {
-			maxval = source[i];
-			max = temp;
-		}
+	let counts = arr.count(source);
+	counts = arr.toKvp(counts);
+	counts = counts.sort((a,b) => a[1] - b[1]);
+
+	// Check if found set is enum-like
+	let reductionFactor = source.length / counts.length;
+	if (reductionFactor > 0.5 && counts[0][1] >= 2) {
+		return [new EnumUsetype({domain:counts.map(a=>a[0])})];
 	}
 
-	var enumlike = 0;
-	for (var i = 0; i < source.length; i++) {
-		if (counts[source[i]] > 2)
-			enumlike++;
+	// otherwise check for NOVAL
+	if (counts[counts.length - 1][1] / counts[counts.length - 2][1] > 2) {
+		return [new EnumUsetype({domain:counts[counts.length - 1][0]})];
 	}
 
-	// how much "binned" the data is
-	var reductionFactor = 1 - Object.keys(counts).length / source.length;
-
-
-
-	if (enumlike && reductionFactor > 0.5)
-		return Object.keys(counts);
-	if (!enumlike && reductionFactor > 0.2)
-		return [maxval];
 	return [];
 }

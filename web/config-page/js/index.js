@@ -1,7 +1,7 @@
-import { Chart, SourceData, Init as CoreInit } from '/lib/js/core/Main.js';
-import { Template } from '/lib/js/core/Template.js';
-import { Init as UiInit } from '/lib/js/uigen/Main.js';
-import '/lib/js/debug.js';
+import { Chart, SourceData, Init as CoreInit } from '/src/js/core/Main.js';
+import { Template } from '/src/js/core/Template.js';
+import { Init as UiInit } from '/src/js/uigen/Main.js';
+import '/src/js/debug.js';
 
 ///////// This page only works with a single instance.
 ///////// Multiple instance chart workers are on their way.

@@ -17,7 +17,7 @@ document.warn = message => showPopup(message, 1);
 document.err = message => showPopup(message, 2);
 
 // CONSOLE.LOG EXTENSION
-if (true) {
+if (false) {
     let warn = console.warn;
     let error = console.error;
     let err = console.err;

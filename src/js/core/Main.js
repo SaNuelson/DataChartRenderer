@@ -11,7 +11,7 @@ import { SourceData } from './SourceData.js';
  * @param {function(): void} opts.onGoogleChartsLoaded
  */
 export function Init(opts) {
-    fetch("/dist/res/graph_types.json")
+    fetch("/src/json/graph_types.json")
         .then((data) => data.json())
         .then((json) => {
             Template.loadChartTemplates(json);

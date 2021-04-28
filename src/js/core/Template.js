@@ -77,6 +77,7 @@ export const Template = {
 
     /**
      * Contains a chart template of specified name
+     * @param {string} name of the chart template.
      * @returns {boolean}
      */
     hasChart(name) { return templateData["ChartTypes"].some(template => template.name === name)},
@@ -89,6 +90,8 @@ export const Template = {
 
     /**
      * Get role of a specific chart by name.
+     * @param {string} chartName name of the chart template
+     * @param {string} roleName name of the role template
      * @returns {ValueRoleTemplate}
      */
     chartRole(chartName, roleName) { return templateData["ChartTypes"].find(template => template.name === chartName)["roles"].find(role => role.name === roleName)},
@@ -108,6 +111,7 @@ export const Template = {
 
     /**
      * Contains a role template of specified name
+     * @param {string} name of the role template
      * @returns {boolean}
      */
     hasRole(name) { return templateData["RoleDetails"].some(template => template.name === name)},

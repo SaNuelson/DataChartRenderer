@@ -1,50 +1,79 @@
-import * as XRegExp from 'xregexp';
-
-window.xreg = XRegExp;
-
-/** 
- * Use str.match() to get a string split into groups of numeric, alpha characters and others
- * @example 
- * console.log("abc123...4,d-5".match(allCutPattern))
- * // ["abc", "123", "...", "4", ",", "d", "-", "5"]
+/**
+ * @file Handles RegExp patterns and pattern generators.
+ * As this plug-in should be able to handle more than just English datasets,
+ * regexes have to be written down with multi-lang support.
  */
-const allCutPattern = /((?:[A-Za-z]+)|(?:[0-9]+)|(?:[^a-zA-Z0-9]+))/g;
 
-/** 
- * Use str.match() to get a string split into groups of numeric and alpha characters. Other characters are ignored.
- * @example
- * console.log("abc123...4,d-5".match(allCutPattern))
- * // ["abc", "123", "4", "d", "5"]
- */
-const alphanumCutPattern = /((?:[A-Za-z]+)|(?:[0-9]+))/g;
+const patternBits = {
+    letters: "\\p{L}",
+    marks: "\\p{M}",
+    punctuations: "\\p{P}",
+    symbols: "\\p{S}",
+    numbers: "\\p{N}",
+    separators: "\\p{Z}",
+    wspaces: "\\s"
+}
 
 /**
- * 
- */
-const numCutPattern = /((?:[0-9]+)|(?:[^0-9]+))/g;
-
-/**
- * Get Regex pattern that can be used with str.match() to cut a string into chunks of different kinds.
- * @param {object} params
- * @param {boolean} params.alpha match groups of letters, default false
- * @param {boolean} params.numeric match groups of letters, default false
- * @param {boolean} params.alphanum match groups of alphanumeric characters. Overrides params.alpha and params.numeric, default false
- * @param {boolean} params.punct match groups of punctuation characters, default false
- * @param {boolean} params.wspace
- * @param {boolean} params.other match additional groups of any uncaught characters, default true
+ * Generate a multi-language compatible Unicode regex pattern.
+ * When used on a string, this pattern splits it on boundaries of character types.
+ * @param {object} args
+ * @param {boolean} args.letters match letter groups (including marks)
+ * @param {boolean} args.punctuations match punctuation groups (parentheses, dashes, dots, commas...)
+ * @param {boolean} args.symbols match symbol groups (currencies, relations, borders...)
+ * @param {boolean} args.numbers match number groups
+ * @param {boolean} args.separators match separator groups (mostly whitespace)
+ * @param {boolean} args.rest match any characters left out into merged groups
+ * @param {boolean} args.matchall True - no global flag, named groups, use with .matchAll,
+ * False - global flag, groups can't be named, use with .match
+ * @returns {RegExpStringIterator|String[]} If matchall is true, returns regex result iterator,
+ * else returns simple array of matches.
  * @example
- * console.log("abc123.def".match(getCutPattern({alpha = true, numeric = true})))
- * // []
+ * let str = "Jake wrote 'g3t šr3kt' 1.000.000 times"
+ * str.match(getCutPattern({letters = true, numbers = true, matchall = false}));
+ * // ["Jake", "wrote", "g", "3", "t", "šr", "3", "kt", "1", "000", "000"]
  */
 export const getCutPattern = function({
-    alpha = true, 
-    numeric = true, 
-    alnum = false,
-    punct = false, 
-    wspace = false,
-    other = true} = {}) {
-        const bitAlpha = "([A-Za-zÀ-ÖØ-öø-ÿ]+)";
-        const bitNum = "(\d+)";
-        const bitAlnum = "([A-Za-zÀ-ÖØ-öø-ÿ0-9]+)";
-        const bitWspace = "(\s+)";
+    letters = false,
+    punctuations = false,
+    symbols = false,
+    numbers = false,
+    separators = false,
+    rest = false,
+    matchall = true
+}) {
+    let used = [];
+
+    if (letters)
+        used.push({name:"letters", val:[patternBits.letters, patternBits.marks]});
+    
+    if (punctuations)
+        used.push({name:"punctuations", val:[patternBits.punctuations]});
+
+    if (symbols)
+        used.push({name:"symbols", val:[patternBits.symbols]});
+
+    if (numbers)
+        used.push({name:"numbers", val:[patternBits.numbers]});
+
+    if (separators)
+        used.push({name:"separators", val:[patternBits.separators, patternBits.wspaces]});
+
+    if (rest && used.length > 0) {
+        let nonother = ["^", ...used.map(o => o.val)].flat();
+        used.push({name:"rest", val:nonother});
     }
+    else if (used.length == 0)
+        used.push({name:"rest", val:["."]});
+
+    const toReg = (bit) => {
+        let arr = ["("];
+        if (matchall) arr.push("?<", bit.name, ">");
+        if (bit.val.length > 1) arr.push("[", ...bit.val, "]+)");
+        else arr.push(bit.val[0], "+)");
+        return arr.join("");
+    }
+
+    let regstr = used.map(toReg).join("|");
+    return new RegExp(regstr, "gus");
+}

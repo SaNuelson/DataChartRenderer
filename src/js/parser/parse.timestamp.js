@@ -1,5 +1,6 @@
 import * as logic from '../utils/logic.js';
 import { conditionalCartesian } from '../utils/utils.js';
+import { Timestamp } from './usetype.js';
 /**
  * @file Handles parsing of types *Date*, *DateTime* and *TimeOfDay*.
  * 
@@ -22,7 +23,7 @@ export function recognizeTimestamp(source, params) {
 	let formats = recognizeTimestampFormat(source, params);
 	let categories = recognizeTimestampKinds(formats);
 	let readableFormats = formats.map(f => formatToString(f));
-	return [categories, readableFormats];
+	return readableFormats.map(format => new Timestamp(format)); // [categories, readableFormats];
 }
 
 
@@ -310,7 +311,7 @@ function recognizeTimestampKinds(formats) {
 		else if (isd)
 			kinds.push("date");
 		else if (ist)
-			kinds.push("time");
+			kinds.push("timeofday");
 	}
 	
 	return kinds;

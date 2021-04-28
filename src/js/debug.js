@@ -9,6 +9,7 @@ import * as ParseExperimentModule from './parser/parse.experiment.js';
 import * as ParseMainModule from './parser/parse.main.js';
 import * as ParseNumModule from './parser/parse.num.js';
 import * as ParseTimestampModule from './parser/parse.timestamp.js';
+import * as Usetype from './parser/usetype.js';
 
 import * as UigenMainModule from './uigen/Main.js';
 
@@ -29,14 +30,14 @@ window.debug = {
         experiment: ParseExperimentModule,
         main: ParseMainModule,
         num: ParseNumModule,
-        timestamp: ParseTimestampModule
+        timestamp: ParseTimestampModule,
+        usetype: Usetype
     },
     uigen: {
         main: UigenMainModule
     },
     utils: {
         events: EventModule,
-        logic: LogicModule,
-        utils: UtilsModule
+        logic: LogicModule
     }
 }
