@@ -1,0 +1,42 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Test Page</title>
+</head>
+<body>
+    <p>Below input your data file and JSON config file you've set up in config-page.</p>
+    <label for="fileInput">CSV Source File: </label>
+    <input id="fileInput" type="file">
+    <label for="configInput">Corresponding JSON Config File: </label>
+    <input id="configInput" type="file">
+    <button id="drawChartBtn">Draw Chart</button>
+    <div id="chartDiv" style="width:100vw;height:80vh"></div>
+
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    <script type="text/javascript" src="../include/js/core/Min.js"></script>
+    <script>
+        let chart = new Chart();
+
+        $(()=>{
+            chart.setContainer('chartDiv');
+
+            $('#fileInput').change(function() {
+                let file = this.files[0];
+                let fr = new FileReader();
+                fr.onload = e => chart.loadDataFromRaw(e.target.result);
+                fr.readAsText(file);
+            });
+            $('#configInput').change(function(){
+                let file = this.files[0];
+                let fr = new FileReader();
+                fr.onload = e => chart.loadConfigData(JSON.parse(e.target.result));
+                fr.readAsText(file);
+            });
+            $('#drawChartBtn').click(function() { chart.draw(true) });
+        })
+    </script>
+</body>
+</html>
