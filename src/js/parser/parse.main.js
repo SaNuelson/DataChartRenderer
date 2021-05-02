@@ -39,32 +39,41 @@ export function tryParse(source, type, format) {
  */
 export function determineType(data) {
 	let debug = window.app.manager._debugArgs.verbose
-	if (debug)
+	if (debug) {
 		console.groupCollapsed(`detemineType(${data.length > 0 ? data[0] + "..." : []})`);
+	}
 
 	let args = {}
 
 	let enumUsetypes = recognizeEnumset(data, args);
-	if (debug)
-		console.log("detemineEnumset = ", enumUsetypes);
-
-	if (enumUsetypes.length > 0 && enumUsetypes[0].domain.length === 1) {
-		args.noval = enumUsetypes[0].domain[0];
-		EnumUsetypeArgs = [];
+	if (debug) {
+		if (enumUsetypes.length === 1 && enumUsetypes[0].size() === 1) {
+			console.log("NOVAL determined: ", enumUsetypes[0].domain[0]);
+			args.noval = enumUsetypes[0].domain[0];
+			enumUsetypes = [];
+		}
+		else {
+			console.log("EnumUsetypes determined: ", enumUsetypes);
+		}
 	}
 
 	let numUsetypes = recognizeNum(data, args);
-	if (debug)
-		console.log("recognizeNum = ", numUsetypes);
+	if (debug) {
+		console.log("NumberUsetypes determined: ", numUsetypes);
+	}
 
 	let timestampUsetypes = recognizeTimestamp(data, args);
-	if (debug)
-		console.log("timestampUsetypes = ", timestampUsetypes);
+	if (debug) {
+		console.log("TimestampUsetypes determined: ", timestampUsetypes);
+	}
 
-	if (debug) console.groupEnd();
+	if (debug) {
+		console.groupEnd();
+	}
 
 	let rets = [].concat(enumUsetypes, numUsetypes, timestampUsetypes);
-	if (rets.length === 0)
+	if (rets.length === 0) {
 		return [new StringUsetype()];
+	}
 	return rets;
 }

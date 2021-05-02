@@ -128,7 +128,9 @@ function loadDataRecognition() {
     }
     table.append(tbody);
 
-    $('#recog-div').append(table);
+    $('#recog-div')
+        .empty()
+        .append(table);
 }
 
 // TODO definitely gotta move this elsewhere
@@ -233,7 +235,7 @@ function fileSelectedHandler(input, type) {
     console.log("Selected new source file: ", input.value);
     let reader = new FileReader();
     reader.onload = function (fileLoadedEvent) {
-        document.log("File successfully read.");
+        console.log("File successfully read.");
         let text = fileLoadedEvent.target.result;
         if (type == 'data') {
             manager.loadDataFromRaw(text);

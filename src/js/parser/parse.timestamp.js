@@ -101,7 +101,7 @@ function recognizeTimestampFormat(source, params) {
 	};
 	let formats = conditionalCartesian(condCartArgs, yearIdxs, monthIdxs, dayIdxs, hourIdxs, minIdxs, secIdxs, milsecIdxs);
 
-	console.log(formats);
+	console.log("recognizeTimestampFormats - initial conditional cartesian: ", formats);
 
 	let maxErrs = Math.max(5, source.length / 1000);
 
@@ -134,6 +134,7 @@ function recognizeTimestampFormat(source, params) {
 
 		if(formatBatch.length > 0)
 		{
+			console.log("recognizeTimestampFormats - successful format batch: ", formatBatch);
 			return formatBatch;
 		}
 	}

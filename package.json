@@ -5,8 +5,7 @@
   "description": "npm augmented version of DCR",
   "main": "./lib/core/Main.js",
   "scripts": {
-    "test": "node --experimental-modules --trace-warnings --experimental-vm-modules node_modules/jest/bin/jest.js --bail",
-    "test-log": "node --experimental-modules --trace-warnings --experimental-vm-modules node_modules/jest/bin/jest.js >> log.txt 2>> err.txt",
+    "test": "node --experimental-modules --experimental-vm-modules node_modules/jest/bin/jest.js",
     "jest:clearcache": "jest --clear-cache"
   },
   "author": "Black Warden",

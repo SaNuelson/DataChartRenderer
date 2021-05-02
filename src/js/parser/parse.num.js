@@ -7,10 +7,14 @@ import { indexesOf } from '../utils/utils.js';
  * @param {string[]} source strings upon which format should be determined
  * @returns {NumUsetype[]} possible number formats of specified strings
  */
-export function recognizeNum(source) {
+export function recognizeNum(source, args) {
 	// TODO
 	const extractorChunkSize = 5;
 	const usetypePrecision = .95;
+
+	if (args.noval) {
+		var noval = args.noval;
+	}
 
 	if (!source || source.length === 0) {
 		return [];
