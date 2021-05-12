@@ -1,9 +1,9 @@
+import '/src/js/debug.js';
 // TODO: Absolute paths and all from Main.js
 import { Init as CoreInit } from '../../../src/js/core/Main.js';
 import { Chart } from '../../../src/js/core/Chart.js';
 import { Template } from '../../../src/js/core/Template.js';
 import * as Utils from '../../../src/js/utils/utils.js';
-import '/src/js/debug.js';
 import { populateHeader, populateData } from '../../../src/nmjs/ui.js';
 
 ///////// This page only works with a single instance.
@@ -31,7 +31,8 @@ $(() => {
     // LOAD local data files
     $("#source-file-input").on('change', function () { fileSelectedHandler(this, 'data'); })
     $('#config-file-input').on('change', function () { fileSelectedHandler(this, 'config'); })
-    $("#load-local-file-btn").on('click', () => $('#source-file-input').click());
+    $("#load-local-file-btn").on('click', () => loadFileLocalHandler());
+    $('#online-file-load-button').on('click', () => loadFileByUrlHandler());
 
     // LOAD DEMO data files
     $('#load-demo-file-btn').on('click', () => manager.loadDataFromUrl('../res/data_type_debug.csv'));
@@ -67,6 +68,16 @@ function sourceChangeHandler() {
     loadDataPreview();
     loadDataRecognition();
     loadChartMapping();
+}
+
+function loadFileLocalHandler() {
+    $('#source-file-input').trigger('click');
+}
+
+// TODO: Invalid URL feedback && URL checking
+function loadFileByUrlHandler() {
+    let url = $('#online-file-load-input')[0].value;
+    manager.loadDataFromUrl(url);
 }
 
 /**

@@ -272,10 +272,10 @@ export class SourceData {
             for (let j = 0; j < cols.length; j++) {
                 let parsed = this._usetypes[cols[j]][0].deformat(this._data[i][cols[j]]);
                 if (!parsed && parsed !== 0) {
-                    throw "In column " + this._head[cols[j]] +
-                    " Could not parse value " + this._data[i][cols[j]] +
-                    " into type " + types[j] +
-                    " using format " + formats[j];
+                    console.error("In column ", this._head[cols[j]],
+                    " Could not parse value ", this._data[i][cols[j]],
+                    " into type ", this._usetypes[cols[j]][0]);
+                    return null;
                 } else {
                     parsed_line.push(parsed);
                 }

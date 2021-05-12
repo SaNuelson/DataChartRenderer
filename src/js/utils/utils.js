@@ -177,3 +177,16 @@ export const indexesOf = function (domain, seeked, transform){
         a.push(i);
     return a;
 }
+
+/**
+ * Return val clamped between min and max.
+ * @param {*} val the value to clamp between min and max.
+ * @param {*} min lower bound (returned if val is smaller)
+ * @param {*} max upper bound (returned if val is greater)
+ * @returns {*} clamped value
+ */
+export const clamp = function (val, min, max) {
+    if (val < min) return min;
+    if (max < val) return max;
+    return val;
+}
