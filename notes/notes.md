@@ -70,3 +70,35 @@ TODO & Ideas
 
 Several of current Chart templates use the same basis.
 Maybe instead, let's keep only the bases as the core and add 'presets' key with array of possible configurations That would also give space for user to inject their custom configs as well.
+
+Any parser pseudocode
+===
+```js
+
+function recognizeUsetypes(data):
+
+  initialSamples = data.take(INIT_BATCH_SIZE)
+  otherSamples = data.skip(INIT_BATCH_SIZE)
+
+  usetypes = recognizeInitialUsetypes(initialSamples)
+
+  for (sample of otherSamples):
+    
+    for (usetype of usetypes):
+
+      test = usetype.deformat(sample)
+
+      if (typeof test === usetype.underlyingType):
+        usetype.success++
+
+  for (usetype of usetypes):
+
+    if usetype.success < requiredPrecision * data.length:
+      usetypes.remove(usetype)
+
+    else
+      usetype.confidence *= ustype.success / data.length
+
+  return usetypes
+
+```
