@@ -2,6 +2,20 @@ import { Number as NumUsetype } from './usetype.js';
 import { getCutPattern } from '../utils/patterns.js';
 import { indexesOf } from '../utils/utils.js';
 
+let verbose = (window.verbose ?? {}).number;
+console.log("parse.num.js verbosity = ", verbose);
+if (verbose) {
+	var log = console.log;
+	var warn = console.warn;
+	var error = console.error;
+}
+else {
+	var log = () => {};
+	var warn = () => {};
+	var error = () => {};
+}
+
+
 /**
  * Try to recognize possible formats of string-represented numbers in source array.
  * @param {string[]} source strings upon which format should be determined
@@ -20,7 +34,8 @@ export function recognizeNum(source, args) {
 		return [];
 	}
 
-	let nuts = extractPossibleFormats(source.slice(0,extractorChunkSize));
+	let nuts = extractPossibleFormats(source.slice(0, extractorChunkSize));
+	log("extractedNumUsetypes", nuts);
 	let matches = nuts.map(()=>0);
 	let disabled = 0;
 	for (let i = 0, il = source.length; i < il; i++) {
@@ -34,6 +49,7 @@ export function recognizeNum(source, args) {
 					if (nuts[j].min > num) nuts[j].min = num;
 				}
 				else if (matches[j] < usetypePrecision * (i + 1)) {
+					console.log("Matching", nuts[j], "against", token, "failed, disabling potential format.");
 					nuts[j].disabled = true;
 					disabled++;
 				}
@@ -42,6 +58,7 @@ export function recognizeNum(source, args) {
 		if (disabled === nuts.length)
 			return [];
 	}
+	nuts.forEach((nut, idx) => nut.confidence = matches[idx] / source.length)
 	nuts = nuts.filter(nut => !nut.disabled);
 
 	return nuts;
@@ -52,12 +69,14 @@ export function recognizeNum(source, args) {
  * @returns {NumUsetype[]} possible numutypes
  */
 function extractPossibleFormats(source) {
-	const log = (line, msg) => {
-		console.warn(`Number Recognizer (CSV line ${line} = ${source[line]}): ${msg}`);
+	const exlog = (line, msg) => {
+		// warn(`Number Recognizer (CSV line ${line} = ${source[line]}): ${msg}`);
 	}
 
 	let args = {};
 	const possibleDels = ['.', ',', ' '];
+	const potentialThousandSeparators = ['.',',',' '];
+	const potentialDecimalSeparators = ['.',','];
 	const cutPattern = getCutPattern({
 		numbers: true,
 		rest: true
@@ -101,7 +120,7 @@ function extractPossibleFormats(source) {
 		let split = [...source[i].trim().matchAll(cutPattern)].map(match => match.groups);
 
 		if (split.every(s => !s.numbers)) {
-			log(i, "String contains no digits");
+			exlog(i, "String contains no digits");
 			continue;
 		}
 
@@ -118,7 +137,6 @@ function extractPossibleFormats(source) {
 		}
 
 		let delims = split.filter(token => token.rest).map(token => token.rest);
-		console.log(source[i], split, delims);
 
 		// FORMAT
 		// N - number sequence
@@ -153,12 +171,12 @@ function extractPossibleFormats(source) {
 			let delimkeys = Object.keys(counts);
 
 			if (delimkeys.length !== 2) {
-				log(i, `Too many unique delimiters ${delimkeys}`);
+				exlog(i, `Too many unique delimiters ${delimkeys}`);
 				continue;
 			}
 
 			if (counts[delimkeys[0]] > 1 && counts[delimkeys[1]] > 1) {
-				log(i, `No delimiter ${delimkeys} recognized as decimal`);
+				exlog(i, `No delimiter ${delimkeys} recognized as decimal`);
 				continue;
 			}
 
@@ -166,7 +184,7 @@ function extractPossibleFormats(source) {
 			//  (N)($Dx)(N3)($Dy)(N)
 			if (counts[delimkeys[0]] === 1 && counts[delimkeys[1]] === 1) {
 				if (split[2].numbers.length !== 3) {
-					log(i, `Between delimiters ${delimkeys}, there should be 3 digits`);
+					exlog(i, `Between delimiters ${delimkeys}, there should be 3 digits`);
 					continue;
 				}
 				memory.addValid();
@@ -180,13 +198,13 @@ function extractPossibleFormats(source) {
 				// all non-border digit sequences have to be of length 3
 				for (let j = 2, lnidx = split.length - 2; j < lnidx; j += 2) {
 					if (split[j].numbers.length !== 3) {
-						log(i, `Number sequence ${split[j].numbers} has invalid length`);
+						exlog(i, `Number sequence ${split[j].numbers} has invalid length`);
 						continue;
 					}
 				}
 				// first digit sequence hasto be at most 3
 				if (split[0].numbers.length > 3) {
-					log(i, `First digit sequence is longer than 3`);
+					exlog(i, `First digit sequence is longer than 3`);
 					continue;
 				}
 
@@ -212,7 +230,7 @@ function extractPossibleFormats(source) {
 				else {
 					// last sequence can be longer (if there are no mili-delimiters)
 					if (split[split.length - 1].numbers.length > 3 && split[split.length - 2].rest !== dd) {
-						log(i, `Last digit sequence is longer than 3 while using mili-delimiter`);
+						exlog(i, `Last digit sequence is longer than 3 while using mili-delimiter`);
 						continue;
 					}
 
@@ -226,7 +244,7 @@ function extractPossibleFormats(source) {
 	let numutypes = [];
 	for (let delimset in memory.delims) {
 		let delims = delimset.split('|');
-		console.log(delims, delims[1] === '');
+		log(delims, delims[1] === '');
 		numutypes.push(new NumUsetype({
 			prefix: Object.keys(memory.prefixes),
 			suffix: Object.keys(memory.suffixes),
@@ -251,3 +269,5 @@ export function parseNum(source,format) {
 		return source.map(format.deformat);
 	return format.deformat(source);
 }
+
+export const recognizeNumbers = extractPossibleFormats;

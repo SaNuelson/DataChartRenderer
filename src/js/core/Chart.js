@@ -13,7 +13,7 @@ export class Chart {
 
     _debugArgs = {};
     constructor (opts) {
-        this._debugArgs = opts;
+        this.verbose = (opts ?? {}).verbose;
     }
 
     //#region Properties

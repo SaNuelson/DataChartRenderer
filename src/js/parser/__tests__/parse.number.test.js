@@ -52,15 +52,3 @@ describe('Number Usetype toString', () => {
         expect(nu.toString()).toBe("{[p-5,555.55550s][p77,777.77700s]}")
     })
 });
-
-describe('NumberRecognizer recognizes', () => {
-    var x = 5;
-    
-    test("Async x should be 10 now", () => {
-        expect(x).not.toBe(5);
-    })
-
-    test("Async shouldn't be 5 now, let's fail this one", () => {
-        expect(x).toBe(5);
-    })
-})

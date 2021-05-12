@@ -1,6 +1,22 @@
 import * as logic from '../utils/logic.js';
-import { conditionalCartesian } from '../utils/utils.js';
+import { clamp, conditionalCartesian } from '../utils/utils.js';
 import { Timestamp } from './usetype.js';
+import { getCutPattern } from '../utils/patterns.js';
+
+let verbose = (window.verbose ?? {}).time;
+console.log("parse.timestamp.js verbosity = ", verbose);
+if (verbose) {
+	var log = console.log;
+	var warn = console.warn;
+	var error = console.error;
+}
+else {
+	var log = () => { };
+	var warn = () => { };
+	var error = () => { };
+}
+
+
 /**
  * @file Handles parsing of types *Date*, *DateTime* and *TimeOfDay*.
  * 
@@ -25,7 +41,6 @@ export function recognizeTimestamp(source, params) {
 	let readableFormats = formats.map(f => formatToString(f));
 	return readableFormats.map(format => new Timestamp(format)); // [categories, readableFormats];
 }
-
 
 /**
  * @param {string[]} source Source string array holding data to be recognized.
@@ -84,24 +99,24 @@ function recognizeTimestampFormat(source, params) {
 		logic.ruleImplies(exist('q'), exist('s')),
 		logic.ruleImplies(exist('m'), exist('h')),
 		logic.ruleImplies(exist('s', 'h'), exist('m')),
-		logic.ruleImplies(exist('s','q'), grouped('s','q')),
-		logic.ruleImplies(exist('m','s'), grouped('m','s')),
-		logic.ruleImplies(exist('h','m'), grouped('h','m')),
-		logic.ruleImplies(exist('D','M'), grouped('D','M')),
-		logic.ruleImplies(exist('D','M','Y'), logic.ruleAny(
-			grouped('D','Y'), // ...MDY...
-			grouped('M','Y') // ...DMY...
+		logic.ruleImplies(exist('s', 'q'), grouped('s', 'q')),
+		logic.ruleImplies(exist('m', 's'), grouped('m', 's')),
+		logic.ruleImplies(exist('h', 'm'), grouped('h', 'm')),
+		logic.ruleImplies(exist('D', 'M'), grouped('D', 'M')),
+		logic.ruleImplies(exist('D', 'M', 'Y'), logic.ruleAny(
+			grouped('D', 'Y'), // ...MDY...
+			grouped('M', 'Y') // ...DMY...
 		)),
 		inclusive()
 	);
-	
+
 	let condCartArgs = {
-		sturdy:true, 
-		callback:filterCallback
+		sturdy: true,
+		callback: filterCallback
 	};
 	let formats = conditionalCartesian(condCartArgs, yearIdxs, monthIdxs, dayIdxs, hourIdxs, minIdxs, secIdxs, milsecIdxs);
 
-	console.log("recognizeTimestampFormats - initial conditional cartesian: ", formats);
+	log("recognizeTimestampFormats - initial conditional cartesian: ", formats);
 
 	let maxErrs = Math.max(5, source.length / 1000);
 
@@ -111,12 +126,12 @@ function recognizeTimestampFormat(source, params) {
 		let formatBatch = formats.filter(f => misses(f) === missThreshold);
 		let formatBatchErrs = formatBatch.map(x => 0);
 
-		if(formatBatch.length === 0) continue;
+		if (formatBatch.length === 0) continue;
 
 		for (let t = 1; t < source.length; t++) {
 
 			if (params.noval && source[t] === params.noval)
-				continue;	
+				continue;
 
 			let split = source[t].match(alphanumCutPattern);
 			let tokens = split.map(parseSpecifier);
@@ -132,9 +147,8 @@ function recognizeTimestampFormat(source, params) {
 			formatBatch = formatBatch.filter((_, idx) => formatBatchErrs[idx] < maxErrs);
 		}
 
-		if(formatBatch.length > 0)
-		{
-			console.log("recognizeTimestampFormats - successful format batch: ", formatBatch);
+		if (formatBatch.length > 0) {
+			log("recognizeTimestampFormats - successful format batch: ", formatBatch);
 			return formatBatch;
 		}
 	}
@@ -209,7 +223,7 @@ var DayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturda
 var MonthDays = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
 var MonthAbbrevs = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Sep', 'Oct', 'Nov', 'Dec']
 var MonthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'September', 'October', 'November', 'December']
-var DateFormatChars = ['Y','M','D','h','m','s','q'];
+var DateFormatChars = ['Y', 'M', 'D', 'h', 'm', 's', 'q'];
 
 const allCutPattern = /((?:[A-Za-z]+)|(?:[0-9]+)|(?:[^a-zA-Z0-9]*))/g;
 const alphanumCutPattern = /((?:[A-Za-z]+)|(?:[0-9]+))/g;
@@ -224,18 +238,18 @@ const numCutPattern = /((?:[0-9]+)|(?:[^0-9]+))/g;
 /** Generate function that tells if format 'f' contains timestamp parts '...is' */
 const exist = (...is) => (f => is.every(i => f[DateFormatChars.indexOf(i)] >= 0));
 /** Generate function that tells if timestamp parts '...is' appear in specified order in format 'f' */
-const inorder = (...is) => (f => is.map(i => f[DateFormatChars.indexOf(i)]).every((_,p,is) => !is[p + 1] || is[p] < is[p + 1]));
+const inorder = (...is) => (f => is.map(i => f[DateFormatChars.indexOf(i)]).every((_, p, is) => !is[p + 1] || is[p] < is[p + 1]));
 /** Generate function that tells if timestamp parts '...is' are together AND in specified order in format 'f' */
 const consecutives = (...is) => logic.ruleBoth(inorder(...is), grouped(...is));
 /** Generate function that tells if timestamp parts '...is' are together in format 'f' */
-const grouped = (...is) => function(f) {
+const grouped = (...is) => function (f) {
 	let fis = is.map(i => f[DateFormatChars.indexOf(i)]);
 	let [bot, top] = [Math.min(...fis), Math.max(...fis)];
 	let debug = f.map(ff => fis.includes(ff) ? 1 : ff <= bot ? 2 : ff >= top ? 3 : 0);
 	return f.every(ff => fis.includes(ff) | ff <= bot | ff >= top);
 }
 /** Generate function that tells if format 'f' includes all parts within defined parts (eg. format with Years and Minutes needs Month, Days and Hours as well) */
-const inclusive = () => function(f) {
+const inclusive = () => function (f) {
 	let wasT = false;
 	let wasF = false;
 	for (let i = 0; i < f.length; i++) {
@@ -252,15 +266,15 @@ const inclusive = () => function(f) {
 
 const upperBounds = [9999, 12, 31, 23, 59, 59, 999];
 const lowerBounds = [1970, 1, 1, 0, 0, 0, 0];
-const validateTimestampBounds = (tokens, format) => format.every((f,i) => f < 0 || lowerBounds[i] <= tokens[f] && tokens[f] <= upperBounds[i])
+const validateTimestampBounds = (tokens, format) => format.every((f, i) => f < 0 || lowerBounds[i] <= tokens[f] && tokens[f] <= upperBounds[i])
 
 const validateTimestampFormat = (tokens, format) => (format[0] < 0 || 1970 <= tokens[format[0]] && tokens[format[0]] <= 9999)
-													&& (format[1] < 0 || (1 <= tokens[format[1]] && tokens[format[1]] <= 12))
-													&& (format[2] < 0 || (1 <= tokens[format[2]] && tokens[format[2]] <= 31))
-													&& (format[3] < 0 || (0 <= tokens[format[3]] && tokens[format[3]] <= 23))
-													&& (format[4] < 0 || (0 <= tokens[format[4]] && tokens[format[4]] <= 59))
-													&& (format[5] < 0 || (0 <= tokens[format[5]] && tokens[format[5]] <= 59))
-													&& (format[6] < 0 || (0 <= tokens[format[6]] && tokens[format[6]] <= 999));
+	&& (format[1] < 0 || (1 <= tokens[format[1]] && tokens[format[1]] <= 12))
+	&& (format[2] < 0 || (1 <= tokens[format[2]] && tokens[format[2]] <= 31))
+	&& (format[3] < 0 || (0 <= tokens[format[3]] && tokens[format[3]] <= 23))
+	&& (format[4] < 0 || (0 <= tokens[format[4]] && tokens[format[4]] <= 59))
+	&& (format[5] < 0 || (0 <= tokens[format[5]] && tokens[format[5]] <= 59))
+	&& (format[6] < 0 || (0 <= tokens[format[6]] && tokens[format[6]] <= 999));
 
 /**
  * Parse string as a possible datetime specified (account for it being a number, month abbrev, month name, day name...)
@@ -314,19 +328,55 @@ function recognizeTimestampKinds(formats) {
 		else if (ist)
 			kinds.push("timeofday");
 	}
-	
+
 	return kinds;
 }
 
 function formatToString(format) {
-	let reformat = ["","","","","","",""];
-	if(format[0] >= 0)reformat[format[0]] = "Y";
-	if(format[1] >= 0)reformat[format[1]] = "M";
-	if(format[2] >= 0)reformat[format[2]] = "D";
-	if(format[3] >= 0)reformat[format[3]] = "h";
-	if(format[4] >= 0)reformat[format[4]] = "m";
-	if(format[5] >= 0)reformat[format[5]] = "s";
-	if(format[6] >= 0)reformat[format[6]] = "n";
+	let reformat = ["", "", "", "", "", "", ""];
+	if (format[0] >= 0) reformat[format[0]] = "Y";
+	if (format[1] >= 0) reformat[format[1]] = "M";
+	if (format[2] >= 0) reformat[format[2]] = "D";
+	if (format[3] >= 0) reformat[format[3]] = "h";
+	if (format[4] >= 0) reformat[format[4]] = "m";
+	if (format[5] >= 0) reformat[format[5]] = "s";
+	if (format[6] >= 0) reformat[format[6]] = "n";
 	return reformat.join("");
 }
 
+/*********\
+|   NEW   |
+\*********/
+
+const timestampCutPattern = getCutPattern({
+	letters: true,
+	numbers: true,
+	rest: true,
+	matchall: true
+})
+const usetypeRequiredPrecision = 0.99;
+const initialBatchSizeDefaultRatio = 0.1;
+const initialBatchSizeLowerBound = 10;
+const initialBatchSizeUpperBound = 100;
+const getInitialBatchSize = (len) => clamp(
+	len * initialBatchSizeDefaultRatio,
+	Math.min(len, initialBatchSizeLowerBound),
+	Math.min(len, initialBatchSizeUpperBound)
+)
+
+export function recognizeTimestampNew(source, params) {
+	let initBatchSize = getInitialBatchSize(source.length);
+	let initialBatch = source.slice(0, initBatchSize);
+	let restBatch = source.slice(initBatchSize);
+
+	let usetypes = extractPossibleTimestamps(initialBatch, params);
+	for (let sample of restBatch) {
+
+	}
+}
+
+function extractPossibleTimstamps(source, params) {
+
+}
+
+export const recognizeTimestamps = recognizeTimestampFormat;

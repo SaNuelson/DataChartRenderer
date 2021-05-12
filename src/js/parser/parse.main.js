@@ -4,6 +4,20 @@ import { parseTimestamp, recognizeTimestamp } from './parse.timestamp.js';
 import { recognizeEnumset } from './parse.enum.js';
 import { String as StringUsetype } from './usetype.js';
 
+let verbose = (window.verbose ?? {}).parser;
+console.log("parse.main.js verbosity = ", verbose);
+if (verbose) {
+	var log = console.log;
+	var warn = console.warn;
+	var error = console.error;
+}
+else {
+	var log = () => {};
+	var warn = () => {};
+	var error = () => {};
+}
+
+
 /**
  * Try to parse string into specified type using optional format.
  * @param {string} source string to be parsed
@@ -18,7 +32,7 @@ export function tryParse(source, type, format) {
 		case "number":
 			let num = parseNum(source.replace(/\s/g, ''));
 			if (isNaN(num)){
-				console.error("Unparsable number in tryParse - ", source);
+				error("Unparsable number in tryParse - ", source);
 				return null;
 			}
 			return num;
@@ -27,7 +41,7 @@ export function tryParse(source, type, format) {
 		case "timeofday":
 			return parseTimestamp(source, format);
 		default:
-			console.warn("Unknown type in tryParse - ", type);
+			warn("Unknown type in tryParse - ", type);
 			return null;
 	}
 }
@@ -48,23 +62,23 @@ export function determineType(data) {
 	let enumUsetypes = recognizeEnumset(data, args);
 	if (debug) {
 		if (enumUsetypes.length === 1 && enumUsetypes[0].size() === 1) {
-			console.log("NOVAL determined: ", enumUsetypes[0].domain[0]);
+			log("NOVAL determined: ", enumUsetypes[0].domain[0]);
 			args.noval = enumUsetypes[0].domain[0];
 			enumUsetypes = [];
 		}
 		else {
-			console.log("EnumUsetypes determined: ", enumUsetypes);
+			log("EnumUsetypes determined: ", enumUsetypes);
 		}
 	}
 
 	let numUsetypes = recognizeNum(data, args);
 	if (debug) {
-		console.log("NumberUsetypes determined: ", numUsetypes);
+		log("NumberUsetypes determined: ", numUsetypes);
 	}
 
 	let timestampUsetypes = recognizeTimestamp(data, args);
 	if (debug) {
-		console.log("TimestampUsetypes determined: ", timestampUsetypes);
+		log("TimestampUsetypes determined: ", timestampUsetypes);
 	}
 
 	if (debug) {

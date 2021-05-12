@@ -17,6 +17,7 @@ import * as TimestampMethods from '../parser/parse.timestamp.js';
  * for which it is essentially a glorified wrapper.
  * Some can also have secondary compatible types.
  * @interface
+ * @template T
  */
 export class Usetype {
 
@@ -24,7 +25,11 @@ export class Usetype {
 
     /** Transform value of underlying type to formatted string */
     format(x) { return x; }
-    /** Transform formatted string (conforming to this' format) to underlying type */
+    /** 
+     * Transform formatted string (conforming to this' format) to underlying type 
+     * @param {string} x to try to parse
+     * @returns {T|null} instance of underlying type if successful, null otherwise.
+     */
     deformat(x) { return x; }
 
     toString() { return "{undefined}"; }
@@ -260,24 +265,34 @@ export class Number extends Usetype {
      */
     deformat(string) {
         let stripped = string;
+
         this.prefix.forEach(p => {
             if (stripped.startsWith(p))
                 stripped = stripped.slice(p.length);
         });
+
         this.suffix.forEach(s => {
             if (stripped.endsWith(s))
-                stripped = stripped.slice(-s.length);
+                stripped = stripped.slice(0, -s.length);
         })
-        if (this.thousandSeparator)
-            stripped = stripped
-                .split(this.thousandSeparator)
-                .join("");
-        if (this.decimalSeparator)
+
+        if (this.thousandSeparator) {
+            stripped = stripped.split(this.thousandSeparator);
+            if (stripped.slice(1, -1).some(part => part.length < 3))
+                return null;
+            stripped = stripped.join("");
+        }
+
+        if (this.decimalSeparator) {
             stripped = stripped
                 .split(this.decimalSeparator)
                 .join(".");
-        if (!isNaN(stripped))
+        }
+
+        if (!isNaN(stripped)){
             return +stripped;
+        }
+
         return null;
     }
 
@@ -445,7 +460,7 @@ const TimestampTokenDetails = {
 
     /** e.g. January 3rd 1998 */
     monthName: {
-        label: '{NN}',
+        label: '{MMMM}',
         regexBit: '(' + monthNames.map(m => '(?:' + m + ')').join('|') + ')',
         category: TimestampCategory.Month,
         apply: (date, val) => date.setMonth(monthNames.indexOf(+val)),
@@ -454,7 +469,7 @@ const TimestampTokenDetails = {
 
     /** e.g. Jan 3rd, 1998 */
     monthAbbrev: {
-        label: '{N}',
+        label: '{MMM}',
         regexBit: '(' + monthAbbrevs.map(m => '(?:' + m + ')').join('|') + ')',
         category: TimestampCategory.Month,
         apply: (date, val) => date.setMonth(monthAbbrevs.indexOf(+val)),
@@ -481,7 +496,7 @@ const TimestampTokenDetails = {
 
     /** e.g. Saturday 3.1. 1998 */
     dayOfWeekFull: {
-        label: '{WW}',
+        label: '{DDDD}',
         regexBit: '(' + weekDays.map(d => '(?:' + d + ')').join('|') + ')',
         apply: (date, val) => console.warn("Apply dayOfWeekFull called, undefined behaviour"),
         extract: (date) => weekDays[date.getDay()]
@@ -489,7 +504,7 @@ const TimestampTokenDetails = {
 
     /** e.g. Sat 3.1. 1998 */
     dayOfWeekShort: {
-        label: '{W}',
+        label: '{DDD}',
         regexBit: '(' + weekDayAbbrevs.map(d => '(?:' + d + ')').join('|') + ')',
         apply: (date, val) => console.warn("Apply dayOfWeekFull called, undefined behaviour"),
         extract: (date) => weekDayAbbrevs[date.getDay()]
@@ -558,7 +573,7 @@ const TimestampTokenDetails = {
 
     /** e.g. 6.32 s */
     secondShort: {
-        label: 's',
+        label: '{s}',
         regexBit: '([0-9]{,2})',
         category: TimestampCategory.Second,
         apply: (date, val) => date.setSeconds(val),
@@ -576,7 +591,7 @@ const TimestampTokenDetails = {
 
     /** e.g. 35s 27ms */
     millisecondShort: {
-        label: 'n',
+        label: '{n}',
         regexBit: '([0-9]{,3})',
         category: TimestampCategory.Millisecond,
         apply: (date, val) => date.setMilliseconds(val),

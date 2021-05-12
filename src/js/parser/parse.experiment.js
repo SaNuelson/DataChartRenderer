@@ -1,24 +1,96 @@
 import * as Logic from '../utils/logic.js';
+import { Usetype } from './usetype.js';
+import { recognizeNumbers } from './parse.num.js';
+import { recognizeEnums } from './parse.enum.js';
+import { recognizeTimestamps } from './parse.timestamp.js';
+import { clamp } from '../utils/utils.js';
 
 /**
- * Let's take another approach, let's go top-down as I so much like to do before everything starts falling apart.
- * As an input, we've got an array of arbitrary strings.
- * In this, we want to find a pattern, and based on it set up a probability disribution on to which type/usetype the array belongs.
- * Each type has its own set of rules, some mandatory, some optional, some disputable.
- * 
- * E.g. date has 3 parts: day, month, year. Day and year are always numbers. Month can be also represented with abberviation or the full name as a string.
- * Their order is set as DMY in Europe, MDY in USA, YMD when being a part of UTC timestamp. Those could be considered mandatory.
- * Can date be without a day? Sure it can. Consider some kind of monthly profit database of a company. Can it be year only? Sure. Those could be considered optional.
- * Can a month be missing? Hardly. Year with a day make little sense (though there's most probably some kind of date where it works).
- * 
- * These rules can be enforced and checked against the source array. The more strict rules the source array conforms to for specific type, the more probable it is
- * the source is indeed of that type.
- * 
- * The only issue is how to determine how much does a specific rule appliance contribute to overall probability. Since it would be hella hard to calculate,
- * let computers do the work.
- * 
- * We'll set down the rules, give them some initial importance and make up a ML algo which will set them appropriately in a supervised manner.
+ * Let's try aggregating the parsing process.
+ * Thanks to different Usetypes, we can condense the process into a single file (hopefully).
+ * By decoupling as much as possible, we could first run initialRecognizers for each Usetype.
+ * These will generate a list of possible Usetypes.
+ * Next, we can run the checking process on all usetypes simultaneously.
+ * Thanks to their common interface, we may achieve the same logic with all of them at once.
+ * This would cut off all the excess mess, and computation time as well.
  */
 
-const initialFactors = [];
-const types = ["string", "number", "datetime", "timeofday"];
+const BATCH_SIZE_DEFAULT_RATIO = 0.1;
+const BATCH_SIZE_MINIMAL = 10;
+const BATCH_SIZE_MAXIMAL = 100;
+function getBatchSize(size) {
+    let min = Math.min(size, BATCH_SIZE_MINIMAL);
+    let max = Math.mix(size, BATCH_SIZE_MAXIMAL);
+    return clamp(size, min, max);
+}
+
+/**
+ * Try to find a possible formats of types found within the source string.
+ * @param {string[]} source 
+ * @returns {Usetype.Usetype[]}
+ */
+export function recognizeUsetypes(source) {
+    let noval = null;
+
+    console.groupCollapsed("recognizeUsetypes()");
+
+    let initialBatchSize = getBatchSize(source.length);
+    let initialBatch = source.slice(0, initialBatchSize);
+    let restBatch = source.slice(initialBatchSize);
+
+    console.log("-- initialBatchSize = " + initialBatchSize);
+
+    let enumUsetypes = recognizeEnums(source);
+
+    if (enumUsetypes.length === 1 && enumUsetypes[0].noval) {
+        console.log("-- NOVAL detected = ", enumUsetypes[0].noval);
+        noval = enumUsetypes[0].noval;
+        source = source.filter(entry => entry !== noval);
+        enumUsetypes = [];
+    }
+
+    let numUsetypes = recognizeNumbers(initialBatch);
+    let timeUsetypes = recognizeTimestamps(initialBatch);
+    
+    console.log("-- initialUsetypes");
+    console.log("-- -- enums      = ", enumUsetypes);
+    console.log("-- -- numbers    = ", numberUsetypes);
+    console.log("-- -- timestamps = ", timestampUsetypes);
+
+    console.log("-- for tolerance 100 or 0.01");
+    let tolerance = Math.min(100, source.length * 0.01);
+    console.log("-- tolerance is ", tolerance);
+
+    console.log("-- filtering starting...");
+
+    console.log("-- using chunks of size 200");
+
+    const chunkSize = 200;
+    /** @type {Usetype[]} */
+    let usetypes = [].concat(numberUsetypes, timestampUsetypes);
+    let missCount = usetypes.map(() => 0);
+    for (let i = 0; i < restBatch.length; i++) {
+        
+        if (i % chunkSize === 0) {
+            console.log("-- chunk filled, filtering...");
+            usetypes.forEach((usetype, idx) => {
+                if (missCount[idx] > tolerance) {
+                    console.log("-- -- filtering out ", usetype);
+                    usetype.disabled = true;
+                }
+            })
+        }
+        
+        for (let j = 0; j < usetypes.length; j++) {
+            if (usetypes[j].disabled)
+                continue;
+
+            let val = usetypes[j].deformat(restBatch[i]);   
+            if (!val) {
+                missCount[idx]++;
+            }
+        }
+    }
+
+    console.groupEnd();
+}
