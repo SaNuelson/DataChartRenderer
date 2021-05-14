@@ -74,7 +74,6 @@ function extractPossibleFormats(source) {
 	}
 
 	let args = {};
-	const possibleDels = ['.', ',', ' '];
 	const potentialThousandSeparators = ['.',',',' '];
 	const potentialDecimalSeparators = ['.',','];
 	const cutPattern = getCutPattern({
@@ -86,7 +85,6 @@ function extractPossibleFormats(source) {
 		prefixes: [],
 		suffixes: [],
 		delims: [],
-		validCtr: 0,
 		addPrefix: function (p) {
 			if (this.prefixes[p])
 				this.prefixes[p] += 1;
@@ -100,14 +98,18 @@ function extractPossibleFormats(source) {
 				this.suffixes[s] = 1; 
 		},
 		addDelims: function (kd, dd, md) {
+			let valid = (!dd || potentialDecimalSeparators.includes(dd)) && 
+						(!md || potentialThousandSeparators.includes(md)) &&
+						(!kd || potentialThousandSeparators.includes(kd));
+			if (!valid) { return false; }
+
 			let key = kd + "|" + dd + "|" + md;
 			if (this.delims[key])
 				this.delims[key] += 1;
 			else
 				this.delims[key] = 1;
-		},
-		addValid: function () {
-			this.validCtr++;
+
+			return true;
 		},
 		addNum: function (num) {
 			this.minVal = Math.min(this.minVal, num);
@@ -147,17 +149,15 @@ function extractPossibleFormats(source) {
 		// FORMAT 
 		// 	(N)
 		if (delims.length === 0) {
-			memory.addValid();
 			memory.addDelims("", "", "");
-
 		}
 		// FORMAT 
 		// 	(N)(D)(N)
 		else if (delims.length === 1) {
-			memory.addValid();
 			memory.addDelims("", delims[0], "");
-			if (split[2].numbers.length === 3)
+			if (split[2].numbers.length === 3) {
 				memory.addDelims(delims[0], "", "");
+			}
 		}
 		// FORMAT
 		//  (N)(D)(N)((D)(N))+
@@ -187,7 +187,6 @@ function extractPossibleFormats(source) {
 					exlog(i, `Between delimiters ${delimkeys}, there should be 3 digits`);
 					continue;
 				}
-				memory.addValid();
 				memory.addDelims(split[1].rest, split[3].rest, "");
 				memory.addDelims("", split[1].rest, split[3].rest);
 			}
@@ -222,7 +221,6 @@ function extractPossibleFormats(source) {
 				// FORMAT 
 				//  (N)((td)(N))+(dd)(N)
 				if (split[split.length - 2].rest === dd) {
-					memory.addValid();
 					memory.addDelims(td, dd);
 				}
 				// FORMAT 
@@ -234,7 +232,6 @@ function extractPossibleFormats(source) {
 						continue;
 					}
 
-					memory.addValid();
 					memory.addDelims(td, dd, td);
 				}
 			}
@@ -244,13 +241,11 @@ function extractPossibleFormats(source) {
 	let numutypes = [];
 	for (let delimset in memory.delims) {
 		let delims = delimset.split('|');
-		log(delims, delims[1] === '');
+		error("delims",delims);
 		numutypes.push(new NumUsetype({
-			prefix: Object.keys(memory.prefixes),
-			suffix: Object.keys(memory.suffixes),
-			thousandSeparator: delims[0],
-			decimalSeparator: delims[1],
-			separateDecimalThousands: delims[2] !== '',
+			prefixes: Object.keys(memory.prefixes),
+			suffixes: Object.keys(memory.suffixes),
+			separators: delims,
 			integral: delims[1] === ''
 		}));
 	}

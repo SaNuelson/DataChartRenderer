@@ -1,3 +1,4 @@
+import '/src/js/verbose.js';
 import '/src/js/debug.js';
 // TODO: Absolute paths and all from Main.js
 import { Init as CoreInit } from '../../../src/js/core/Main.js';

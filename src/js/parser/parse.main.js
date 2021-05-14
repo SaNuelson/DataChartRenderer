@@ -52,15 +52,14 @@ export function tryParse(source, type, format) {
  * @returns {import('./usetype.js').Usetype} list of possible usetypes
  */
 export function determineType(data) {
-	let debug = window.app.manager._debugArgs.verbose
-	if (debug) {
+	if (verbose) {
 		console.groupCollapsed(`detemineType(${data.length > 0 ? data[0] + "..." : []})`);
 	}
 
 	let args = {}
 
 	let enumUsetypes = recognizeEnumset(data, args);
-	if (debug) {
+	if (verbose) {
 		if (enumUsetypes.length === 1 && enumUsetypes[0].size() === 1) {
 			log("NOVAL determined: ", enumUsetypes[0].domain[0]);
 			args.noval = enumUsetypes[0].domain[0];
@@ -72,16 +71,16 @@ export function determineType(data) {
 	}
 
 	let numUsetypes = recognizeNum(data, args);
-	if (debug) {
+	if (verbose) {
 		log("NumberUsetypes determined: ", numUsetypes);
 	}
 
 	let timestampUsetypes = recognizeTimestamp(data, args);
-	if (debug) {
+	if (verbose) {
 		log("TimestampUsetypes determined: ", timestampUsetypes);
 	}
 
-	if (debug) {
+	if (verbose) {
 		console.groupEnd();
 	}
 

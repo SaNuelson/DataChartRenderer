@@ -156,74 +156,42 @@ export class Enum extends Usetype {
  * @implements {Usetype}
  */
 export class Number extends Usetype {
-
-    /**
-     * @param {NumberUsetypeArgs} args 
-     */
+    
     constructor({
-        min = null,
-        max = null,
-        sample = null,
-        decimalSeparator = ".",
-        thousandSeparator = "",
-        prefix = "",
-        suffix = "",
-        integerPlaces = 0,
-        decimalPlaces = 0,
-        integral = true
-    }) {
+        separators = [],
+        prefixes = [],
+        suffixes = [],
+        scientific = false,
+        strictlyPositive = false
+    }) 
+    {
         super();
-        this.min = min;
-        this.max = max;
-        if (!min && !max)
-            this.min = sample;
-        this.decimalSeparator = decimalSeparator;
-        this.thousandSeparator = thousandSeparator;
-        this.prefix = prefix;
-        this.suffix = suffix;
-        this.integerPlaces = integerPlaces;
-        this.decimalPlaces = decimalPlaces;
-        this.integral = integral;
+        if (separators.length > 0 && separators[0] !== "") {
+            this.thousandSeparator = separators[0];
+        }
+        if (separators.length > 1 && separators[1] !== "") {
+            this.decimalSeparator = separators[1];
+        }
+        if (separators.length > 2 && separators[2] === separators[0]) {
+            this.separateDecimalThousands = true;
+        }
+        if (scientific) {
+            this.scientific = true;
+        }
+        if (strictlyPositive) {
+            this.strictlyPositive = true;
+        }
+        this.prefixes = prefixes;
+        this.suffixes = suffixes;
     }
 
     //#region Defaults
-    min = null;
-    max = null;
-    prefix = "";
-    suffix = "";
-    decimalSeparator = ".";
+    prefixes = [];
+    suffixes = [];
+    decimalSeparator = "";
     thousandSeparator = "";
     separateDecimalThousands = false;
-    decimalPlaces = 0;
-    integerPlaces = 0;
-    integral = true;
     //#endregion
-
-    toString() {
-
-        if (this.min !== null && this.max !== null) {
-            let min = this.format(this.min);
-            let max = this.format(this.max);
-            return `{[${min}][${max}]}`;
-        }
-        else if (this.min !== null || this.max !== null) {
-            let sample = this.format(this.min ? this.min : this.max);
-            return `{${sample}}`;
-        }
-        else {
-            return this.toFormatString();
-        }
-
-    }
-
-    toFormatString() {
-        let sample = this.max ? this.max : this.min ? this.min : 12345.6789;
-        let formatted = this.format(sample);
-        let parts = formatted.split(this.decimalSeparator);
-        if (parts.length === 1)
-            return parts[0].replace(/[0-9]/g, 'X');
-        return parts[0].replace(/[0-9]/g, 'X') + this.decimalSeparator + parts[1].replace(/[0-9]/g, 'x');
-    }
 
     /**
      * Format passed in number as a string, using this Usetype's config.
@@ -231,6 +199,13 @@ export class Number extends Usetype {
      * @returns {string} formatted number as string using self
      */
     format(num) {
+        function _addSeparator (str, sep, leftAligned) {
+            let bits = leftAligned ?
+                str.match(/.{1,3}/g) :
+                str.match(/.{1,3}(?=(.{3})*$)/g)
+            return bits.join(sep);
+        }
+
         var numString = num.toFixed(this.decimalPlaces);
         var numParts = numString.split(".");
 
@@ -239,13 +214,13 @@ export class Number extends Usetype {
         if (this.integerPlaces > 0 && numParts[0].length < this.integerPlaces)
             wholePart = "0".repeat(this.integerPlaces - wholePart.length) + wholePart;
 
-        wholePart = this._addSeparator(numParts[0], this.thousandSeparator, false);
+        wholePart = _addSeparator(numParts[0], this.thousandSeparator, false);
 
         if (this.integral)
             return this.prefix + wholePart + this.suffix;
 
         var decimalPart = "0";
-
+        
         if (numParts.length > 1)
             decimalPart = numParts[1];
 
@@ -253,61 +228,43 @@ export class Number extends Usetype {
             decimalPart = decimalPart + "0".repeat(this.decimalPlaces - decimalPart.length);
 
         if (this.separateDecimalThousands)
-            decimalPart = this._addSeparator(numParts[1], this.thousandSeparator, true);
+            decimalPart = _addSeparator(numParts[1], this.thousandSeparator, true);
 
         return this.prefix + wholePart + this.decimalSeparator + decimalPart + this.suffix;
     }
 
-    /**
-     * Deformat a string representation of a number in this format into the number value.
-     * @param {string} string Formatted string using this pattern. Other patterns may not work.
-     * @returns {number} Value of formatted string passed in
+    /** 
+     * Transform formatted string to number
+     * @param {string} x to try to parse
+     * @returns {number} number represented by input string
      */
-    deformat(string) {
-        let stripped = string;
-
-        this.prefix.forEach(p => {
-            if (stripped.startsWith(p))
-                stripped = stripped.slice(p.length);
-        });
-
-        this.suffix.forEach(s => {
-            if (stripped.endsWith(s))
-                stripped = stripped.slice(0, -s.length);
-        })
-
-        if (this.thousandSeparator) {
-            stripped = stripped.split(this.thousandSeparator);
-            if (stripped.slice(1, -1).some(part => part.length < 3))
-                return null;
-            stripped = stripped.join("");
-        }
-
-        if (this.decimalSeparator) {
-            stripped = stripped
-                .split(this.decimalSeparator)
-                .join(".");
-        }
-
-        if (!isNaN(stripped)){
-            return +stripped;
-        }
-
-        return null;
+    deformat(str) {
+        // TODO
+        let temp = str;
+        this.prefixes.forEach(prefix => temp.startsWith(prefix) && (temp = temp.slice(prefix.length)));
+        this.suffixes.forEach(suffix => temp.endsWith(suffix) && (temp = temp.slice(0, temp.length - suffix.length)));
+        temp = temp.split(this.decimalSeparator).join('.');
+        temp = temp.split(this.thousandSeparator).join('');
+        if (isNaN(temp))
+            return null;
+        return +temp;
     }
 
-    /**
-     * @param {boolean} leftAligned = decimalPart
-     * @example _addSeparator("1234567890", ".", false); // returns "1.234.567.890"
-     * @example _addSeparator("1234567890", " ", true); // returns "123 456 789 0"
-     */
-    _addSeparator (str, sep, leftAligned) {
-        let bits = leftAligned ?
-            str.match(/.{1,3}/g) :
-            str.match(/.{1,3}(?=(.{3})*$)/g)
-        return bits.join(sep);
-    }
+    toString() { return "{undefined}"; }
+    toFormatString() { return ""; }
+    toDebugString() { return "Usetype::Base()"; }
 
+    /** 
+     * Possible underlying types for this Usetype subclass.
+     * @type {string}
+     * @todo Set as static
+     */
+    compatibleTypes = [];
+
+    /**
+     * Underlying type for this Usetype instance.
+     * @type {string}
+     */
     compatibleTypes = ["number"];
     type = "number";
 }
