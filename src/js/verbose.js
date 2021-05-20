@@ -3,5 +3,6 @@ window.verbose = {
     enum: true,
     parser: true,
     number: true,
-    time: true
+    time: true,
+    string: true
 }

@@ -1,382 +1,1076 @@
-import * as logic from '../utils/logic.js';
+import { must } from '../utils/logic.js';
 import { clamp, conditionalCartesian } from '../utils/utils.js';
-import { Timestamp } from './usetype.js';
+import { Usetype } from './usetype.js';
 import { getCutPattern } from '../utils/patterns.js';
+import { infill, areEqual, groupBy, hasDuplicates } from '../utils/array.js';
+import { escapeRegExp } from '../utils/string.js';
+import { timestampConstants } from './parse.constants.js';
+
+/**
+ * @file Holds timestsamp parsing, recognizing logic along with format wrapper
+ * @todo UTC time zones
+ */
 
 let verbose = (window.verbose ?? {}).time;
 console.log("parse.timestamp.js verbosity = ", verbose);
 if (verbose) {
-	var log = console.log;
-	var warn = console.warn;
-	var error = console.error;
+	var debug = window.console;
 }
 else {
-	var log = () => { };
-	var warn = () => { };
-	var error = () => { };
-}
-
-
-/**
- * @file Handles parsing of types *Date*, *DateTime* and *TimeOfDay*.
- * 
- * Terminology-wise, all of the types above belong to a *Timestamp* group.
- * They consist of *Specifiers* (year, month, day, hour...), and *Delimiters*
- * 
- * For simplicity, internally it uses array [Y, M, D, h, m, s, q], where elements are indexes
- * of respective *Specifiers*.
- * 
- * E.g. date "22.06.1998 13:55:48" would correspond to a format [2, 1, 0, 3, 4, 5, -7] (DD.MM.YYYY hh:mm:ss)
- * Specifiers which are not present are indexed by arbitrary negative number.
- * 
- * Outside, it returns a usual readable format (e.g. DD.MM.YYYY, hh:mm)
- * Which for one enables to write down more complex compositions, different types (DD as in 04.02.1990 vs D as 4.2.1990)
- * And is readable right off the bat.
- * Also enables nice expansion of new elements (year quadrant, month abbrevs...)
- */
-
-export function recognizeTimestamp(source, params) {
-	let formats = recognizeTimestampFormat(source, params);
-	let categories = recognizeTimestampKinds(formats);
-	let readableFormats = formats.map(f => formatToString(f));
-	return readableFormats.map(format => new Timestamp(format)); // [categories, readableFormats];
+	var debug = {};
+	let funcHandles = Object.getOwnPropertyNames(window.console).filter(item => typeof window.console[item] === 'function');
+	funcHandles.forEach(handle => debug[handle] = window.console[handle]);
 }
 
 /**
- * @param {string[]} source Source string array holding data to be recognized.
- * @param {object} params Uncertaing usage as for now (TODO), holds info about NOVAL etc.
- * @returns {[string[], string[]]} Tuples of arrays in form of [date/datetime/timeofday, format].
+ * Recognize possible timestamp formats in provided strings.
+ * @param {string[]} source array of strings with expected uniform formatting
+ * @param {*} params NYI, additional parameters for recognizer
+ * @returns {Timestamp[]} array of extracted timestamp usetypes
  */
-function recognizeTimestampFormat(source, params) {
-	if (source.length === 0)
-		return [];
+export function recognizeTimestamps(source, params) {
+    const initialBatchSize = 5;
 
-	let yearIdxs = [-7]; // (technically 271821 BCE ~ 275760 CE) 1970 - 9999 (following suite for C#'s datetime)
-	let monthIdxs = [-6]; // 1 - 12
-	let dayIdxs = [-5]; // 1 - 31 (28)
-	let hourIdxs = [-4]; // 0 - 23
-	let minIdxs = [-3]; // 0 - 59
-	let secIdxs = [-2]; // 0 - 59
-	let milsecIdxs = [-1]; // 0 - 999
+    let now = performance.now();
 
-	let split = source[0].match(alphanumCutPattern);
+    // first try the most frequently used timestamps
+    let expectedUsetypes = getExpectedUsetypes();
+    expectedUsetypes = filterTimestampUsetypes(source, expectedUsetypes);
+    expectedUsetypes = filterDuplicatesAndSubtypes(expectedUsetypes);
 
-	if (params.noval) {
-		let at = 0;
-		while (source[at++] === params.noval);
-		split = source[at].match(alphanumCutPattern);
-	}
+    if (expectedUsetypes.length > 0) {
+        debug.log("recognizeTimestamp -- expected usetypes found.");
+        return expectedUsetypes;
+    }
 
-	for (let i in split) {
-		let token = split[i];
-		let parsed = parseInt(token);
-		if (!parsed) {
-			if (MonthNames.includes(token) || MonthAbbrevs.includes(token)) {
-				monthIdxs.push(i);
-				token = split[i] = MonthNames.indexOf(token) ? MonthNames.indexOf(token) + 1 : MonthAbbrevs.indexOf(token) + 1;
-				continue;
-			}
-		}
+    debug.log("recognizeTimestamp -- expectedUsetypes -- took ", performance.now() - now);
+    now = performance.now();
 
-		if (1970 <= token && token <= 9999)
-			yearIdxs.push(i);
-		if (1 <= token && token <= 12)
-			monthIdxs.push(i);
-		if (1 <= token && token <= 31)
-			dayIdxs.push(i);
-		if (0 <= token && token <= 23)
-			hourIdxs.push(i);
-		if (0 <= token && token <= 59)
-			minIdxs.push(i);
-		if (0 <= token && token <= 59)
-			secIdxs.push(i);
-		if (0 <= token && token <= 999)
-			milsecIdxs.push(i);
-	}
+    // otherwise do it the hard way
+    let initialBatch = source.slice(0, initialBatchSize);
+    let extractedUsetypes = extractTimestampUsetypes(initialBatch);
+    debug.log("recognizeTimestamp -- extractedUsetypes === ", extractedUsetypes);
 
-	let filterCallback = logic.ruleAll(
-		logic.ruleImplies(exist('D'), exist('M')),
-		logic.ruleImplies(exist('q'), exist('s')),
-		logic.ruleImplies(exist('m'), exist('h')),
-		logic.ruleImplies(exist('s', 'h'), exist('m')),
-		logic.ruleImplies(exist('s', 'q'), grouped('s', 'q')),
-		logic.ruleImplies(exist('m', 's'), grouped('m', 's')),
-		logic.ruleImplies(exist('h', 'm'), grouped('h', 'm')),
-		logic.ruleImplies(exist('D', 'M'), grouped('D', 'M')),
-		logic.ruleImplies(exist('D', 'M', 'Y'), logic.ruleAny(
-			grouped('D', 'Y'), // ...MDY...
-			grouped('M', 'Y') // ...DMY...
-		)),
-		inclusive()
-	);
+    debug.log("recognizeTimestamp -- extractTimestampUsetypes -- took ", performance.now() - now);
+    now = performance.now();
 
-	let condCartArgs = {
-		sturdy: true,
-		callback: filterCallback
-	};
-	let formats = conditionalCartesian(condCartArgs, yearIdxs, monthIdxs, dayIdxs, hourIdxs, minIdxs, secIdxs, milsecIdxs);
+    extractedUsetypes = filterInvalidUsetypes(extractedUsetypes);
+    debug.log("recognizeTimestamp -- extractedUsetypes === ", extractedUsetypes);
 
-	log("recognizeTimestampFormats - initial conditional cartesian: ", formats);
+    debug.log("recognizeTimestamp -- filterInvalidUsetypes -- took ", performance.now() - now);
+    now = performance.now();
 
-	let maxErrs = Math.max(5, source.length / 1000);
+    extractedUsetypes = filterTimestampUsetypes(source, extractedUsetypes);
+    debug.log("recognizeTimestamp -- extractedUsetypes === ", extractedUsetypes);
 
-	let missThreshold = -1;
-	while (++missThreshold <= 6) {
-		const misses = (f) => f.reduce((i, n) => n < 0 ? ++i : i, 0);
-		let formatBatch = formats.filter(f => misses(f) === missThreshold);
-		let formatBatchErrs = formatBatch.map(x => 0);
+    debug.log("recognizeTimestamp -- filterTimestampUsetypes -- took ", performance.now() - now);
+    now = performance.now();
 
-		if (formatBatch.length === 0) continue;
+    extractedUsetypes = filterDuplicatesAndSubtypes(extractedUsetypes);
+    debug.log("recognizeTimestamp -- extractedUsetypes === ", extractedUsetypes);
 
-		for (let t = 1; t < source.length; t++) {
+    debug.log("recognizeTimestamp -- filterDuplicatesAndSubtypes -- took ", performance.now() - now);
+    now = performance.now();
 
-			if (params.noval && source[t] === params.noval)
-				continue;
+    return extractedUsetypes;
+}
 
-			let split = source[t].match(alphanumCutPattern);
-			let tokens = split.map(parseSpecifier);
+/** For each string in source, find all possible mappable formattings */
+function extractTimestampUsetypes(source) {
 
-			// validate current record against all formats within batch
-			// penalize incorrect ones
-			for (let j = 0; j < formatBatch.length; j++) {
-				if (!validateTimestampFormat(tokens, formatBatch[j]))
-					formatBatchErrs[j]++;
-			}
+    let formattings = [];
+    let memo = {};
+    let hashTable = {};
+    let tokenHandles = Object.keys(TimestampTokenDetails);
+    for (let string of source) {
+        let combinations = extractTokenRecursive(string);
+        combinations.forEach(combination => {
+            if (!hashTable[combination]) {
+                hashTable[combination] = true;
+                formattings.push(combination);
+            }
+        })
+    }
 
-			// get rid of imprecise formats
-			formatBatch = formatBatch.filter((_, idx) => formatBatchErrs[idx] < maxErrs);
-		}
+    let usetypes = formattings.map(f => new Timestamp({ formatting: f }));
+    return usetypes;
 
-		if (formatBatch.length > 0) {
-			log("recognizeTimestampFormats - successful format batch: ", formatBatch);
-			return formatBatch;
-		}
-	}
+    function extractTokenRecursive(string, usedCategories = [], startingIndex = 0) {
 
-	return [];
+        if (string === "")
+            return [[]];
+
+        if (memo[[string, '|', usedCategories]]) {
+            let ret = memo[[string, '|', usedCategories]];
+            return ret;
+        }
+
+        let retSet = [];
+        for (let i = startingIndex, l = tokenHandles.length; i < l; i++) {
+            let token = TimestampTokenDetails[tokenHandles[i]];
+
+            if (usedCategories.includes(token.category)) {
+                continue;
+            }
+
+            let pattern = new RegExp(token.regexBit);
+            let match = string.match(pattern);
+            if (match) {
+
+                let newUsedCategories = [token.category, ...usedCategories];
+                let parts = string.split(match[1]);
+                let leftPart = parts[0];
+                let rightPart = parts.slice(1).join(match[1]);
+
+                let leftSplits = extractTokenRecursive(leftPart, newUsedCategories);
+                for (let left of leftSplits) {
+
+                    let leftUsedCategories = left.map(label => getTokenDetailsByLabel(label).category).filter(c => c);
+                    let newNewUsedCategories = [].concat(newUsedCategories, leftUsedCategories);
+
+                    let rightSplits = extractTokenRecursive(rightPart, newNewUsedCategories);
+                    for (let right of rightSplits) {
+                        let comb = [].concat(left, [token.label], right);
+                        retSet.push(comb);
+                    }
+                }
+            }
+        }
+
+        if (retSet.length > 0) {
+            memo[[string, '|', usedCategories]] = retSet;
+            return retSet;
+        }
+
+        // unknown string, considered literal
+        memo[[string, '|', usedCategories]] = [[string]];
+        return [[string]];
+    }
+}
+
+/** For each string in source, check if each usetype is applicable and correct */
+function filterTimestampUsetypes(source, usetypes) {
+    for (let i = 0; i < source.length; i++) {
+        for (let usetype of usetypes) {
+            let val = usetype.deformat(source[i]);
+            if (val === null) {
+                usetype.disabled = true;
+            }
+        }
+
+        let nextUsetypes = usetypes.filter(usetype => !usetype.disabled);
+
+        if (nextUsetypes.length === 1) {
+            return nextUsetypes;
+        }
+        if (nextUsetypes.length === 0) {
+            debug.log("Batch of usetypes nulled during ", source[i], usetypes);
+            return [];
+        }
+        usetypes = nextUsetypes;
+    }
+    return usetypes;
+}
+
+function filterInvalidUsetypes(usetypes) {
+    return usetypes.filter(hasValidFormat);
+}
+
+/** For each usetype, check if there is more specific usetype in the set */
+function filterDuplicatesAndSubtypes(usetypes) {
+    for (let i = 0; i < usetypes.length; i++) {
+        let subtypes = [];
+        for (let j = i + 1; j < usetypes.length; j++) {
+            if (usetypes[i].isSupersetOf(usetypes[j]))
+                subtypes.push(j);
+        }
+        usetypes = usetypes.filter((_, i) => !subtypes.includes(i));
+    }
+    return usetypes;
+}
+
+/** If present, select usetypes which belong to the expected set of timestamp formats */
+var expectedUsetypesCache;
+function getExpectedUsetypes() {
+    if (!expectedUsetypesCache)
+        generateExpectedUsetypes();
+    return expectedUsetypesCache.map(format => new Timestamp({formatting: format, skipValidation: true}));
+
+    function generateExpectedUsetypes() {
+        // TODO: Move to json and fetch from there.
+        let cache = [];
+
+        //#region UTC
+
+        const utcDateBasic = [
+            ['{YYYY}', '{MM}', '{DD}'],
+            ['--', '{MM}', '{DD}']
+        ];
+        cache = cache.concat(utcDateBasic);
+
+        const utcDateExtended = [
+            ['{YYYY}', '-', '{MM}', '-', '{DD}'],
+            ['{YYYY}', '-', '{MM}'],
+            ['--', '{MM}', '-', '{DD}']
+        ];
+        cache = cache.concat(utcDateExtended);
+
+        const utcDateTimeConnector = 'T';
+
+        const utcTimeBasic = [
+            ['T', '{hh}', '{mm}', '{ss}', '.', '{nnn}'],
+            ['T', '{hh}', '{mm}', '{ss}'],
+            ['T', '{hh}', '{mm}'],
+            ['T', '{hh}']
+        ];
+        cache = cache.concat(utcTimeBasic);
+
+        let utcDatetimeBasic = [];
+        for (let date of utcDateBasic)
+            for (let time of utcTimeBasic)
+                utcDatetimeBasic.push(date.concat(time));
+        cache = cache.concat(utcDatetimeBasic);
+
+        const utcTimeExtended = [
+            ['{hh}', ':', '{mm}', ':', '{ss}', '.', '{nnn}'],
+            ['{hh}', ':', '{mm}', ':', '{ss}'],
+            ['{hh}', ':', '{mm}']
+        ];
+        cache = cache.concat(utcTimeExtended);
+
+        let utcDatetimeExtended = [];
+        for (let date of utcDateExtended)
+            for (let time of utcTimeExtended)
+                utcDatetimeExtended.push(date.concat([utcDateTimeConnector], time));
+        cache = cache.concat(utcDatetimeExtended);
+
+        //#endregion
+
+        //#region Frequent
+
+        const frequentDateSeparators = ['.','-','/'];
+        const frequentTimeSeparators = [':','.'];
+        const frequentDateTimeSeparators = [' ', '\t'];
+        const frequentDateOrders = [
+            ['{DD}','{MM}','{YYYY}'],
+            ['{DD}','{MM}','{YY}'],
+            ['{MM}','{DD}','{YYYY}'],
+            ['{MM}','{DD}','{YY}']
+        ];
+
+        const frequentTimeOrders = [
+            ['{hh}','{mm}','{ss}','{nnn}'],
+            ['{hh}','{mm}','{ss}'],
+            ['{hh}','{mm}']
+        ];
+
+        let frequentDates = [];
+        for (let date of frequentDateOrders)
+            for (let sep of frequentDateSeparators)
+                frequentDates.push(infill(date, sep));
+        cache = cache.concat(frequentDates);
+
+        let frequentTimes = [];
+        for (let time of frequentTimeOrders)
+            for (let sep of frequentTimeSeparators)
+                frequentTimes.push(infill(time, sep));
+        cache = cache.concat(frequentTimes);
+
+        let frequentDatetimes = [];
+        for (let date of frequentDates)
+            for (let time of frequentTimes)
+                frequentDatetimes.concat(frequentDateTimeSeparators.map(sep => [].concat(date, [sep], time)));
+        cache = cache.concat(frequentDatetimes);
+
+        //#endregion
+
+        expectedUsetypesCache = cache;
+    }
 
 }
 
-export function parseTimestamp(source, format) {
-	if (format.match(/Y|M|D/))
-		return parseDate(source, format);
-	else
-		return parseTimeOfDay(source, format);
+/**********************\
+   Timestamp::Usetype   
+\**********************/
+
+const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+const monthAbbrevs = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const weekDays = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+const weekDayAbbrevs = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+
+function determineTypeFromFormatting(format) {
+
+    let tokens = format.map(label => TimestampLabelToToken[label]);
+    tokens = tokens.filter(t => t);
+    let tokenCategories = tokens.map(token => TimestampTokenDetails[token].category);
+
+    const timeCategories = [
+        TimestampCategory.Hours,
+        TimestampCategory.Minutes,
+        TimestampCategory.Seconds,
+        TimestampCategory.Milliseconds
+    ];
+
+    const dateCategories = [
+        TimestampCategory.Years,
+        TimestampCategory.Months,
+        TimestampCategory.Days,
+        TimestampCategory.Era
+    ];
+
+    let containsDate = false;
+    if (tokenCategories.some(category => dateCategories.includes(category)))
+        containsDate = true;
+
+    let containsTime = false;
+    if (tokenCategories.some(category => timeCategories.includes(category)))
+        containsTime = true;
+
+    if (containsTime && containsDate)
+        return "datetime";
+
+    if (containsTime)
+        return "timeofday";
+
+    if (containsDate)
+        return "date";
+
+    return "unknown";
 }
 
-function parseDate(source, format) {
-	let data = source.split(/[^0-9]/);
-	let Y = 0, M = 1, D = 1, h = 0, m = 0, s = 0, q = 0;
-	for (let i = 0; i < format.length; i++) {
-		switch (format[i]) {
-			case "Y":
-				Y = parseInt(data[i]);
-				break;
-			case "M":
-				M = parseInt(data[i]);
-				break;
-			case "D":
-				D = parseInt(data[i]);
-				break;
-			case "h":
-				h = parseInt(data[i]);
-				break;
-			case "m":
-				m = parseInt(data[i]);
-				break;
-			case "s":
-				s = parseInt(data[i]);
-				break;
-			case "q":
-				q = parseInt(data[i]);
-				break;
-		}
-	}
-	return new Date(Y, M, D, h, m, s, q);
+function hasValidFormat(timestamp) {
+    return validateTimestampFormat(timestamp.formatting) && timestamp.type !== "unknown";
 }
 
-function parseTimeOfDay(source, format) {
-	let data = source.split(/[^0-9]/);
-	let h = 0, m = 0, s = 0, q = 0;
-	for (let i = 0; i < format.length; i++) {
-		switch (format[i]) {
-			case "h":
-				h = parseInt(data[i]);
-				break;
-			case "m":
-				m = parseInt(data[i]);
-				break;
-			case "s":
-				s = parseInt(data[i]);
-				break;
-			case "q":
-				q = parseInt(data[i]);
-				break;
-		}
-	}
-	return [h, m, s, q];
+function dateToTimeOfDay(date) {
+    return [date.getHours(), date.getMinutes(), date.getSeconds(), date.getMilliseconds()];
 }
 
+function validateTimestampFormat(format) {
 
-var DayAbbrevs = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-var DayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-var MonthDays = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
-var MonthAbbrevs = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Sep', 'Oct', 'Nov', 'Dec']
-var MonthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'September', 'October', 'November', 'December']
-var DateFormatChars = ['Y', 'M', 'D', 'h', 'm', 's', 'q'];
+    let tokenLabels = format.filter(label => Object.values(TimestampTokenDetails).some(token => token.label === label));
+    if (hasDuplicates(tokenLabels)) {
+        // TODO: for debug purposes, replace by simple false
+        window.faultyFormat = format;
+        throw "duplicates found, saved in window.faultyFormat";
+    }
+    let tokens = format.map(label => TimestampLabelToToken[label]);
+    tokens = tokens.filter(l => l);
+    let categories = tokens.map(token => TimestampTokenDetails[token].category);
 
-const allCutPattern = /((?:[A-Za-z]+)|(?:[0-9]+)|(?:[^a-zA-Z0-9]*))/g;
-const alphanumCutPattern = /((?:[A-Za-z]+)|(?:[0-9]+))/g;
-const numCutPattern = /((?:[0-9]+)|(?:[^0-9]+))/g;
+    if (hasDuplicates(categories))
+        return false;
 
-// Functions below generate helper functions for format filter.
-// is - characters from {@var DateFormatChars} to check conditions with.
-// f - array of numbers indicating indexes of timestamp units ordering.
-// 		eg. [0, 1, 2, 5, 6, -2, -1] mean indexes of Year, Month, Day, Hour, Minute, Second, Millisecond respectively,
-//		while all negative values mean the specific part isn't present.
+    if (!enforceCustomRules(format))
+        return false;
 
-/** Generate function that tells if format 'f' contains timestamp parts '...is' */
-const exist = (...is) => (f => is.every(i => f[DateFormatChars.indexOf(i)] >= 0));
-/** Generate function that tells if timestamp parts '...is' appear in specified order in format 'f' */
-const inorder = (...is) => (f => is.map(i => f[DateFormatChars.indexOf(i)]).every((_, p, is) => !is[p + 1] || is[p] < is[p + 1]));
-/** Generate function that tells if timestamp parts '...is' are together AND in specified order in format 'f' */
-const consecutives = (...is) => logic.ruleBoth(inorder(...is), grouped(...is));
-/** Generate function that tells if timestamp parts '...is' are together in format 'f' */
-const grouped = (...is) => function (f) {
-	let fis = is.map(i => f[DateFormatChars.indexOf(i)]);
-	let [bot, top] = [Math.min(...fis), Math.max(...fis)];
-	let debug = f.map(ff => fis.includes(ff) ? 1 : ff <= bot ? 2 : ff >= top ? 3 : 0);
-	return f.every(ff => fis.includes(ff) | ff <= bot | ff >= top);
-}
-/** Generate function that tells if format 'f' includes all parts within defined parts (eg. format with Years and Minutes needs Month, Days and Hours as well) */
-const inclusive = () => function (f) {
-	let wasT = false;
-	let wasF = false;
-	for (let i = 0; i < f.length; i++) {
-		if (f[i] >= 0 && !wasT)
-			wasT = true;
-		else if (f[i] < 0 && wasT)
-			wasF = true;
-		else if (f[i] >= 0 && wasF)
-			return false;
-	}
-	return true;
+    return true;
 }
 
+function enforceCustomRules(format) {
+    if (format[0] === TimestampTokenDetails.monthShort.label && format[2] === TimestampTokenDetails.dayShort.label && format[4] === TimestampTokenDetails.yearFull.label) {
+        var debug = true;
+    }
 
-const upperBounds = [9999, 12, 31, 23, 59, 59, 999];
-const lowerBounds = [1970, 1, 1, 0, 0, 0, 0];
-const validateTimestampBounds = (tokens, format) => format.every((f, i) => f < 0 || lowerBounds[i] <= tokens[f] && tokens[f] <= upperBounds[i])
+    function has(...categories) {
+        return function (format) {
+            return categories.every(category =>
+                format.some(label =>
+                    getTokenDetailsByLabel(label).category === category));
+        }
+    }
 
-const validateTimestampFormat = (tokens, format) => (format[0] < 0 || 1970 <= tokens[format[0]] && tokens[format[0]] <= 9999)
-	&& (format[1] < 0 || (1 <= tokens[format[1]] && tokens[format[1]] <= 12))
-	&& (format[2] < 0 || (1 <= tokens[format[2]] && tokens[format[2]] <= 31))
-	&& (format[3] < 0 || (0 <= tokens[format[3]] && tokens[format[3]] <= 23))
-	&& (format[4] < 0 || (0 <= tokens[format[4]] && tokens[format[4]] <= 59))
-	&& (format[5] < 0 || (0 <= tokens[format[5]] && tokens[format[5]] <= 59))
-	&& (format[6] < 0 || (0 <= tokens[format[6]] && tokens[format[6]] <= 999));
+    function areInOrder(...cats) {
+        return function (format) {
+            let formatCats = format.map(label => getTokenDetailsByLabel(label).category);
+            let retval = cats
+                .map(cat => formatCats.indexOf(cat))
+                .map((cat, idx, arr) => idx === arr.length - 1 || cat < arr[idx + 1])
+                .reduce((acc, cat) => acc && cat, true);
+            return retval;
+        }
+    }
 
-/**
- * Parse string as a possible datetime specified (account for it being a number, month abbrev, month name, day name...)
- * @param {string} x 
- * @returns 
- */
-const parseSpecifier = (x) => {
-	let num = parseInt(x);
-	if (num || num === 0) // JS is really dumb sometimes
-		return num;
+    function areInOrderIfExist(cat1, cat2) {
+        if (cat1 instanceof Array && cat2 instanceof Array) {
+            return function (format) {
+                let formatCats = format
+                    .map(label => getTokenDetailsByLabel(label).category)
+                    .filter(c => c);
+                let cat1idxs = cat1.map(cat => formatCats.indexOf(cat)).filter(idx => idx >= 0);
+                let cat2idxs = cat2.map(cat => formatCats.indexOf(cat)).filter(idx => idx >= 0);
+                return Math.max(...cat1idxs) < Math.min(...cat2idxs);
+            }
+        }
 
-	let monthAbbrevIdx = MonthAbbrevs.indexOf(x);
-	if (monthAbbrevIdx >= 0)
-		return monthAbbrevIdx + 1;
+        return must.imply(
+            has(cat1, cat2),
+            areInOrder(cat1, cat2)
+        );
+    }
 
-	let monthNameIdx = MonthNames.indexOf(x);
-	if (monthNameIdx >= 0)
-		return monthNameIdx + 1;
+    function isBefore(cat, otherCats) {
+        return function (format) {
+            let rules = otherCats.map(otherCat => ordered(otherCat, cat));
+            return must.all(...rules);
+        }
+    }
 
-	return undefined;
+    function isAfter(cat, otherCats) {
+        return function (format) {
+            let rules = otherCats.map(otherCat => ordered(cat, otherCat));
+            return must.all(...rules);
+        }
+    }
+
+    // Return true if specified set of categories has no other non-literal tokens inbetween in format.
+    function grouped(...categories) {
+        return function (format) {
+            let formatCats = format.map(label => getTokenDetailsByLabel(label).category);
+            formatCats = formatCats.filter(c => c);
+            formatCats = formatCats.map(c => categories.includes(c));
+            formatCats = formatCats.slice(formatCats.indexOf(true), formatCats.lastIndexOf(true));
+            return formatCats.reduce((a, n) => a && n, true);
+        }
+    }
+
+    // If format contains 2 mandatory date/datetime/time tokens,
+    // it has to contain all inbetween (has year, has minutes, should have months, days, hours)
+    const compliesInclusion = (format) => {
+        const categoriesInOrder = [
+            TimestampCategory.Years,
+            TimestampCategory.Months,
+            TimestampCategory.Days,
+            TimestampCategory.Hours,
+            TimestampCategory.Minutes,
+            TimestampCategory.Seconds,
+            TimestampCategory.Milliseconds
+        ];
+        let hasCategories = categoriesInOrder.map((category) => has(category)(format));
+        let firstPresent = hasCategories.indexOf(true);
+        let lastPresent = hasCategories.lastIndexOf(true);
+        return hasCategories.slice(firstPresent, lastPresent).reduce((a, n) => a && n, true);
+    }
+
+    // Presence of specific tokens implies presence of others
+    // Meridiem makes no sense without hours, era without years...
+    const compliesContinuity = must.all(
+        must.imply(
+            has(TimestampCategory.Milliseconds),
+            has(TimestampCategory.Seconds)
+        ),
+        must.imply(
+            has(TimestampCategory.Meridiem),
+            has(TimestampCategory.Hours)
+        ),
+        must.imply(
+            has(TimestampCategory.Era),
+            has(TimestampCategory.Years)
+        )
+    );
+
+    // Despite various nature of datetime formats, some things are constant
+    const compliesSuccession = must.all(
+        // time tokens are in direct order (hours, minutes, seconds, milliseconds)
+        areInOrderIfExist(TimestampCategory.Hours, TimestampCategory.Minutes),
+        areInOrderIfExist(TimestampCategory.Minutes, TimestampCategory.Seconds),
+        areInOrderIfExist(TimestampCategory.Seconds, TimestampCategory.Milliseconds),
+        areInOrderIfExist(TimestampCategory.Hours, TimestampCategory.Meridiem),
+
+        // era comes only after year (AD 500 makes no sense)
+        areInOrderIfExist(TimestampCategory.Years, TimestampCategory.Era),
+
+        // time comes only after date, both are grouped
+        areInOrderIfExist(
+            [
+                TimestampCategory.Years,
+                TimestampCategory.Months,
+                TimestampCategory.Days,
+                TimestampCategory.Era,
+                TimestampCategory.DayOfWeek
+            ],
+            [
+                TimestampCategory.Hours,
+                TimestampCategory.Minutes,
+                TimestampCategory.Seconds,
+                TimestampCategory.Milliseconds,
+                TimestampCategory.Meridiem
+            ]),
+
+        must.imply(
+            has(
+                TimestampCategory.Years,
+                TimestampCategory.Months,
+                TimestampCategory.Days
+            ),
+            must.any(
+                // UTC format
+                areInOrder(
+                    TimestampCategory.Years,
+                    TimestampCategory.Months,
+                    TimestampCategory.Days
+                ),
+                // common format
+                areInOrder(
+                    TimestampCategory.Days,
+                    TimestampCategory.Months,
+                    TimestampCategory.Years
+                ),
+                // american format
+                areInOrder(
+                    TimestampCategory.Months,
+                    TimestampCategory.Days,
+                    TimestampCategory.Years
+                )
+            )
+        )
+    );
+
+    const compliesNumericSeparation = (format) => {
+        const numericSpecificities = [
+            TimestampSpecificity.NumericLong,
+            TimestampSpecificity.NumericMedium,
+            TimestampSpecificity.NumericShort
+        ];
+
+        const startsNumerically = (label) => {
+            let token = getTokenDetailsByLabel(label);
+            if (token.literal) {
+                return /^[0-9]/.test(label);
+            }
+            else {
+                return token.numeric;
+            }
+        }
+
+        const endsNumerically = (label) => {
+            let token = getTokenDetailsByLabel(label);
+            if (token.literal) {
+                return /[0-9]$/.test(label);
+            }
+            else {
+                return token.numeric;
+            }
+        }
+
+        for (let i = 0; i < format.length - 1; i++) {
+            if (endsNumerically(format[i]) && startsNumerically(format[i + 1])) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    return compliesInclusion(format) && compliesContinuity(format) && compliesSuccession(format) && compliesNumericSeparation(format);
 }
 
-/**
- * 
- * @param {number[][]} formats Array of internal-like formats
- * @returns {string[]} Categories of provided formats (date,datetime,timeofday)
- */
-function recognizeTimestampKinds(formats) {
-	let types = [];
-	const dateCondition = logic.ruleAny(
-		exist('Y'),
-		exist('M'),
-		exist('D')
-	);
-
-	const timeCondition = logic.ruleAny(
-		exist('h'),
-		exist('m'),
-		exist('s'),
-		exist('q')
-	)
-
-	let kinds = [];
-	for (let f of formats) {
-		let isd = dateCondition(f);
-		let ist = timeCondition(f);
-		if (isd && ist)
-			kinds.push("datetime");
-		else if (isd)
-			kinds.push("date");
-		else if (ist)
-			kinds.push("timeofday");
-	}
-
-	return kinds;
+const TimestampCategory = {
+    Years: 1,
+    Months: 2,
+    Days: 3,
+    Hours: 4,
+    Minutes: 5,
+    Seconds: 6,
+    Milliseconds: 7,
+    Era: 8,
+    Meridiem: 9,
+    DayOfWeek: 10
 }
 
-function formatToString(format) {
-	let reformat = ["", "", "", "", "", "", ""];
-	if (format[0] >= 0) reformat[format[0]] = "Y";
-	if (format[1] >= 0) reformat[format[1]] = "M";
-	if (format[2] >= 0) reformat[format[2]] = "D";
-	if (format[3] >= 0) reformat[format[3]] = "h";
-	if (format[4] >= 0) reformat[format[4]] = "m";
-	if (format[5] >= 0) reformat[format[5]] = "s";
-	if (format[6] >= 0) reformat[format[6]] = "n";
-	return reformat.join("");
+const TimestampSpecificity = {
+    NumericShort: 0,
+    NumericMedium: 1,
+    NumericLong: 2,
+    WordShort: 3,
+    WordLong: 4,
 }
 
-/*********\
-|   NEW   |
-\*********/
+const TimestampTokenDetails = {
 
-const timestampCutPattern = getCutPattern({
-	letters: true,
-	numbers: true,
-	rest: true,
-	matchall: true
-})
-const usetypeRequiredPrecision = 0.99;
-const initialBatchSizeDefaultRatio = 0.1;
-const initialBatchSizeLowerBound = 10;
-const initialBatchSizeUpperBound = 100;
-const getInitialBatchSize = (len) => clamp(
-	len * initialBatchSizeDefaultRatio,
-	Math.min(len, initialBatchSizeLowerBound),
-	Math.min(len, initialBatchSizeUpperBound)
-)
+    /** e.g. year 50 BC */
+    era: {
+        label: '{EE}',
+        regexBit: '((?:AD)|(?:BC))',
+        category: TimestampCategory.Era,
+        numeric: false,
+        // apply is valid since one can expect year preceding era in a format (BC 1500 makes little sense)
+        apply: (date, val) => date.getFullYear() > 0 && val === 'BC' && date.setFullYear(-date.getFullYear()),
+        applyTod: (tod, val) => warn("ApplyTOD era called, undefined behaviour"),
+        extract: (date) => date.getFullYear() >= 0 ? 'AD' : 'BC',
+        extractTod: (tod) => warn("ExtractTOD era called, undefined behaviour")
+    },
 
-export function recognizeTimestampNew(source, params) {
-	let initBatchSize = getInitialBatchSize(source.length);
-	let initialBatch = source.slice(0, initBatchSize);
-	let restBatch = source.slice(initBatchSize);
+    /** e.g. 3.1.1998 */
+    yearFull: {
+        label: '{YYYY}',
+        regexBit: '([0-9]{4,})',
+        category: TimestampCategory.Years,
+        numeric: true,
+        subtoken: "yearShort",
+        apply: (date, val) => date.setFullYear(+val),
+        applyTod: (tod, val) => warn("ApplyTOD yearFull called, undefined behaviour"),
+        extract: (date) => date.getFullYear().toString().padStart(4, "0"),
+        extractTod: (tod) => warn("ExtractTOD yearFull called, undefined behaviour")
+    },
 
-	let usetypes = extractPossibleTimestamps(initialBatch, params);
-	for (let sample of restBatch) {
+    /** e.g. 3.1.'98 */
+    yearShort: {
+        label: '{YY}',
+        regexBit: '([0-9]{2})',
+        category: TimestampCategory.Years,
+        numeric: true,
+        apply: (date, val) => date.setFullYear(+val),
+        applyTod: (tod, val) => warn("ApplyTOD yearShort called, undefined behaviour"),
+        extract: (date) => date.getFullYear().toString(),
+        extractTod: (tod) => warn("ExtractTOD yearShort called, undefined behaviour")
+    },
 
-	}
+    /** e.g. 03.01.1998 */
+    monthFull: {
+        label: '{MM}',
+        regexBit: '([0-9]{2})',
+        category: TimestampCategory.Months,
+        numeric: true,
+        subtoken: "monthShort",
+        apply: (date, val) => date.setMonth(val - 1),
+        applyTod: (tod, val) => warn("ApplyTOD monthFull called, undefined behaviour"),
+        extract: (date) => (date.getMonth() + 1).toString().padStart(2, "0"),
+        extractTod: (tod) => warn("ExtractTOD monthFull called, undefined behaviour")
+    },
+
+    /** e.g. 3.1.1998 */
+    monthShort: {
+        label: '{M}',
+        regexBit: '([0-9]{1,2})',
+        category: TimestampCategory.Months,
+        numeric: true,
+        apply: (date, val) => date.setMonth(val - 1),
+        applyTod: (tod, val) => warn("ApplyTOD monthShort called, undefined behaviour"),
+        extract: (date) => (date.getMonth() + 1).toString(),
+        extractTod: (tod) => warn("ExtractTOD monthShort called, undefined behaviour")
+    },
+
+    /** e.g. January 3rd 1998 */
+    monthName: {
+        label: '{MMMM}',
+        regexBit: '(' + monthNames.map(m => '(?:' + m + ')').join('|') + ')',
+        category: TimestampCategory.Months,
+        numeric: false,
+        subtoken: "monthAbbrev",
+        apply: (date, val) => date.setMonth(monthNames.indexOf(val)),
+        applyTod: (tod, val) => warn("ApplyTOD monthName called, undefined behaviour"),
+        extract: (date) => monthNames[date.getMonth()],
+        extractTod: (tod) => warn("ExtractTOD monthName called, undefined behaviour")
+    },
+
+    /** e.g. Jan 3rd, 1998 */
+    monthAbbrev: {
+        label: '{MMM}',
+        regexBit: '(' + monthAbbrevs.map(m => '(?:' + m + ')').join('|') + ')',
+        category: TimestampCategory.Months,
+        numeric: false,
+        apply: (date, val) => date.setMonth(monthAbbrevs.indexOf(val)),
+        applyTod: (tod, val) => warn("ApplyTOD monthAbbrev called, undefined behaviour"),
+        extract: (date) => monthAbbrevs[date.getMonth()],
+        extractTod: (tod) => warn("ExtractTOD monthAbbrev called, undefined behaviour")
+    },
+
+    /** e.g. 03.01.1998 */
+    dayFull: {
+        label: '{DD}',
+        regexBit: '([0-9]{2})',
+        category: TimestampCategory.Days,
+        numeric: true,
+        subtoken: "dayShort",
+        apply: (date, val) => date.setDate(+val),
+        applyTod: (tod, val) => warn("ApplyTOD dayFull called, undefined behaviour"),
+        extract: (date) => date.getDate().toString().padStart(2, "0"),
+        extractTod: (tod) => warn("ExtractTOD dayFull called, undefined behaviour")
+    },
+
+    /** e.g. 3.1.1998 */
+    dayShort: {
+        label: '{D}',
+        regexBit: '([0-9]{1,2})',
+        category: TimestampCategory.Days,
+        numeric: true,
+        apply: (date, val) => date.setDate(+val),
+        applyTod: (tod, val) => warn("ApplyTOD dayShort called, undefined behaviour"),
+        extract: (date) => date.getDate().toString(),
+        extractTod: (tod) => warn("ExtractTOD dayShort called, undefined behaviour")
+    },
+
+    /** e.g. Saturday 3.1. 1998 */
+    dayOfWeekFull: {
+        label: '{DDDD}',
+        category: TimestampCategory.DayOfWeek,
+        numeric: false,
+        subtoken: "dayOfWeekShort",
+        regexBit: '(' + weekDays.map(d => '(?:' + d + ')').join('|') + ')',
+        apply: (date, val) => warn("Apply dayOfWeekFull called, undefined behaviour"),
+        applyTod: (tod, val) => warn("ApplyTOD dayOfWeekFull called, undefined behaviour"),
+        extract: (date) => weekDays[date.getDay()],
+        extractTod: (tod) => warn("ExtractTOD dayOfWeekFull called, undefined behaviour")
+    },
+
+    /** e.g. Sat 3.1. 1998 */
+    dayOfWeekShort: {
+        label: '{DDD}',
+        category: TimestampCategory.DayOfWeek,
+        numeric: false,
+        regexBit: '(' + weekDayAbbrevs.map(d => '(?:' + d + ')').join('|') + ')',
+        apply: (date, val) => warn("Apply dayOfWeekShort called, undefined behaviour"),
+        applyTod: (tod, val) => warn("ApplyTOD dayOfWeekShort called, undefined behaviour"),
+        extract: (date) => weekDayAbbrevs[date.getDay()],
+        extractTod: (tod) => warn("ExtractTOD dayOfWeekShort called, undefined behaviour")
+    },
+
+    /** e.g. 7:30 AM */
+    meridiem: {
+        label: '{RR}',
+        regexBit: '((?:AM)(?:PM))',
+        category: TimestampCategory.Meridiem,
+        numeric: false,
+        // same like era, it should be safe to assume meridiem won't be preceding hours (e.g. AM 7:30)
+        apply: (date, val) => {
+            let hours = date.getHours();
+            if (val === 'PM' && hours < 12)
+                date.setHours(hours + 12); // all after noon
+            else if (val === 'AM' && hours === 12)
+                cate.setHours(0); // midnight
+        },
+        applyTod: (tod, val) => warn("ApplyTOD meridiem called, undefined behaviour"),
+        extract: (date) => date.getHours() < 12 || date.getHours() === 0 ? 'AM' : 'PM',
+        extractTod: (tod) => tod[0] < 12 || tod[0] === 0 ? 'AM' : 'PM'
+    },
+
+    /** e.g. 07:05:32 */
+    hourFull: {
+        label: '{hh}',
+        regexBit: '([0-9]{2})',
+        category: TimestampCategory.Hours,
+        numeric: true,
+        subtoken: "hourShort",
+        apply: (date, val) => date.setHours(val),
+        applyTod: (tod, val) => tod[0] = val,
+        extract: (date, format) => {
+            let extracted = date.getHours();
+            if (format && format.includes(TimestampTokenDetails.meridiem.label))
+                extracted %= 12;
+            return extracted.toString().padStart(2, '0');
+        },
+        extractTod: (tod, format) => {
+            let extracted = tod[0];
+            if (format && format.includes(TimestampTokenDetails.meridiem.label))
+                extracted %= 12;
+            return extracted.toString().padStart(2, '0');
+        }
+    },
+
+    /** e.g. 7:05 AM */
+    hourShort: {
+        label: '{h}',
+        regexBit: '([0-9]{1,2})',
+        category: TimestampCategory.Hours,
+        numeric: true,
+        apply: (date, val) => date.setHours(val),
+        applyTod: (tod, val) => tod[0] = val,
+        extract: (date, format) => {
+            let extracted = date.getHours();
+            if (format && format.includes(TimestampTokenDetails.meridiem.label))
+                extracted %= 12;
+            return extracted.toString();
+        },
+        extractTod: (tod, format) => {
+            let extracted = tod[0];
+            if (format && format.includes(TimestampTokenDetails.meridiem.label))
+                extracted %= 12;
+            return extracted.toString();
+        }
+    },
+
+    /** e.g. 07:05:32 */
+    minuteFull: {
+        label: '{mm}',
+        regexBit: '([0-9]{2})',
+        category: TimestampCategory.Minutes,
+        numeric: true,
+        subtoken: "minuteShort",
+        apply: (date, val) => date.setMinutes(val),
+        applyTod: (tod, val) => tod[1] = val,
+        extract: (date) => date.getMinutes().toString().padStart(2, '0'),
+        extractTod: (tod) => tod[1].toString().padStart(2, '0')
+    },
+
+    /** e.g. 5m 32s */
+    minuteShort: {
+        label: '{m}',
+        regexBit: '([0-9]{1,2})',
+        category: TimestampCategory.Minutes,
+        numeric: true,
+        apply: (date, val) => date.setMinutes(val),
+        applyTod: (tod, val) => tod[1] = val,
+        extract: (date) => date.getMinutes().toString(),
+        extractTod: (tod) => tod[1].toString()
+    },
+
+    /** e.g. 14:15:08 */
+    secondFull: {
+        label: '{ss}',
+        regexBit: '([0-9]{2})',
+        category: TimestampCategory.Seconds,
+        numeric: true,
+        subtoken: "secondShort",
+        apply: (date, val) => date.setSeconds(val),
+        applyTod: (tod, val) => tod[2] = val,
+        extract: (date) => date.getSeconds().toString().padStart(2, '0'),
+        extractTod: (tod) => tod[2].toString().padStart(2, '0')
+    },
+
+    /** e.g. 6.32 s */
+    secondShort: {
+        label: '{s}',
+        regexBit: '([0-9]{1,2})',
+        category: TimestampCategory.Seconds,
+        numeric: true,
+        apply: (date, val) => date.setSeconds(val),
+        applyTod: (tod, val) => tod[2] = val,
+        extract: (date) => date.getSeconds().toString(),
+        extractTod: (tod) => tod[2].toString()
+    },
+
+    /** e.g. 35.027s */
+    millisecondFull: {
+        label: '{nnn}',
+        regexBit: '([0-9]{3})',
+        category: TimestampCategory.Milliseconds,
+        numeric: true,
+        subtoken: "millisecondShort",
+        apply: (date, val) => date.setMilliseconds(val),
+        applyTod: (tod, val) => tod[3] = val,
+        extract: (date) => date.getMilliseconds().toString().padStart(3, '0'),
+        extractTod: (tod) => tod[3].toString().padStart(3, '0')
+    },
+
+    /** e.g. 35s 27ms */
+    millisecondShort: {
+        label: '{n}',
+        regexBit: '([0-9]{1,3})',
+        category: TimestampCategory.Milliseconds,
+        numeric: true,
+        apply: (date, val) => date.setMilliseconds(val),
+        applyTod: (tod, val) => tod[3] = val,
+        extract: (date) => date.getMilliseconds().toString(),
+        extractTod: (tod) => tod[3].toString()
+    }
 }
 
-function extractPossibleTimstamps(source, params) {
+// TimestampTokenDetails access methods
 
+function getTokenByLabel(label) {
+    return TimestampLabelToToken[label];
 }
 
-export const recognizeTimestamps = recognizeTimestampFormat;
+function getTokenDetails(token) {
+    return TimestampTokenDetails[token];
+}
+
+function getTokenDetailsByLabel(label) {
+    let token = getTokenDetails(getTokenByLabel(label));
+    return token ? token : { literal: true };
+}
+
+function existsLabel(label) {
+    return TimestampLabelToToken[label] !== undefined;
+}
+
+const TimestampLabelToToken = (() => {
+    let rev = {};
+    for (let type in TimestampTokenDetails) {
+        let label = TimestampTokenDetails[type].label;
+        rev[label] = type;
+    }
+    return rev;
+})()
+
+function nullDate() { return new Date(0) }
+class Timestamp extends Usetype {
+
+    /**
+     * 
+     * @param {DatetimeUsetypeArgs} args 
+     */
+    constructor(args) {
+        super();
+
+        let explicitType = args.type;
+        if (!explicitType)
+            explicitType = "none";
+
+        let minType = "none";
+        if (args.min) {
+            this.min = args.min;
+            if (isValidDate(args.min)) {
+                minType = "datetime";
+            }
+            else if (isValidTimeOfDay(args.min)) {
+                minType = "timeofday";
+            }
+            else minType = "unknown";
+        }
+        let maxType = "none";
+        if (args.max) {
+            this.max = args.max;
+            if (isValidDate(args.max)) {
+                maxType = "datetime";
+            }
+            else if (isValidTimeOfDay(args.max)) {
+                maxType = "timeofday";
+            }
+            else maxType = "unknown";
+        }
+
+        let implicitType = determineTypeFromFormatting(args.formatting);
+
+        let gatheredTypes = [minType, maxType, explicitType, implicitType];
+
+        gatheredTypes = gatheredTypes.filter(type => type !== "none");
+
+        let allTypesEqual = gatheredTypes.every(type => type === gatheredTypes[0]);
+
+        if (!allTypesEqual) {
+            debug.error("Timestamp ", this.formatting, " allTypesEqual false.");
+            this.type = "unknown";
+        }
+
+        this.type = gatheredTypes[0];
+
+        this.formatting = [...args.formatting];
+
+        if (!args.skipValidation && !hasValidFormat(this)) {
+            this.type = "unknown";
+            return;
+        }
+
+        // format(date)
+        // extract all bits from date, join them
+
+        // deformat(string)
+        // match with regex (which extracts all important groups)
+        // apply those using appliers
+
+        let regBits = [];
+        let appliers = [];
+        let extractors = [];
+        let applyMethod = "apply";
+        let extractMethod = "extract";
+        if (this.type === "timeofday") {
+            applyMethod = "applyTod";
+            extractMethod = "extractTod";
+        }
+
+        this.formatting.forEach(bit => {
+            if (existsLabel(bit)) {
+                let token = getTokenDetailsByLabel(bit);
+                regBits.push(token.regexBit);
+                appliers.push(token[applyMethod]);
+                extractors.push(token[extractMethod]);
+            }
+            else {
+                regBits.push(escapeRegExp(bit));
+                extractors.push(() => bit);
+            }
+        });
+        let pattern = new RegExp(regBits.join(''));
+        this.format = function (date) {
+            return extractors.map(ex => ex(date, this.formatting)).join('');
+        }
+        this.deformat = function (string, verbose = false) {
+            let retval = null;
+            if (this.type === "timeofday")
+                retval = [];
+            else
+                retval = nullDate();
+            let match = string.match(pattern);
+            if (!match)
+                return null;
+            appliers.forEach((app, idx) => app(retval, match[idx + 1], this.formatting));
+
+            // consistency check
+            if (string !== this.format(retval)) {
+                return null;
+            }
+
+            return retval;
+        }
+    }
+
+    min = null;
+    max = null;
+    formatting = null;
+    type = "none";
+    pattern = null;
+    replacement = null;
+    type = "timestamp";
+
+    toString() {
+        let ret = '';
+        if (this.min && this.max)
+            ret = this.format(this.min) + "-" + this.format(this.max);
+        else if (this.min || this.max)
+            ret = this.format(this.min ? this.min : this.max);
+        else {
+            if (this.type === "datetime")
+                ret = this.format(nullDate());
+            else if (this.type === "date")
+                ret = this.format(nullDate());
+            else if (this.type === "timeofday")
+                ret = this.format(dateToTimeOfDay(nullDate()));
+        }
+        let prefix = 'X';
+        if (this.type === "date")
+            prefix = 'D';
+        else if (this.type === "datetime")
+            prefix = 'DT';
+        else if (this.type === "timeofday")
+            prefix = 'TOD'
+        return prefix + "{" + ret + "}";
+    }
+
+    format(date) { console.error("Timestamp::Usetype format invalid", this); return null; }
+    deformat(string) { console.error("Timestamp::Usetype format invalid", this); return null; }
+
+    isSupersetOf(other) {
+        if (this.formatting.length !== other.formatting.length) {
+            return false;
+        }
+
+        for (let i = 0, l = this.formatting.length; i < l; i++) {
+            let thisToken = getTokenDetailsByLabel(this.formatting[i]);
+            let thisSubtoken = TimestampTokenDetails[thisToken.subtoken];
+            let otherToken = getTokenDetailsByLabel(other.formatting[i]);
+            // literals, must be equal
+            if (thisToken.literal) {
+                // TODO: Expect possibility of split literal, e.g. "at " vs "at", " "
+                if (!otherToken.literal) {
+                    return false;
+                }
+                if (this.formatting[i] !== other.formatting[i]) {
+                    return false;
+                }
+            }
+            // tokens, subset token must be equal or thisToken.subtoken
+            else if (otherToken !== thisToken && otherToken !== thisSubtoken) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    isImplicitSupersetOf(other) {
+
+    }
+}
+window.Timestamp = Timestamp;

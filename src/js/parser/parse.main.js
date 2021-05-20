@@ -1,49 +1,26 @@
 import * as utils from '../utils/utils.js';
-import { parseNum, recognizeNum } from './parse.num.js';
-import { parseTimestamp, recognizeTimestamp } from './parse.timestamp.js';
-import { recognizeEnumset } from './parse.enum.js';
-import { String as StringUsetype } from './usetype.js';
+
+import { recognizeNumbers } from './parse.num.js';
+import { recognizeTimestamps } from './parse.timestamp.js';
+import { recognizeEnums } from './parse.enum.js';
+import { recognizeStrings } from './parse.string.js';
+
+import { numberConstants, enumConstants, timestampConstants } from './parse.constants.js';
+import { getCommonPrefix, getCommonSuffix } from '../utils/string.js';
 
 let verbose = (window.verbose ?? {}).parser;
 console.log("parse.main.js verbosity = ", verbose);
 if (verbose) {
-	var log = console.log;
-	var warn = console.warn;
-	var error = console.error;
+	var debug = window.console;
 }
 else {
-	var log = () => {};
-	var warn = () => {};
-	var error = () => {};
+	var debug = {};
+	let funcHandles = Object.getOwnPropertyNames(window.console).filter(item => typeof window.console[item] === 'function');
+	funcHandles.forEach(handle => debug[handle] = window.console[handle]);
 }
 
-
-/**
- * Try to parse string into specified type using optional format.
- * @param {string} source string to be parsed
- * @param {string} type string name of the type to parse into
- * @param {string} format optional parameter (mostly required in case of datetime format)
- * @returns {string|number|Date|number[]} Parsed type if successful, null otherwise.
- */
-export function tryParse(source, type, format) {
-	switch (type) {
-		case "string":
-			return source;
-		case "number":
-			let num = parseNum(source.replace(/\s/g, ''));
-			if (isNaN(num)){
-				error("Unparsable number in tryParse - ", source);
-				return null;
-			}
-			return num;
-		case "date":
-		case "datetime":
-		case "timeofday":
-			return parseTimestamp(source, format);
-		default:
-			warn("Unknown type in tryParse - ", type);
-			return null;
-	}
+const defaultRecognizerArgs = {
+	skipConstants: true
 }
 
 /**
@@ -51,42 +28,196 @@ export function tryParse(source, type, format) {
  * @param {string[]} data array of strings to recognize, usually column from SourceData
  * @returns {import('./usetype.js').Usetype} list of possible usetypes
  */
-export function determineType(data) {
-	if (verbose) {
-		console.groupCollapsed(`detemineType(${data.length > 0 ? data[0] + "..." : []})`);
+export function determineType(data, args) {
+
+	if (!args)
+		args = Object.assign({}, defaultRecognizerArgs);
+
+	debug.groupCollapsed(`detemineType(${data.length > 0 ? data[0] + "..." : []})`);
+
+	let gatheredUsetypes = [];
+
+	let enumUsetypes;
+	[data, enumUsetypes, args] = preprocessEnumlikeness(data, args);
+	gatheredUsetypes.push(...enumUsetypes);
+	
+	// [data, args] = preprocessIndicators(data, args);
+
+	if (!args.skipConstants || !args.constant) {
+		let numPerformance = performance.now();
+		let numUsetypes = recognizeNumbers(data, args);
+		debug.log("determineType -- recognizeNumbers -- took ", performance.now() - numPerformance);
+		debug.log("NumberUsetypes detected: ", numUsetypes);
+		gatheredUsetypes.push(...numUsetypes);	
+
+		let timestampPerformance = performance.now();
+		let timestampUsetypes = recognizeTimestamps(data, args);
+		debug.log("determineType -- recognizeTimestamps -- took ", performance.now() - timestampPerformance);
+		debug.log("TimestampUsetypes detected: ", timestampUsetypes);
+		gatheredUsetypes.push(...timestampUsetypes);
 	}
 
-	let args = {}
+	debug.groupEnd();
 
-	let enumUsetypes = recognizeEnumset(data, args);
-	if (verbose) {
-		if (enumUsetypes.length === 1 && enumUsetypes[0].size() === 1) {
-			log("NOVAL determined: ", enumUsetypes[0].domain[0]);
-			args.noval = enumUsetypes[0].domain[0];
-			enumUsetypes = [];
+	if (gatheredUsetypes.length === 0) {
+		return recognizeStrings(data, args);
+	}
+	return gatheredUsetypes;
+}
+
+function preprocessEnumlikeness(source, args) {
+	let enumUsetypes = recognizeEnums(source, args);
+	let enumUsetype = enumUsetypes[0];
+	if (!enumUsetype) {
+		enumUsetypes = [];
+	}
+	else if (enumUsetype.noval) {
+		debug.log("NOVAL detected as ", enumUsetype.noval);
+		args.noval = enumUsetype.noval;
+		source = source.filter(value => value !== args.noval);
+		enumUsetypes = [];
+	}
+	else if (enumUsetype.constant) {
+		debug.log("CONSTANT detected as ", enumUsetype.constant);
+		args.constant = enumUsetype.constant;
+		source = [];
+		enumUsetypes = [];
+	}
+	else if (enumUsetype.potentialIds) {
+		debug.log("POTENTIAL ID column found");
+		args.potentialIds = true;
+		enumUsetypes = [];
+	}
+	else {
+		debug.log("Enum usetype detected as ", enumUsetype);
+	}
+
+	return [source, enumUsetypes, args];
+}
+
+function preprocessIndicators(source, args) {
+
+	let timestampConstantGroups = Object.values(timestampConstants).map(getFunc => getFunc(args.locale));
+	let enumConstantGroups = Object.values(enumConstants).map(getFunc => getFunc(args.locale));
+	let numberConstantGroups = Object.values(numberConstants).map(getFunc => getFunc(args.locale));
+	const changeLimit = 10;
+
+	let change = true;
+	while (change) {
+		change = false;
+
+		let [prefix, suffix] = extractCommonAffixes(source);
+		if (prefix) {
+			args.prefixes = (args.prefixes || []).push([prefix]);
+			source = source.map(value => value.substring(prefix.length));
+			change = true;
 		}
-		else {
-			log("EnumUsetypes determined: ", enumUsetypes);
+		if (suffix) {
+			args.suffixes = (args.suffixes || []).push([suffx]);
+			source = source.map(value => value.substring(value.length - suffix.length));
+			change = true;
 		}
+		
+		for (let i = 0; i < 3; i++) {
+			let affixType = ["timestamp", "enum", "number"][i];
+			let group = [timestampConstantGroups, enumConstantGroups, numberConstantGroups][i];
+
+			let [prefixes, strippedSource, suffixes] = extractCommonIndicators(source, group);
+			if (prefixes.length) {
+				args.prefixes = (args.prefixes || []).push(prefixes);
+				args.indicators = (args.indicators || []).push(affixType);
+				source = strippedSource;
+				change = true;
+			}
+			if (suffixes.length) {
+				args.suffixes = (args.suffixes || []). push(suffixes);
+				args.indicators = (args.indicators || []).push(affixType);
+				source = strippedSource;
+				change = true;
+			}
+		}
+
 	}
 
-	let numUsetypes = recognizeNum(data, args);
-	if (verbose) {
-		log("NumberUsetypes determined: ", numUsetypes);
+	function extractCommonAffixes(source) {
+	
+		// construct common prefix and suffix
+		let prefix = source[0];
+		let suffix = source[0];
+		let lastChange = 0;
+		let counter = 1;
+		while (lastChange < changeLimit && counter < source.length) {
+			let newPrefix = getCommonPrefix(prefix, source[counter]);
+			let newSuffix = getCommonSuffix(suffix, source[counter]);
+			if (suffix !== newSuffix || prefix !== newPrefix) {
+				lastChange = 0;
+				prefix = newPrefix;
+				suffix = newSuffix;
+			}
+		}
+		return [prefix, suffix];
 	}
 
-	let timestampUsetypes = recognizeTimestamp(data, args);
-	if (verbose) {
-		log("TimestampUsetypes determined: ", timestampUsetypes);
+	function extractCommonIndicators(source, groups) {
+		let prefixesEnabled = groups.map(group => true);
+		let suffixesEnabled = groups.map(group => true);
+		let lastChange = 0;
+		let counter = 0;
+		while (lastChange < changeLimit && counter < source.length) {
+			let sample = source[counter];
+
+			for (let g = 0, l = groups.length; g < l; g++) {
+				if (prefixesEnabled[g] && groups[g].every(indicator => !sample.startsWith(indicator))) {
+					prefixesEnabled[g] = false;
+					lastChange = 0;
+				}
+				if (suffixesEnabled[g] && groups[g].every(indicator => !sample.endsWith(indicator))) {
+					suffixesEnabled[g] = false;
+					lastChange = 0;
+				}
+			}
+
+			let prefixCount = prefixesEnabled.reduce((a,n) => a + +n, 0);
+			let extractedPrefixes = [];
+			if (prefixCount > 1) {
+				throw "extractCommonIndicators -- multiple prefixes found";
+			}
+			else if (prefixCount === 1) {
+				let prefixIndex = prefixesEnabled.indexOf(true);
+				extractedPrefixes = groups[prefixIndex];
+			}
+			
+			let suffixCount = suffixesEnabled.reduce((a,n) => a + +n, 0);
+			let extractedSuffixes = [];
+			if (suffixCount > 1) {
+				throw "extractCommonIndicators -- multiple suffixes found";
+			}
+			else if (prefixCount === 1) {
+				let suffixIndex = suffixesEnabled.indexOf(true);
+				extractedSuffixes = groups[suffixIndex];
+			}
+
+			let strippedSource = [];
+			for (let i = 0, l = source.length; i < l; i++) {
+				let sample = source[i];
+				for (let prefix of extractedPrefixes) {
+					if (sample.startsWith(prefix)) {
+						sample = sample.replace(prefix, "");
+						break;
+					}
+				}
+				for (let suffix of extractedSuffixes) {
+					if (sample.endsWith(suffix)) {
+						sample = sample.replace(suffix, "");
+						break;
+					}
+				}
+				strippedSource.push(sample);
+			}
+
+			return [extractedPrefixes, strippedSource, extractedSuffixes];
+		}
+
 	}
 
-	if (verbose) {
-		console.groupEnd();
-	}
-
-	let rets = [].concat(enumUsetypes, numUsetypes, timestampUsetypes);
-	if (rets.length === 0) {
-		return [new StringUsetype()];
-	}
-	return rets;
 }

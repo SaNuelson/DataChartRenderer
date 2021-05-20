@@ -1,4 +1,3 @@
-import { tryParse } from '../parser/parse.main.js';
 import { bindEventSystemMixin } from '../utils/events.js';
 import { determineType } from '../parser/parse.main.js';
 import { Usetype } from '../parser/usetype.js';

@@ -5,4 +5,9 @@ import { SourceData } from './SourceData.js';
  */
 class Catalogue {
     
+    _bindings = [];
+    size() { return this._bindings.length; }
+
+    
+
 }

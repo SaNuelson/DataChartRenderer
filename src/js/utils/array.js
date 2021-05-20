@@ -74,3 +74,71 @@ export const crossEntropy = function(arr, against) {
         }
     }
 }
+
+/**
+ * Check if array has any duplicates (shallow?)
+ * @param {*[]} array 
+ * @returns {boolean} true if has any duplicates 
+ */
+export function hasDuplicates(array) {
+    return (new Set(array)).size !== array.length;
+}
+
+/**
+ * Group objects in array by specific key
+ * @param {*[]} xs array to group
+ * @param {*} key key to group by
+ * @param {boolean} dropKeyless whether to skip objects lacking specified key or not
+ * @returns {*} object with keys equal to grouping keys, values being arrays of objects
+ * @example
+ * let objs = [{'a':5},{'a':10},{'b':20},{'a':false}]
+ * let grouped = groupBy(objs, 'a', true);
+ * // {'5':[{'a':5}], '10':[{'a':10}], 'false':{'a':false}]}
+ */
+export function groupBy(xs, key, dropKeyless = true) {
+    if (dropKeyless)
+        xs = xs.filter(x => x[key] || x[key] === 0);
+
+    let groups = {};
+    for (let x of xs) {
+        groups[x[key]] = (groups[x[key]] || []);
+        groups[x[key]].push(x);
+    }
+    return groups;
+}
+
+/**
+ * Check if two arrays are equal element-wise (shallow)
+ * @param {*[]} ax 
+ * @param {*[]} bx 
+ * @returns {boolean} true if of same size and all eleements equal, false otherwise
+ */
+export function areEqual(ax, bx) {
+    if (ax.length !== bx.length)
+        return false;
+    for (let i in ax)
+        if (ax[i] !== bx[i])
+            return false;
+    return true;
+}
+
+/**
+ * Insert element el between every two elements of arr.
+ * @param {any[]} arr array to infill (won't be mutated)
+ * @param {any} el infilling element (shallow copy)
+ * @param {boolean} [start=false] (=false) whether to put one element at the start
+ * @param {boolean} [end=false] (=false) whether to put one element at the end
+ * @example
+ * let arr = ["a","b","c","d"];
+ * let filler = "X";
+ * console.log(infill(arr, filler, true, false));
+ * // ["X", "a", "X", "b", "X", "c", "X", "d"];
+ */
+export function infill(arr, el, start = false, end = false) {
+    let infilled = arr.map(a => [a, el]).flat(1);
+    if (start)
+        infilled.splice(0, 0, el);
+    if (!end)
+        infilled.splice(-1, 1);
+    return infilled;
+}

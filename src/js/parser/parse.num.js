@@ -1,6 +1,7 @@
-import { Number as NumUsetype } from './usetype.js';
+import { Usetype } from './usetype.js';
 import { getCutPattern } from '../utils/patterns.js';
 import { indexesOf } from '../utils/utils.js';
+import { numberConstants } from './parse.constants.js';
 
 let verbose = (window.verbose ?? {}).number;
 console.log("parse.num.js verbosity = ", verbose);
@@ -10,20 +11,20 @@ if (verbose) {
 	var error = console.error;
 }
 else {
-	var log = () => {};
-	var warn = () => {};
-	var error = () => {};
+	var log = () => { };
+	var warn = () => { };
+	var error = () => { };
 }
 
 
 /**
  * Try to recognize possible formats of string-represented numbers in source array.
  * @param {string[]} source strings upon which format should be determined
- * @returns {NumUsetype[]} possible number formats of specified strings
+ * @returns {Number[]} possible number formats of specified strings
  */
-export function recognizeNum(source, args) {
+export function recognizeNumbers(source, args) {
 	// TODO
-	const extractorChunkSize = 5;
+	const initialBatchSize = 5;
 	const usetypePrecision = .95;
 
 	if (args.noval) {
@@ -34,9 +35,17 @@ export function recognizeNum(source, args) {
 		return [];
 	}
 
-	let nuts = extractPossibleFormats(source.slice(0, extractorChunkSize));
+	// populate initial batch with largest samples
+	let initialBatch = [];
+	{
+		let sortedSource = [...source].sort();
+		initialBatch = sortedSource.slice(0, initialBatchSize);
+	}
+	console.log("recognizeNum -- initial batch = ", initialBatch);
+
+	let nuts = extractPossibleFormats(initialBatch);
 	log("extractedNumUsetypes", nuts);
-	let matches = nuts.map(()=>0);
+	let matches = nuts.map(() => 0);
 	let disabled = 0;
 	for (let i = 0, il = source.length; i < il; i++) {
 		let token = source[i];
@@ -66,7 +75,7 @@ export function recognizeNum(source, args) {
 
 /**
  * @param {string[]} source formats (possibly a subset of one passed in)
- * @returns {NumUsetype[]} possible numutypes
+ * @returns {Number[]} possible numutypes
  */
 function extractPossibleFormats(source) {
 	const exlog = (line, msg) => {
@@ -74,8 +83,8 @@ function extractPossibleFormats(source) {
 	}
 
 	let args = {};
-	const potentialThousandSeparators = ['.',',',' '];
-	const potentialDecimalSeparators = ['.',','];
+	const potentialThousandSeparators = ['.', ',', ' '];
+	const potentialDecimalSeparators = ['.', ','];
 	const cutPattern = getCutPattern({
 		numbers: true,
 		rest: true
@@ -95,12 +104,12 @@ function extractPossibleFormats(source) {
 			if (this.suffixes[s])
 				this.suffixes[s] += 1;
 			else
-				this.suffixes[s] = 1; 
+				this.suffixes[s] = 1;
 		},
 		addDelims: function (kd, dd, md) {
-			let valid = (!dd || potentialDecimalSeparators.includes(dd)) && 
-						(!md || potentialThousandSeparators.includes(md)) &&
-						(!kd || potentialThousandSeparators.includes(kd));
+			let valid = (!dd || potentialDecimalSeparators.includes(dd)) &&
+				(!md || potentialThousandSeparators.includes(md)) &&
+				(!kd || potentialThousandSeparators.includes(kd));
 			if (!valid) { return false; }
 
 			let key = kd + "|" + dd + "|" + md;
@@ -113,7 +122,7 @@ function extractPossibleFormats(source) {
 		},
 		addNum: function (num) {
 			this.minVal = Math.min(this.minVal, num);
-			this.maxVal = Math.max(this.maxVal, num) ;
+			this.maxVal = Math.max(this.maxVal, num);
 		}
 	};
 
@@ -163,11 +172,12 @@ function extractPossibleFormats(source) {
 		//  (N)(D)(N)((D)(N))+
 		else {
 			let counts = delims.reduce((acc, delim) => {
-				if (acc[delim]) 
+				if (acc[delim])
 					acc[delim] += 1;
 				else
-					acc[delim] = 1; 
-				return acc }, {});
+					acc[delim] = 1;
+				return acc
+			}, {});
 			let delimkeys = Object.keys(counts);
 
 			if (delimkeys.length !== 2) {
@@ -241,8 +251,7 @@ function extractPossibleFormats(source) {
 	let numutypes = [];
 	for (let delimset in memory.delims) {
 		let delims = delimset.split('|');
-		error("delims",delims);
-		numutypes.push(new NumUsetype({
+		numutypes.push(new Number({
 			prefixes: Object.keys(memory.prefixes),
 			suffixes: Object.keys(memory.suffixes),
 			separators: delims,
@@ -259,10 +268,202 @@ function extractPossibleFormats(source) {
  * @param {import('./usetype.js').Number} format Usetype.Number instance containing format info
  * @returns Parsed num if possible, NaN otherwise
  */
-export function parseNum(source,format) {
+export function parseNum(source, format) {
 	if (source.length)
 		return source.map(format.deformat);
 	return format.deformat(source);
 }
 
-export const recognizeNumbers = extractPossibleFormats;
+/**
+ * @typedef NumberUsetypeArgs
+ * Argument object used to construct {@see Number}.
+ * @property {number} [min] minimal value, if none provided, max is treated as a sample
+ * @property {number} [max] maximal value, if none provided, min is treated as a sample
+ * @property {string} [decimalSeparator] default ".", replaces dot in e.g. $13.59
+ * @property {string} [thousandSeparator] default "", inserted between thousands, e.g. 15.000.000 pcs
+ * @property {boolean} [separateDecimalThousands] default false, if thousands should be separated on right-side as well
+ * @property {string} [prefix] default none, prefixes all numbers
+ * @property {string} [suffix] default none, suffixes all numbers
+ * @property {number} [integerPlaces] default 0, minimal length to be padded on the left
+ * @property {number} [decimalPlaces] default 0, minimal length to be padded on the right
+ * @property {boolean} [integral] default true, if number is whole (no decimal places)
+*/
+
+const nullNum = () => 1234567.654321;
+
+/**
+ * Number usetype. Mostly any numerical formats can be wrapped by this.
+ * Usetypes such as prices, numbers...
+ * @todo ratios, fractions
+ * @implements {Usetype}
+ */
+export class Number extends Usetype {
+
+    constructor({
+        separators = [],
+        prefixes = [],
+        suffixes = [],
+        scientific = false,
+        strictlyPositive = false
+    }) {
+        super();
+        if (separators.length > 0 && separators[0] !== "") {
+            this.thousandSeparator = separators[0];
+        }
+        if (separators.length > 1 && separators[1] !== "") {
+            this.decimalSeparator = separators[1];
+        }
+        if (separators.length > 2 && separators[2] === separators[0]) {
+            this.separateDecimalThousands = true;
+        }
+        if (scientific) {
+            this.scientific = true;
+        }
+        if (strictlyPositive) {
+            this.strictlyPositive = true;
+        }
+
+        this.prefixes = prefixes;
+        let prefixIndicators = recognizeIndicators(this.prefixes);
+        if (prefixIndicators.type !== 'unknown') {
+            this.prefixes = prefixIndicators.domain;
+            this.prefixPlaceholder = prefixIndicators.type;
+        }
+
+        this.suffixes = suffixes;
+        let suffixIndicators = recognizeIndicators(this.suffixes);
+        if (suffixIndicators.type !== 'unknown') {
+            this.suffixes = suffixIndicators.domain;
+            this.suffixPlaceholder = suffixIndicators.type;
+        }
+
+    }
+
+    //#region Defaults
+    prefixes = [];
+    suffixes = [];
+    decimalSeparator = "";
+    thousandSeparator = "";
+    separateDecimalThousands = false;
+    //#endregion
+
+    /**
+     * Format passed in number as a string, using this Usetype's config.
+     * @param {number} num number to convert to formatted string
+     * @returns {string} formatted number as string using self
+     */
+    format(num) {
+        function _addSeparator(str, sep, leftAligned) {
+            let bits = leftAligned ?
+                str.match(/.{1,3}/g) :
+                str.match(/.{1,3}(?=(.{3})*$)/g)
+            return bits.join(sep);
+        }
+
+        let outPrefix = this.prefixPlaceholder ?? this.prefixes;
+        let outSuffix = this.suffixPlaceholder ?? this.suffixes;
+
+        var numString;
+        if (this.decimalPlaces)
+            numString = num.toFixed(this.decimalPlaces);
+        else
+            numString = num.toString();
+        var numParts = numString.split(".");
+
+        var wholePart = numParts[0];
+
+        if (this.integerPlaces > 0 && numParts[0].length < this.integerPlaces)
+            wholePart = "0".repeat(this.integerPlaces - wholePart.length) + wholePart;
+
+        wholePart = _addSeparator(numParts[0], this.thousandSeparator, false);
+
+        if (this.integral)
+            return outPrefix + wholePart + outSuffix;
+
+        var decimalPart = "0";
+
+        if (numParts.length > 1)
+            decimalPart = numParts[1];
+
+        if (this.decimalPlaces > 0 && numParts[1].length < this.decimalPlaces)
+            decimalPart = decimalPart + "0".repeat(this.decimalPlaces - decimalPart.length);
+
+        if (this.separateDecimalThousands)
+            decimalPart = _addSeparator(numParts[1], this.thousandSeparator, true);
+
+        return outPrefix + wholePart + this.decimalSeparator + decimalPart + outSuffix;
+    }
+
+    /** 
+     * Transform formatted string to number
+     * @param {string} x to try to parse
+     * @returns {number} number represented by input string
+     */
+    deformat(str) {
+        // TODO
+        let temp = str;
+        this.prefixes.forEach(prefix => temp.startsWith(prefix) && (temp = temp.slice(prefix.length)));
+        this.suffixes.forEach(suffix => temp.endsWith(suffix) && (temp = temp.slice(0, temp.length - suffix.length)));
+        temp = temp.split(this.decimalSeparator).join('.');
+        temp = temp.split(this.thousandSeparator).join('');
+        if (isNaN(temp))
+            return null;
+        return +temp;
+    }
+
+    toString() {
+        if (this.min && this.max) {
+            return "N{" + this.format(this.min) + "-" + this.format(this.max) + "}";
+        }
+        else if (this.min) {
+            return "N{" + this.format(this.min) + "}";
+        }
+        else if (this.max) {
+            return "N{" + this.format(this.max) + "}";
+        }
+        else {
+            return "N{" + this.format(nullNum()) + "}";
+        }
+    }
+    toFormatString() { return ""; }
+    toDebugString() { return "Usetype::Base()"; }
+
+    /** 
+     * Possible underlying types for this Usetype subclass.
+     * @type {string}
+     * @todo Set as static
+     */
+    compatibleTypes = [];
+
+    /**
+     * Underlying type for this Usetype instance.
+     * @type {string}
+     */
+    compatibleTypes = ["number"];
+    type = "number";
+}
+
+function recognizeIndicators(indicators) {
+    let currCodes = numberConstants.getCurrencyCodes();
+
+    if (!indicators || !(indicators instanceof Array) || indicators.length === 0){
+        return {type: 'unknown', format: 'unknown', domain: []};
+    }
+
+    if (indicators.every(indicator => currCodes.includes(indicator)))
+        return {type: 'currency', format: 'code', domain: [...currCodes]};
+
+    let currSymbols = numberConstants.getCurrencySymbols();
+    if (indicators.every(indicator => currSymbols.includes(indicator)))
+        return {type: 'currency', format: 'symbol', domain: [...currSymbols]};
+
+    let metricPrefixSymbols = numberConstants.getMetricPrefixSymbols();
+    if (indicators.every(indicator => metricPrefixSymbols.includes(indicator)))
+        return {type: 'metric', format: 'symbol', domain: [...metricPrefixSymbols]};
+
+    let metricPrefixNames = numberConstants.getMetricPrefixes();
+    if (indicators.every(indicator => metricPrefixNames.includes(indicator)))
+        return {type: 'metric', format: 'prefix', domain: [...metricPrefixNames]};
+
+    return {type: 'unknown', format: 'unknown', domain: []};
+}

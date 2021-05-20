@@ -8,10 +8,17 @@
     "test": "node --experimental-modules --experimental-vm-modules node_modules/jest/bin/jest.js",
     "jest:clearcache": "jest --clear-cache"
   },
+  "quokka": {
+    "stdEsm": false,
+    "nativeEsm": true,
+    "plugins": ["jsdom-quokka-plugin"]
+  },
   "author": "Black Warden",
   "license": "ISC",
   "devDependencies": {
+    "fetch": "^1.1.0",
     "jest": "^26.0.1",
+    "jsdom": "^16.5.3",
     "node": ">= 12.16.3",
     "npm": ">= 6.14.4",
     "tee": "^0.2.0",

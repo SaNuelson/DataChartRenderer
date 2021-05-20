@@ -1,4 +1,9 @@
 
+//////////////
+/////////////  MUSTs
+////////////
+const must = {};
+
 //#region Unary
 
 /**
@@ -6,7 +11,8 @@
  * @param {function (...any) : boolean} f 
  * @returns {function (...any) : boolean}
  */
-export const ruleNot = f => ((...p) => !f(...p));
+const mustNot = f => ((...p) => !f(...p));
+must.not = mustNot;
 
 //#endregion
 
@@ -18,7 +24,8 @@ export const ruleNot = f => ((...p) => !f(...p));
  * @param {function (...any) : boolean} g
  * @returns {function (...any) : boolean} f(...p) AND g(...p)
  */
-export const ruleBoth = (f,g) => ((...p) => f(...p) && g(...p));
+const mustBoth = (f, g) => ((...p) => f(...p) && g(...p));
+must.both = mustBoth;
 
 /**
  * Generate a binary OR merger
@@ -26,7 +33,8 @@ export const ruleBoth = (f,g) => ((...p) => f(...p) && g(...p));
  * @param {function (...any) : boolean} g 
  * @returns {function (...any) : boolean} f(...p) OR g(...p)
  */
-export const ruleEither = (f,g) => ((...p) => f(...p) || g(...p));
+const mustEither = (f, g) => ((...p) => f(...p) || g(...p));
+must.either = mustEither;
 
 /**
  * Generate a binary IMPLIES (=>) merger
@@ -34,7 +42,8 @@ export const ruleEither = (f,g) => ((...p) => f(...p) || g(...p));
  * @param {function (...any) : boolean} g 
  * @returns {function (...any) : boolean} f(...p) => g(...p)
  */
- export const ruleImplies = (f,g) => ((...p) => !f(...p) || g(...p));
+const mustImply = (f, g) => ((...p) => !f(...p) || g(...p));
+must.imply = mustImply;
 
 /**
  * Generate a binary IMPLIEDBY (<=) merger
@@ -42,7 +51,8 @@ export const ruleEither = (f,g) => ((...p) => f(...p) || g(...p));
  * @param {function (...any) : boolean} g 
  * @returns {function (...any) : boolean} f(...p) <= g(...p)
  */
- export const ruleImpliedBy = (f,g) => ((...p) => f(...p) || !g(...p));
+const mustBeImpliedBy = (f, g) => ((...p) => f(...p) || !g(...p));
+must.implied = mustBeImpliedBy;
 
 /**
  * Generate a binary IFF (==) merger
@@ -50,7 +60,8 @@ export const ruleEither = (f,g) => ((...p) => f(...p) || g(...p));
  * @param {function (...any) : boolean} g 
  * @returns {function (...any) : boolean} f(...p) == g(...p)
  */
-export const ruleIff = (f,g) => ((...p) => f(...p) === g(...p));
+const mustIff = (f, g) => ((...p) => f(...p) === g(...p));
+must.equal = mustIff;
 
 //#endregion
 
@@ -61,34 +72,45 @@ export const ruleIff = (f,g) => ((...p) => f(...p) === g(...p));
  * @param {Array.<function (...any) : boolean>} fs 
  * @returns {function (...any) : boolean} for each f in fs: f(...p)
  */
-export const ruleAll = (...fs) => ((...p) => fs.every(f => f(...p)));
+const mustAll = (...fs) => ((...p) => fs.every(f => f(...p)));
+must.all = mustAll;
 
 /**
  * Generate an ANY merger (non-strict)
  * @param {Array.<function (...any) : boolean>} fs 
  * @returns {function (...any) : boolean} exists f in fs: f(...p)
  */
-export const ruleAny = (...fs) => ((...p) => fs.some(f => f(...p)));
+const mustAny = (...fs) => ((...p) => fs.some(f => f(...p)));
+must.any = mustAny;
 
 /**
  * Generate a NONE merger (non-strict)
  * @param {Array.<function (...any) : boolean>} fs 
  * @returns {function (...any) : boolean} for each f in fs: NOT f(...p)
  */
-export const ruleNone = (...fs) => !ruleAny(...fs);
+const mustNone = (...fs) => !mustAny(...fs);
+must.none = mustNone;
 
 /**
  * Generate an NOT ALL merger
  * @param {Array.<function (...any) : boolean>} fs 
  * @returns {function (...any) : boolean} exists f in fs: NOT f(...p)
  */
-export const ruleNotAll = (...fs) => !ruleAll(...fs);
+const mustNotAll = (...fs) => !mustAll(...fs);
+must.notAll = mustNotAll;
 
 /**
  * Generate an IFF merger
  * @param {Array.<function (...any) : boolean>} fs 
  * @returns {function (...any) : boolean} for each f,g in fs: f(...p) == g(...p)
  */
-export const ruleEqual = (...fs) => ruleAny(ruleAll(...fs), ruleNone(...fs));
+const mustEqual = (...fs) => mustAny(mustAll(...fs), mustNone(...fs));
+must.equal = mustIff;
 
+export { must };
 //#endregion
+
+//////////////
+/////////////  SHOULDs
+////////////
+// Maybe?
