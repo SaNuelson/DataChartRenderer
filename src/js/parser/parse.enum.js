@@ -72,7 +72,7 @@ export function recognizeEnums(source) {
      * @param {EnumUsetypeArgs} args
      */
     constructor(args) {
-        super();
+        super(args);
         if (args.domain)
             this.domain = args.domain;
     }

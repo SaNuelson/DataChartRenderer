@@ -42,7 +42,7 @@ export function determineType(data, args) {
 	gatheredUsetypes.push(...enumUsetypes);
 	
 	// [data, args] = preprocessIndicators(data, args);
-
+	
 	if (!args.skipConstants || !args.constant) {
 		let numPerformance = performance.now();
 		let numUsetypes = recognizeNumbers(data, args);

@@ -22,7 +22,7 @@ export function recognizeStrings(source, args) {
 
 class String extends Usetype {
 	constructor(args) {
-		super();
+		super(args);
 		if (args.potentialIds) {
 			this.unique = true;
 		}

@@ -902,7 +902,7 @@ class Timestamp extends Usetype {
      * @param {DatetimeUsetypeArgs} args 
      */
     constructor(args) {
-        super();
+        super(args);
 
         let explicitType = args.type;
         if (!explicitType)

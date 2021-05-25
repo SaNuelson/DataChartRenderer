@@ -200,12 +200,12 @@ export class SourceData {
             if (!dels)
                 dels = determineDelimiter(lines[1]);
             if (dels.length !== 1)
-                throw new Error('Multiple (or no) valid delimiters encountered (' + dels + ')');
+                throw new Error(`Multiple (or no) valid delimiters encountered (${dels})`);
             var del = dels[0];
         }
 
         // [(START + DEL)](PARGROUP + NODELGROUP)[(DEL + END)] 
-        let reg = new RegExp(`(?<=^|,)("[^"]*")|[^${del}]+(?=${del}|$)`, 'g');
+        let reg = new RegExp(`(?<=^|${del})("[^"]*")|[^${del}"]+(?=${del}|$)`, 'g');
 
         this._head = lines[0].match(reg).map(str => str.startsWith('"') && str.endsWith('"') ? str.slice(1, -1) : str);
 
