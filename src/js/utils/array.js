@@ -142,3 +142,8 @@ export function infill(arr, el, start = false, end = false) {
         infilled.splice(-1, 1);
     return infilled;
 }
+
+let a = ["a", ["b","c"], "d", {e:true}, ()=>{}];
+let b = "X";
+
+let ret = infill(a, b, true, true);

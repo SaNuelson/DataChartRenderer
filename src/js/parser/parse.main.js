@@ -71,15 +71,17 @@ function preprocessEnumlikeness(source, args) {
 	if (!enumUsetype) {
 		enumUsetypes = [];
 	}
-	else if (enumUsetype.noval) {
+	else if (enumUsetype.hasNoval) {
 		debug.log("NOVAL detected as ", enumUsetype.noval);
-		args.noval = enumUsetype.noval;
+		args.hasNoval = true;
+		args.novalValue = enumUsetype.novalVal;
 		source = source.filter(value => value !== args.noval);
 		enumUsetypes = [];
 	}
-	else if (enumUsetype.constant) {
+	else if (enumUsetype.isConstant) {
 		debug.log("CONSTANT detected as ", enumUsetype.constant);
-		args.constant = enumUsetype.constant;
+		args.isConstant = true;
+		args.constantVal = enumUsetype.constantVal;
 		source = [];
 		enumUsetypes = [];
 	}
@@ -95,6 +97,7 @@ function preprocessEnumlikeness(source, args) {
 	return [source, enumUsetypes, args];
 }
 
+// Not implemented, would require internal changes to respective parsers
 function preprocessIndicators(source, args) {
 
 	let timestampConstantGroups = Object.values(timestampConstants).map(getFunc => getFunc(args.locale));

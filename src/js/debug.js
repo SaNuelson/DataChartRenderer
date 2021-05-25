@@ -17,6 +17,8 @@ import * as EventModule from './utils/events.js';
 import * as LogicModule from './utils/logic.js';
 import * as UtilsModule from './utils/utils.js';
 
+import * as ConstantsModule from './parser/parse.constants.js';
+
 window.debug = {
     core: {
         chart: ChartModule,
@@ -31,7 +33,8 @@ window.debug = {
         main: ParseMainModule,
         num: ParseNumModule,
         timestamp: ParseTimestampModule,
-        usetype: Usetype
+        usetype: Usetype,
+        constants: ConstantsModule
     },
     uigen: {
         main: UigenMainModule

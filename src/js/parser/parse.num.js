@@ -2,6 +2,7 @@ import { Usetype } from './usetype.js';
 import { getCutPattern } from '../utils/patterns.js';
 import { indexesOf } from '../utils/utils.js';
 import { numberConstants } from './parse.constants.js';
+import { areEqual } from '../utils/array.js';
 
 let verbose = (window.verbose ?? {}).number;
 console.log("parse.num.js verbosity = ", verbose);
@@ -25,11 +26,6 @@ else {
 export function recognizeNumbers(source, args) {
 	// TODO
 	const initialBatchSize = 5;
-	const usetypePrecision = .95;
-
-	if (args.noval) {
-		var noval = args.noval;
-	}
 
 	if (!source || source.length === 0) {
 		return [];
@@ -49,6 +45,8 @@ export function recognizeNumbers(source, args) {
 	let disabled = 0;
 	for (let i = 0, il = source.length; i < il; i++) {
 		let token = source[i];
+		// cached in case multiple number usetypes fail here
+		let potentialExpansion = undefined;
 		for (let j = 0, jl = nuts.length; j < jl; j++) {
 			if (!nuts[j].disabled) {
 				let num = nuts[j].deformat(token);
@@ -57,10 +55,30 @@ export function recognizeNumbers(source, args) {
 					if (nuts[j].max < num) nuts[j].max = num;
 					if (nuts[j].min > num) nuts[j].min = num;
 				}
-				else if (matches[j] < usetypePrecision * (i + 1)) {
+				else {
 					console.log("Matching", nuts[j], "against", token, "failed, disabling potential format.");
-					nuts[j].disabled = true;
-					disabled++;
+					console.log("Trying to recover expanded number usetype...");
+					if (!potentialExpansion) {
+						potentialExpansion = extractPossibleFormats([token]);
+						console.log("Extracting potential expanding usetypes ", potentialExpansion);
+					}
+					else {
+						console.log("Using pre-extracted potential usetypes ", potentialExpansion);
+					}
+					let foundExpansion = false;
+					for (let k = 0, kl = potentialExpansion.length; k < kl; k++) {
+						if (potentialExpansion[k].isSupersetOf(nuts[j])) {
+							console.log("Found fitting expansion. Replacing old ", nuts[j], "with new ", potentialExpansion[k]);
+
+							foundExpansion = true;
+							nuts[j] = potentialExpansion[k];
+							potentialExpansion.splice(k, 1);
+							break;
+						}
+					}
+					if (!foundExpansion) {
+						nuts[j].disabled = true;
+					}
 				}
 			}
 		}
@@ -299,171 +317,199 @@ const nullNum = () => 1234567.654321;
  */
 export class Number extends Usetype {
 
-    constructor({
-        separators = [],
-        prefixes = [],
-        suffixes = [],
-        scientific = false,
-        strictlyPositive = false
-    }) {
-        super();
-        if (separators.length > 0 && separators[0] !== "") {
-            this.thousandSeparator = separators[0];
-        }
-        if (separators.length > 1 && separators[1] !== "") {
-            this.decimalSeparator = separators[1];
-        }
-        if (separators.length > 2 && separators[2] === separators[0]) {
-            this.separateDecimalThousands = true;
-        }
-        if (scientific) {
-            this.scientific = true;
-        }
-        if (strictlyPositive) {
-            this.strictlyPositive = true;
-        }
+	constructor({
+		separators = [],
+		prefixes = [],
+		suffixes = [],
+		scientific = false,
+		strictlyPositive = false
+	}) {
+		super();
+		if (separators.length > 0 && separators[0] !== "") {
+			this.thousandSeparator = separators[0];
+		}
+		if (separators.length > 1 && separators[1] !== "") {
+			this.decimalSeparator = separators[1];
+		}
+		if (separators.length > 2 && separators[2] === separators[0]) {
+			this.separateDecimalThousands = true;
+		}
+		if (scientific) {
+			this.scientific = true;
+		}
+		if (strictlyPositive) {
+			this.strictlyPositive = true;
+		}
 
-        this.prefixes = prefixes;
-        let prefixIndicators = recognizeIndicators(this.prefixes);
-        if (prefixIndicators.type !== 'unknown') {
-            this.prefixes = prefixIndicators.domain;
-            this.prefixPlaceholder = prefixIndicators.type;
-        }
+		this.prefixes = prefixes;
+		let prefixIndicators = recognizeIndicators(this.prefixes);
+		if (prefixIndicators.type !== 'unknown') {
+			this.prefixes = prefixIndicators.domain;
+			this.prefixPlaceholder = prefixIndicators.type;
+		}
 
-        this.suffixes = suffixes;
-        let suffixIndicators = recognizeIndicators(this.suffixes);
-        if (suffixIndicators.type !== 'unknown') {
-            this.suffixes = suffixIndicators.domain;
-            this.suffixPlaceholder = suffixIndicators.type;
-        }
+		this.suffixes = suffixes;
+		let suffixIndicators = recognizeIndicators(this.suffixes);
+		if (suffixIndicators.type !== 'unknown') {
+			this.suffixes = suffixIndicators.domain;
+			this.suffixPlaceholder = suffixIndicators.type;
+		}
 
-    }
+	}
 
-    //#region Defaults
-    prefixes = [];
-    suffixes = [];
-    decimalSeparator = "";
-    thousandSeparator = "";
-    separateDecimalThousands = false;
-    //#endregion
+	//#region Defaults
+	prefixes = [];
+	suffixes = [];
+	decimalSeparator = "";
+	thousandSeparator = "";
+	separateDecimalThousands = false;
+	//#endregion
 
-    /**
-     * Format passed in number as a string, using this Usetype's config.
-     * @param {number} num number to convert to formatted string
-     * @returns {string} formatted number as string using self
-     */
-    format(num) {
-        function _addSeparator(str, sep, leftAligned) {
-            let bits = leftAligned ?
-                str.match(/.{1,3}/g) :
-                str.match(/.{1,3}(?=(.{3})*$)/g)
-            return bits.join(sep);
-        }
+	/**
+	 * Format passed in number as a string, using this Usetype's config.
+	 * @param {number} num number to convert to formatted string
+	 * @returns {string} formatted number as string using self
+	 */
+	format(num) {
+		function _addSeparator(str, sep, leftAligned) {
+			let bits = leftAligned ?
+				str.match(/.{1,3}/g) :
+				str.match(/.{1,3}(?=(.{3})*$)/g)
+			return bits.join(sep);
+		}
 
-        let outPrefix = this.prefixPlaceholder ?? this.prefixes;
-        let outSuffix = this.suffixPlaceholder ?? this.suffixes;
+		let outPrefix = this.prefixPlaceholder ?? this.prefixes;
+		let outSuffix = this.suffixPlaceholder ?? this.suffixes;
 
-        var numString;
-        if (this.decimalPlaces)
-            numString = num.toFixed(this.decimalPlaces);
-        else
-            numString = num.toString();
-        var numParts = numString.split(".");
+		var numString;
+		if (this.decimalPlaces)
+			numString = num.toFixed(this.decimalPlaces);
+		else
+			numString = num.toString();
+		var numParts = numString.split(".");
 
-        var wholePart = numParts[0];
+		var wholePart = numParts[0];
 
-        if (this.integerPlaces > 0 && numParts[0].length < this.integerPlaces)
-            wholePart = "0".repeat(this.integerPlaces - wholePart.length) + wholePart;
+		if (this.integerPlaces > 0 && numParts[0].length < this.integerPlaces)
+			wholePart = "0".repeat(this.integerPlaces - wholePart.length) + wholePart;
 
-        wholePart = _addSeparator(numParts[0], this.thousandSeparator, false);
+		wholePart = _addSeparator(numParts[0], this.thousandSeparator, false);
 
-        if (this.integral)
-            return outPrefix + wholePart + outSuffix;
+		if (this.integral)
+			return outPrefix + wholePart + outSuffix;
 
-        var decimalPart = "0";
+		var decimalPart = "0";
 
-        if (numParts.length > 1)
-            decimalPart = numParts[1];
+		if (numParts.length > 1)
+			decimalPart = numParts[1];
 
-        if (this.decimalPlaces > 0 && numParts[1].length < this.decimalPlaces)
-            decimalPart = decimalPart + "0".repeat(this.decimalPlaces - decimalPart.length);
+		if (this.decimalPlaces > 0 && numParts[1].length < this.decimalPlaces)
+			decimalPart = decimalPart + "0".repeat(this.decimalPlaces - decimalPart.length);
 
-        if (this.separateDecimalThousands)
-            decimalPart = _addSeparator(numParts[1], this.thousandSeparator, true);
+		if (this.separateDecimalThousands)
+			decimalPart = _addSeparator(numParts[1], this.thousandSeparator, true);
 
-        return outPrefix + wholePart + this.decimalSeparator + decimalPart + outSuffix;
-    }
+		return outPrefix + wholePart + this.decimalSeparator + decimalPart + outSuffix;
+	}
 
-    /** 
-     * Transform formatted string to number
-     * @param {string} x to try to parse
-     * @returns {number} number represented by input string
-     */
-    deformat(str) {
-        // TODO
-        let temp = str;
-        this.prefixes.forEach(prefix => temp.startsWith(prefix) && (temp = temp.slice(prefix.length)));
-        this.suffixes.forEach(suffix => temp.endsWith(suffix) && (temp = temp.slice(0, temp.length - suffix.length)));
-        temp = temp.split(this.decimalSeparator).join('.');
-        temp = temp.split(this.thousandSeparator).join('');
-        if (isNaN(temp))
-            return null;
-        return +temp;
-    }
+	/** 
+	 * Transform formatted string to number
+	 * @param {string} x to try to parse
+	 * @returns {number} number represented by input string
+	 */
+	deformat(str) {
+		// TODO
+		let temp = str;
+		this.prefixes.forEach(prefix => temp.startsWith(prefix) && (temp = temp.slice(prefix.length)));
+		this.suffixes.forEach(suffix => temp.endsWith(suffix) && (temp = temp.slice(0, temp.length - suffix.length)));
+		temp = temp.split(this.decimalSeparator).join('.');
+		temp = temp.split(this.thousandSeparator).join('');
+		if (isNaN(temp))
+			return null;
+		return +temp;
+	}
 
-    toString() {
-        if (this.min && this.max) {
-            return "N{" + this.format(this.min) + "-" + this.format(this.max) + "}";
-        }
-        else if (this.min) {
-            return "N{" + this.format(this.min) + "}";
-        }
-        else if (this.max) {
-            return "N{" + this.format(this.max) + "}";
-        }
-        else {
-            return "N{" + this.format(nullNum()) + "}";
-        }
-    }
-    toFormatString() { return ""; }
-    toDebugString() { return "Usetype::Base()"; }
+	isSupersetOf(other) {
+		if (!areEqual(this.prefixes, other.prefixes)) {
+			console.warn("isSupersetOf() incompatible prefix sets", this.prefixes, other.prefixes);
+			return false;
+		}
 
-    /** 
-     * Possible underlying types for this Usetype subclass.
-     * @type {string}
-     * @todo Set as static
-     */
-    compatibleTypes = [];
+		if (!areEqual(this.suffixes, other.suffixes)) {
+			console.warn("isSupersetOf() incompatible suffix sets", this.suffixes, other.suffixes);
+			return false;
+		}
 
-    /**
-     * Underlying type for this Usetype instance.
-     * @type {string}
-     */
-    compatibleTypes = ["number"];
-    type = "number";
+		if (other.decimalSeparator &&
+			this.decimalSeparator !== other.decimalSeparator) {
+			console.log("isSupersetOf() incompatible decimal separators ", this.decimalSeparator, other.decimalSeparator);
+			return false;
+		}
+
+		if (other.thousandSeparator &&
+			this.thousandSeparator !== other.thousandSeparator) {
+			console.warn("isSupersetOf() incompatible thousand separators ", this.thousandSeparator, other.thousandSeparator);
+			return false;
+		}
+
+		return true;
+	}
+
+	toString() {
+		if (this.min && this.max) {
+			return "N{" + this.format(this.min) + "-" + this.format(this.max) + "}";
+		}
+		else if (this.min) {
+			return "N{" + this.format(this.min) + "}";
+		}
+		else if (this.max) {
+			return "N{" + this.format(this.max) + "}";
+		}
+		else {
+			return "N{" + this.format(nullNum()) + "}";
+		}
+	}
+	toFormatString() { return ""; }
+	toDebugString() { return "Usetype::Number()"; }
+
+	/** 
+	 * Possible underlying types for this Usetype subclass.
+	 * @type {string}
+	 * @todo Set as static
+	 */
+	compatibleTypes = [];
+
+	/**
+	 * Underlying type for this Usetype instance.
+	 * @type {string}
+	 */
+	compatibleTypes = ["number"];
+	type = "number";
 }
 
 function recognizeIndicators(indicators) {
-    let currCodes = numberConstants.getCurrencyCodes();
+	let currCodes = numberConstants.getCurrencyCodes();
 
-    if (!indicators || !(indicators instanceof Array) || indicators.length === 0){
-        return {type: 'unknown', format: 'unknown', domain: []};
-    }
+	if (!indicators || !(indicators instanceof Array) || indicators.length === 0) {
+		return { type: 'unknown', format: 'unknown', domain: [] };
+	}
 
-    if (indicators.every(indicator => currCodes.includes(indicator)))
-        return {type: 'currency', format: 'code', domain: [...currCodes]};
+	if (indicators.every(indicator => currCodes.includes(indicator)))
+		return { type: 'currency', format: 'code', domain: [...currCodes] };
 
-    let currSymbols = numberConstants.getCurrencySymbols();
-    if (indicators.every(indicator => currSymbols.includes(indicator)))
-        return {type: 'currency', format: 'symbol', domain: [...currSymbols]};
+	let currSymbols = numberConstants.getCurrencySymbols();
+	if (indicators.every(indicator => currSymbols.includes(indicator)))
+		return { type: 'currency', format: 'symbol', domain: [...currSymbols] };
 
-    let metricPrefixSymbols = numberConstants.getMetricPrefixSymbols();
-    if (indicators.every(indicator => metricPrefixSymbols.includes(indicator)))
-        return {type: 'metric', format: 'symbol', domain: [...metricPrefixSymbols]};
+	let metricPrefixSymbols = numberConstants.getMetricPrefixSymbols();
+	let cardinalityPrefixSymbols = numberConstants.getCardinalityPrefixSymbols();
+	let magnitudePrefixSymbols = [].concat(metricPrefixSymbols, cardinalityPrefixSymbols);
+	if (indicators.every(indicator => magnitudePrefixSymbols.includes(indicator)))
+		return { type: 'magnitude', format: 'symbol', domain: [...magnitudePrefixSymbols] };
 
-    let metricPrefixNames = numberConstants.getMetricPrefixes();
-    if (indicators.every(indicator => metricPrefixNames.includes(indicator)))
-        return {type: 'metric', format: 'prefix', domain: [...metricPrefixNames]};
+	let metricPrefixNames = numberConstants.getMetricPrefixes();
+	if (indicators.every(indicator => metricPrefixNames.includes(indicator)))
+		return { type: 'magnitude', format: 'prefix', domain: [...metricPrefixNames] };
 
-    return {type: 'unknown', format: 'unknown', domain: []};
+	return { type: 'unknown', format: 'unknown', domain: [] };
 }

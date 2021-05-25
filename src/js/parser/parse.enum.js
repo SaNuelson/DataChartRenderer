@@ -27,7 +27,7 @@ export function recognizeEnums(source) {
 
 	// TODO: single val for whole column. Should be ignored?
 	if (counts.length === 1) {
-		return [{constant: counts[0][0]}];
+		return [{isConstant: true, constantVal: counts[0][0]}];
 	}
 
 	// no repeated value means possible ID column
@@ -47,7 +47,7 @@ export function recognizeEnums(source) {
 	// otherwise check for NOVAL
 	if (counts[counts.length - 1][1] / counts[counts.length - 2][1] > 2 &&
 		counts[counts.length - 2][1] > 0) {
-		return [{noval:counts[counts.length - 1][0]}];
+		return [{hasNoval: true, novalVal:counts[counts.length - 1][0]}];
 	}
 
 	return [];

@@ -105,11 +105,16 @@ function getMetricPrefixSymbols(locale) {
     return ["Y", "Z", "E", "P", "T", "G", "M", "k", "h", "da", "", "d", "c", "m", "μ", "n", "p", "f", "a", "z", "y"];
 }
 
+function getCardinalityPrefixSymbols(locale) {
+    return ["K", "M", "B", "T", "Qa", "Qi", "Sx", "Sp", "Oc", "No", "Dc", "Ud", "Dd", "Td"]; // ...
+}
+
 export const numberConstants = {
     getCurrencySymbols: getCurrencySymbols,
     getCurrencyCodes: getCurrencyCodes,
     getMetricPrefixes: getMetricPrefixes,
-    getMetricPrefixSymbols: getMetricPrefixSymbols
+    getMetricPrefixSymbols: getMetricPrefixSymbols,
+    getCardinalityPrefixSymbols: getCardinalityPrefixSymbols
 }
 
 function getCountryCodes() {
