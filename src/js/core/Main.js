@@ -1,7 +1,7 @@
 console.log("Loaded core/Main.js");
 
 import { Template } from './Template.js';
-import { Chart, eventHandles as ChartEventHandles } from './Chart.js';
+import { Catalogue } from './Catalogue.js';
 import { Role } from './Role.js';
 import { SourceData } from './SourceData.js';
 
@@ -27,4 +27,4 @@ export function Init(opts) {
 
 /* #endregion */
 
-export { Chart, ChartEventHandles, Role, SourceData };
+export { Catalogue, Role, SourceData };
