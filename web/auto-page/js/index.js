@@ -1,5 +1,5 @@
-import '/src/js/verbose.js';
-import '/src/js/debug.js';
+import '../../../src/js/verbose.js';
+import '../../../src/js/debug.js';
 // TODO: Absolute paths and all from Main.js
 import { Init as CoreInit, Catalogue } from '../../../src/js/core/Main.js';
 import { Template } from '../../../src/js/core/Template.js';
