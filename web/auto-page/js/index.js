@@ -1,12 +1,8 @@
 import '/src/js/verbose.js';
 import '/src/js/debug.js';
 // TODO: Absolute paths and all from Main.js
-import { Init as CoreInit } from '../../../src/js/core/Main.js';
-import { Chart } from '../../../src/js/core/Chart.js';
+import { Init as CoreInit, Catalogue } from '../../../src/js/core/Main.js';
 import { Template } from '../../../src/js/core/Template.js';
-import * as Utils from '../../../src/js/utils/utils.js';
-import { populateHeader, populateData } from '../../../src/nmjs/ui.js';
-import { Catalogue } from '../../../src/js/core/Catalogue.js';
 
 ///////// This page only works with a single instance.
 ///////// Multiple instance chart workers are on their way.
