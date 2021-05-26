@@ -11,7 +11,9 @@
   "quokka": {
     "stdEsm": false,
     "nativeEsm": true,
-    "plugins": ["jsdom-quokka-plugin"]
+    "plugins": [
+      "jsdom-quokka-plugin"
+    ]
   },
   "author": "Black Warden",
   "license": "ISC",
@@ -21,6 +23,7 @@
     "jsdom": "^16.5.3",
     "node": ">= 12.16.3",
     "npm": ">= 6.14.4",
+    "papaparse": "^5.3.0",
     "tee": "^0.2.0",
     "webpack": "^5.28.0",
     "webpack-cli": "^4.6.0"

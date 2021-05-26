@@ -29,7 +29,6 @@ const defaultRecognizerArgs = {
  * @returns {import('./usetype.js').Usetype} list of possible usetypes
  */
 export function determineType(data, args) {
-
 	if (!args)
 		args = Object.assign({}, defaultRecognizerArgs);
 
@@ -67,6 +66,7 @@ export function determineType(data, args) {
 
 function preprocessEnumlikeness(source, args) {
 	let enumUsetypes = recognizeEnums(source, args);
+	console.log("preprocessEnumlikeness", enumUsetypes);
 	let enumUsetype = enumUsetypes[0];
 	if (!enumUsetype) {
 		enumUsetypes = [];

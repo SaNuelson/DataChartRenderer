@@ -596,9 +596,9 @@ const TimestampTokenDetails = {
         numeric: false,
         // apply is valid since one can expect year preceding era in a format (BC 1500 makes little sense)
         apply: (date, val) => date.getFullYear() > 0 && val === 'BC' && date.setFullYear(-date.getFullYear()),
-        applyTod: (tod, val) => warn("ApplyTOD era called, undefined behaviour"),
+        applyTod: (tod, val) => debug.warn("ApplyTOD era called, undefined behaviour"),
         extract: (date) => date.getFullYear() >= 0 ? 'AD' : 'BC',
-        extractTod: (tod) => warn("ExtractTOD era called, undefined behaviour")
+        extractTod: (tod) => debug.warn("ExtractTOD era called, undefined behaviour")
     },
 
     /** e.g. 3.1.1998 */
@@ -609,9 +609,9 @@ const TimestampTokenDetails = {
         numeric: true,
         subtoken: "yearShort",
         apply: (date, val) => date.setFullYear(+val),
-        applyTod: (tod, val) => warn("ApplyTOD yearFull called, undefined behaviour"),
+        applyTod: (tod, val) => debug.warn("ApplyTOD yearFull called, undefined behaviour"),
         extract: (date) => date.getFullYear().toString().padStart(4, "0"),
-        extractTod: (tod) => warn("ExtractTOD yearFull called, undefined behaviour")
+        extractTod: (tod) => debug.warn("ExtractTOD yearFull called, undefined behaviour")
     },
 
     /** e.g. 3.1.'98 */
@@ -621,9 +621,9 @@ const TimestampTokenDetails = {
         category: TimestampCategory.Years,
         numeric: true,
         apply: (date, val) => date.setFullYear(+val),
-        applyTod: (tod, val) => warn("ApplyTOD yearShort called, undefined behaviour"),
+        applyTod: (tod, val) => debug.warn("ApplyTOD yearShort called, undefined behaviour"),
         extract: (date) => date.getFullYear().toString(),
-        extractTod: (tod) => warn("ExtractTOD yearShort called, undefined behaviour")
+        extractTod: (tod) => debug.warn("ExtractTOD yearShort called, undefined behaviour")
     },
 
     /** e.g. 03.01.1998 */
@@ -634,9 +634,9 @@ const TimestampTokenDetails = {
         numeric: true,
         subtoken: "monthShort",
         apply: (date, val) => date.setMonth(val - 1),
-        applyTod: (tod, val) => warn("ApplyTOD monthFull called, undefined behaviour"),
+        applyTod: (tod, val) => debug.warn("ApplyTOD monthFull called, undefined behaviour"),
         extract: (date) => (date.getMonth() + 1).toString().padStart(2, "0"),
-        extractTod: (tod) => warn("ExtractTOD monthFull called, undefined behaviour")
+        extractTod: (tod) => debug.warn("ExtractTOD monthFull called, undefined behaviour")
     },
 
     /** e.g. 3.1.1998 */
@@ -646,9 +646,9 @@ const TimestampTokenDetails = {
         category: TimestampCategory.Months,
         numeric: true,
         apply: (date, val) => date.setMonth(val - 1),
-        applyTod: (tod, val) => warn("ApplyTOD monthShort called, undefined behaviour"),
+        applyTod: (tod, val) => debug.warn("ApplyTOD monthShort called, undefined behaviour"),
         extract: (date) => (date.getMonth() + 1).toString(),
-        extractTod: (tod) => warn("ExtractTOD monthShort called, undefined behaviour")
+        extractTod: (tod) => debug.warn("ExtractTOD monthShort called, undefined behaviour")
     },
 
     /** e.g. January 3rd 1998 */
@@ -659,9 +659,9 @@ const TimestampTokenDetails = {
         numeric: false,
         subtoken: "monthAbbrev",
         apply: (date, val) => date.setMonth(monthNames.indexOf(val)),
-        applyTod: (tod, val) => warn("ApplyTOD monthName called, undefined behaviour"),
+        applyTod: (tod, val) => debug.warn("ApplyTOD monthName called, undefined behaviour"),
         extract: (date) => monthNames[date.getMonth()],
-        extractTod: (tod) => warn("ExtractTOD monthName called, undefined behaviour")
+        extractTod: (tod) => debug.warn("ExtractTOD monthName called, undefined behaviour")
     },
 
     /** e.g. Jan 3rd, 1998 */
@@ -671,9 +671,9 @@ const TimestampTokenDetails = {
         category: TimestampCategory.Months,
         numeric: false,
         apply: (date, val) => date.setMonth(monthAbbrevs.indexOf(val)),
-        applyTod: (tod, val) => warn("ApplyTOD monthAbbrev called, undefined behaviour"),
+        applyTod: (tod, val) => debug.warn("ApplyTOD monthAbbrev called, undefined behaviour"),
         extract: (date) => monthAbbrevs[date.getMonth()],
-        extractTod: (tod) => warn("ExtractTOD monthAbbrev called, undefined behaviour")
+        extractTod: (tod) => debug.warn("ExtractTOD monthAbbrev called, undefined behaviour")
     },
 
     /** e.g. 03.01.1998 */
@@ -684,9 +684,9 @@ const TimestampTokenDetails = {
         numeric: true,
         subtoken: "dayShort",
         apply: (date, val) => date.setDate(+val),
-        applyTod: (tod, val) => warn("ApplyTOD dayFull called, undefined behaviour"),
+        applyTod: (tod, val) => debug.warn("ApplyTOD dayFull called, undefined behaviour"),
         extract: (date) => date.getDate().toString().padStart(2, "0"),
-        extractTod: (tod) => warn("ExtractTOD dayFull called, undefined behaviour")
+        extractTod: (tod) => debug.warn("ExtractTOD dayFull called, undefined behaviour")
     },
 
     /** e.g. 3.1.1998 */
@@ -696,9 +696,9 @@ const TimestampTokenDetails = {
         category: TimestampCategory.Days,
         numeric: true,
         apply: (date, val) => date.setDate(+val),
-        applyTod: (tod, val) => warn("ApplyTOD dayShort called, undefined behaviour"),
+        applyTod: (tod, val) => debug.warn("ApplyTOD dayShort called, undefined behaviour"),
         extract: (date) => date.getDate().toString(),
-        extractTod: (tod) => warn("ExtractTOD dayShort called, undefined behaviour")
+        extractTod: (tod) => debug.warn("ExtractTOD dayShort called, undefined behaviour")
     },
 
     /** e.g. Saturday 3.1. 1998 */
@@ -708,10 +708,10 @@ const TimestampTokenDetails = {
         numeric: false,
         subtoken: "dayOfWeekShort",
         regexBit: '(' + weekDays.map(d => '(?:' + d + ')').join('|') + ')',
-        apply: (date, val) => warn("Apply dayOfWeekFull called, undefined behaviour"),
-        applyTod: (tod, val) => warn("ApplyTOD dayOfWeekFull called, undefined behaviour"),
+        apply: (date, val) => debug.warn("Apply dayOfWeekFull called, undefined behaviour"),
+        applyTod: (tod, val) => debug.warn("ApplyTOD dayOfWeekFull called, undefined behaviour"),
         extract: (date) => weekDays[date.getDay()],
-        extractTod: (tod) => warn("ExtractTOD dayOfWeekFull called, undefined behaviour")
+        extractTod: (tod) => debug.warn("ExtractTOD dayOfWeekFull called, undefined behaviour")
     },
 
     /** e.g. Sat 3.1. 1998 */
@@ -720,10 +720,10 @@ const TimestampTokenDetails = {
         category: TimestampCategory.DayOfWeek,
         numeric: false,
         regexBit: '(' + weekDayAbbrevs.map(d => '(?:' + d + ')').join('|') + ')',
-        apply: (date, val) => warn("Apply dayOfWeekShort called, undefined behaviour"),
-        applyTod: (tod, val) => warn("ApplyTOD dayOfWeekShort called, undefined behaviour"),
+        apply: (date, val) => debug.warn("Apply dayOfWeekShort called, undefined behaviour"),
+        applyTod: (tod, val) => debug.warn("ApplyTOD dayOfWeekShort called, undefined behaviour"),
         extract: (date) => weekDayAbbrevs[date.getDay()],
-        extractTod: (tod) => warn("ExtractTOD dayOfWeekShort called, undefined behaviour")
+        extractTod: (tod) => debug.warn("ExtractTOD dayOfWeekShort called, undefined behaviour")
     },
 
     /** e.g. 7:30 AM */
@@ -740,7 +740,7 @@ const TimestampTokenDetails = {
             else if (val === 'AM' && hours === 12)
                 cate.setHours(0); // midnight
         },
-        applyTod: (tod, val) => warn("ApplyTOD meridiem called, undefined behaviour"),
+        applyTod: (tod, val) => debug.warn("ApplyTOD meridiem called, undefined behaviour"),
         extract: (date) => date.getHours() < 12 || date.getHours() === 0 ? 'AM' : 'PM',
         extractTod: (tod) => tod[0] < 12 || tod[0] === 0 ? 'AM' : 'PM'
     },

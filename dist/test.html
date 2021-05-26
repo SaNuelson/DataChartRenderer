@@ -35,15 +35,33 @@
                         data-bs-toggle="dropdown">
                         File
                     </a>
-                    <ul id="load-dropdown" class="dropdown-menu">
-                        <li><a id="load-local-file-btn" href="#" data-action="load-preset-file" data-target="local"
-                                class="dropdown-item">Load Local Datafile...</a></li>
-                        <li><button type="button" class="dropdown-item" data-bs-target="#online-file-load-modal"
-                                data-bs-toggle="modal" data-bs-dismiss="modal">Load Online Datafile...</button></li>
-                        <li><a id="load-demo-file-btn" href="#" data-action="load-preset-file"
-                                data-target="../res/data_type_debug.csv" class="dropdown-item">Load Debug Demo</a></li>
-                        <li><a id="load-demo-file-btn" href="#" data-action="load-preset-file"
-                                data-target="../res/zoo_navstevnost.csv" class="dropdown-item">Load ZOO Demo</a></li>
+                    <ul class="dropdown-menu">
+                        <li><a id="load-local-file-btn" href="#" class="dropdown-item">Load Local Datafile...</a></li>
+                        <li><button type="button" class="dropdown-item" data-bs-target="#online-file-load-modal" data-bs-toggle="modal" data-bs-dismiss="modal">Load Online Datafile...</button></li>
+                        <li><a id="load-demo-file-btn" href="#" class="dropdown-item">Load Debug Demo</a></li>
+                        <li><a id="load-people-demo-file-btn" href="#" class="dropdown-item">Load People Demo</a></li>
+                    </ul>
+                </li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                        Chart
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a id="save-json-file-btn" href="#" class="dropdown-item">Save Options as JSON...</a></li>
+                        <li><a id="load-json-file-btn" href="#" class="dropdown-item">Load Options from JSON...</a></li>
+                    </ul>
+                </li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                        Help
+                    </a>
+                    <ul class="dropdown-menu">
+                        <a id="toggle-table-btn" href="#" data-toggle="collapse" data-target="#table-div"
+                            class="dropdown-item toggle">Toggle Preview Table</a>
+                        <a id="toggle-chart-btn" href="#" data-toggle="collapse" data-target="#chart-div"
+                            class="dropdown-item toggle">Toggle Chart</a>
+                        <a id="toggle-log-btn" href="#" data-toggle="collapse" data-target="#popup-div"
+                            class="dropdown-item toggle">Toggle Logger</a>
                     </ul>
                 </li>
             </ul>
@@ -56,6 +74,7 @@
     </nav>
 
     <input id="source-file-input" style="display:none" type="file" />
+    <input id="config-file-input" style="display:none" type="file" />
 
     <div id="online-file-load-modal" class="modal fade text-body" id="modal" tabindex="-1">
         <div class="modal-dialog">
@@ -77,8 +96,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button id="online-file-load-button" type="button" class="btn btn-primary"
-                        data-bs-dismiss="modal">Load</button>
+                    <button id="online-file-load-button" type="button" class="btn btn-primary" data-bs-dismiss="modal">Load</button>
                 </div>
             </div>
         </div>
@@ -93,7 +111,9 @@
         <div id="recog-div" class="m-4 justify-content-center show" style="overflow-x:auto;overflow-y:hidden">
         </div>
 
-        Possible chart representations:
+        Possible mappings:
+        <div id="mapping-div" class="m-4 justify-content-center show" style="overflow-x:auto;overflow-y:hidden">
+        </div>
 
         <div id="chart-div"></div>
 
@@ -114,8 +134,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.min.js"
         integrity="sha384-j0CNLUeiqtyaRmlzUHCPZ+Gy5fQu0dQ6eZ/xAww941Ai1SxSY+0EQqNXNE6DZiVc"
         crossorigin="anonymous"></script>
-    <!-- Import from module when packing -->
-    <script src="https://unpkg.com/papaparse@5.3.0/papaparse.min.js"></script>
+    <script src="./out.js"></script>
 
 
     <script>

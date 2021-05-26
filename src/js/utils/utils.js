@@ -49,7 +49,7 @@ export function intersection(opts, ...as) {
     if (!as)
         return [];
     
-    return as[0].filter(a => as.splice(0,1).every(ao => ao.includes(a)));
+    return as[0].filter(a => as.slice(0,1).every(ao => ao.includes(a)));
 }
 
 /**
@@ -148,34 +148,6 @@ export function mapping(as, bs, opts) {
         && mappable.forEach(row => row.splice(i,1)));
 
     
-}
-
-/**
- * 
- * @param {Iterable.<T>} domain domain (e.g. array or string) to search the element in
- * @param {U} [seeked=true] element searched for
- * @param {function(T): U} [transform=undefined] transform function applied to the domain if specified (used as domain.map(transform))
- * @returns {number[]} indexes of found occurences
- * @template T,U
- * @example
- * let domain = "Test string for indexesOf";
- * let seeked = "e";
- * let indexes = indexesOf(domain, seeked)
- * // [1, 19, 21]
- * let domain = [{age:19},{sex:"F"},{age:15,sex:"M"},{},{age:18,sex:"F"}];
- * let notOfAgeOrUnknown = (o) => !o.age || o.age < 18;
- * let indexes = indexesOf(domain, true, notOfAgeOrUnknown);
- * // [1, 2, 3]
- */
-export const indexesOf = function (domain, seeked, transform){
-    if (transform)
-        domain = domain.map(transform);
-    let a = [];
-    let i = -1;
-    console.log(domain);
-    while((i = domain.indexOf(seeked,i+1)) >= 0) 
-        a.push(i);
-    return a;
 }
 
 /**

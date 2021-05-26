@@ -262,7 +262,7 @@
             ]
         },
         {
-            "name": "Histogram(single)",
+            "name": "Histogram-single",
             "internal-name": "Histogram",
             "roles": [
                 {
@@ -280,7 +280,7 @@
             ]
         },
         {
-            "name": "Histogram (multiple)",
+            "name": "Histogram-multiple",
             "internal-name": "Histogram",
             "roles": [
                 {

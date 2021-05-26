@@ -37,6 +37,9 @@ class String extends Usetype {
 		}
 	}
 	
+	format(x) { return x.toString(); } 
+	deformat(x) { return x.toString(); }
+
 	toString() {
 		if (this.unique) {
 			return "SID{" + (this.type ?? "") + "}";
@@ -48,6 +51,14 @@ class String extends Usetype {
 
 		return "S{" + (this.type ?? "") + "}";
 	}
+	
+    compatibleTypes = ["string"];
+
+    /**
+     * Underlying type for this Usetype instance.
+     * @type {string}
+     */
+    type = "string";
 }
 
 function validateUrl(value) {

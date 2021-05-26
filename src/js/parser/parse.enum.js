@@ -81,8 +81,8 @@ export function recognizeEnums(source) {
     deformat(value) { return this.domain.includes(value) ? value : undefined }
 
     size() { return this.domain.length }
-    toString() { `{[${this.domain}]}` }
-    toDebugString() { `Usetype.Enum([${this.domain}])` }
+    toString() { return `E{[${this.domain}]}` }
+    toDebugString() { return `Usetype.Enum([${this.domain}])` }
     compatibleTypes = ["string"];
     type = "string";
 }

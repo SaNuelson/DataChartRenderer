@@ -34,6 +34,26 @@ export const avg = function(arr) {
 }
 
 /**
+ * Find indexes using the lambda function provided
+ * @param {Iterable} domain domain (e.g. array or string) to search the element in
+ * @param {function(any): boolean} [callbackFn] function taking (element, index, array) as parameters, returning boolean
+ * @param {any} [thisArg] object to use as "this" when calling callbackFn
+ * @returns {number[]} indexes of elements for which callbackFn returns true
+ */
+export const findIndexes = function (arr, callbackFn, thisArg){
+    if (!callbackFn)
+        callbackFn = (el) => !!el;
+    if (!thisArg)
+        thisArg = this;
+    let idxs = [];
+    for (let i = 0; i < arr.length; i++) {
+        if (callbackFn.call(thisArg, arr[i], i, arr))
+            idxs.push(i);
+    }
+    return idxs;
+}
+
+/**
  * Convert object to array with elements in form [key, object[key]]
  * @param {object} obj
  * @returns {Array.<[string, any]>}

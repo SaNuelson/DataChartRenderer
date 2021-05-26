@@ -1,7 +1,6 @@
 import { Usetype } from './usetype.js';
 import { getCutPattern } from '../utils/patterns.js';
-import { indexesOf } from '../utils/utils.js';
-import { numberConstants } from './parse.constants.js';
+import { unicodeConstants, numberConstants } from './parse.constants.js';
 import { areEqual } from '../utils/array.js';
 
 let verbose = (window.verbose ?? {}).number;
@@ -38,8 +37,6 @@ export function recognizeNumbers(source, args) {
 	debug.log("recognizeNum -- initial batch = ", initialBatch);
 
 	let nuts = extractPossibleFormats(initialBatch, args);
-	window.debugNumUsetypes = (window.debugNumUsetypes ?? []);
-	window.debugNumUsetypes.push("NEWBATCH", nuts);
 	debug.log("extractedNumUsetypes", nuts);
 	let matches = nuts.map(() => 0);
 	let disabled = 0;
@@ -80,7 +77,6 @@ export function recognizeNumbers(source, args) {
 						nuts[j].disabled = true;
 					}
 				}
-				window.debugNumUsetypes.push(nuts);
 			}
 		}
 		if (disabled === nuts.length)
@@ -98,10 +94,10 @@ export function recognizeNumbers(source, args) {
  */
 function extractPossibleFormats(source, args) {
 	const exlog = (line, msg) => {
-		// warn(`Number Recognizer (CSV line ${line} = ${source[line]}): ${msg}`);
+		debug.warn(`Number Recognizer (CSV line ${line} = ${source[line]}): ${msg}`);
 	}
 
-	const potentialThousandSeparators = ['.', ',', ' '];
+	const potentialThousandSeparators = ['.', ',', ...unicodeConstants.getUtf16Whitespace()];
 	const potentialDecimalSeparators = ['.', ','];
 	const cutPattern = getCutPattern({
 		numbers: true,
@@ -128,6 +124,8 @@ function extractPossibleFormats(source, args) {
 			let valid = (!dd || potentialDecimalSeparators.includes(dd)) &&
 				(!md || potentialThousandSeparators.includes(md)) &&
 				(!kd || potentialThousandSeparators.includes(kd));
+
+			console.log(`addDelims(${kd},${dd},${md}) = (${kd.charCodeAt(0)})-(${potentialThousandSeparators.includes(kd)}) `);
 			if (!valid) { return false; }
 
 			let key = kd + "|" + dd + "|" + md;
@@ -166,6 +164,7 @@ function extractPossibleFormats(source, args) {
 		}
 
 		let delims = split.filter(token => token.rest).map(token => token.rest);
+		console.log("delims for ", source[i], " are (", delims.join(","), ")");
 
 		// FORMAT
 		// N - number sequence
@@ -198,8 +197,13 @@ function extractPossibleFormats(source, args) {
 			}, {});
 			let delimkeys = Object.keys(counts);
 
+			if (delimkeys.length === 1) {
+				memory.addDelims(delimkeys[0], "", "");
+				continue;
+			}
+
 			if (delimkeys.length !== 2) {
-				exlog(i, `Too many unique delimiters ${delimkeys}`);
+				exlog(i, `Too many unique delimiters (${delimkeys})`);
 				continue;
 			}
 
@@ -265,7 +269,7 @@ function extractPossibleFormats(source, args) {
 			}
 		}
 	}
-
+	console.log("MEM", memory);
 	let numutypes = [];
 	for (let delimset in memory.delims) {
 		let delims = delimset.split('|');
