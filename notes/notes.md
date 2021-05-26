@@ -102,3 +102,12 @@ function recognizeUsetypes(data):
   return usetypes
 
 ```
+
+Usetype to chart binding algo
+===
+
+```js
+function findMappings(usetypeSets, chart) {
+  
+}
+```
