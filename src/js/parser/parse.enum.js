@@ -45,6 +45,7 @@ export function recognizeEnums(source) {
 
 
 	// otherwise check for NOVAL
+	// TODO: False positive {"1000": 213, "2000": 62, ...}, need better NOVAL criteria
 	if (counts[counts.length - 1][1] / counts[counts.length - 2][1] > 2 &&
 		counts[counts.length - 2][1] > 0) {
 		return [{hasNoval: true, novalVal:counts[counts.length - 1][0]}];

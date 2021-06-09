@@ -20,7 +20,7 @@ else {
 }
 
 const defaultRecognizerArgs = {
-	skipConstants: true
+	skipConstants: false
 }
 
 /**
@@ -33,6 +33,7 @@ export function determineType(data, args) {
 		args = Object.assign({}, defaultRecognizerArgs);
 
 	debug.groupCollapsed(`detemineType(${data.length > 0 ? data[0] + "..." : []})`);
+	debug.log("args = ", args);
 
 	let gatheredUsetypes = [];
 
@@ -42,7 +43,7 @@ export function determineType(data, args) {
 	
 	// [data, args] = preprocessIndicators(data, args);
 	
-	if (!args.skipConstants || !args.constant) {
+	if (!args.skipConstants || !args.isConstant) {
 		let numPerformance = performance.now();
 		let numUsetypes = recognizeNumbers(data, args);
 		debug.log("determineType -- recognizeNumbers -- took ", performance.now() - numPerformance);
@@ -55,12 +56,16 @@ export function determineType(data, args) {
 		debug.log("TimestampUsetypes detected: ", timestampUsetypes);
 		gatheredUsetypes.push(...timestampUsetypes);
 	}
+	if (gatheredUsetypes.length === 0) {
+		let stringPerformance = performance.now();
+		let stringUsetypes = recognizeStrings(data, args);
+		debug.log("detemineType -- recognizeSTrings -- took ", performance.now() - stringPerformance);
+		debug.log("StringUsetypes detected: ", stringUsetypes);
+		gatheredUsetypes = stringUsetypes;
+	}
 
 	debug.groupEnd();
 
-	if (gatheredUsetypes.length === 0) {
-		return recognizeStrings(data, args);
-	}
 	return gatheredUsetypes;
 }
 
@@ -82,7 +87,7 @@ function preprocessEnumlikeness(source, args) {
 		debug.log("CONSTANT detected as ", enumUsetype.constant);
 		args.isConstant = true;
 		args.constantVal = enumUsetype.constantVal;
-		source = [];
+		source = [source[0]];
 		enumUsetypes = [];
 	}
 	else if (enumUsetype.potentialIds) {

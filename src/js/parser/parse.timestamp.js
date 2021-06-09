@@ -160,9 +160,10 @@ function filterTimestampUsetypes(source, usetypes) {
 
         let nextUsetypes = usetypes.filter(usetype => !usetype.disabled);
 
-        if (nextUsetypes.length === 1) {
-            return nextUsetypes;
-        }
+        // False positive on [1000, 1000, 5000, ...] with single usetype ['{YYYY}']
+        // if (nextUsetypes.length === 1) {
+        //     return nextUsetypes;
+        // }
         if (nextUsetypes.length === 0) {
             debug.log("Batch of usetypes nulled during ", source[i], usetypes);
             return [];
@@ -255,7 +256,8 @@ function getExpectedUsetypes() {
             ['{DD}','{MM}','{YYYY}'],
             ['{DD}','{MM}','{YY}'],
             ['{MM}','{DD}','{YYYY}'],
-            ['{MM}','{DD}','{YY}']
+            ['{MM}','{DD}','{YY}'],
+            ['{YYYY}','{MM}','{DD}']
         ];
 
         const frequentTimeOrders = [
@@ -279,7 +281,7 @@ function getExpectedUsetypes() {
         let frequentDatetimes = [];
         for (let date of frequentDates)
             for (let time of frequentTimes)
-                frequentDatetimes.concat(frequentDateTimeSeparators.map(sep => [].concat(date, [sep], time)));
+                frequentDatetimes = frequentDatetimes.concat(frequentDateTimeSeparators.map(sep => [].concat(date, [sep], time)));
         cache = cache.concat(frequentDatetimes);
 
         //#endregion
@@ -591,7 +593,7 @@ const TimestampTokenDetails = {
     /** e.g. year 50 BC */
     era: {
         label: '{EE}',
-        regexBit: '((?:AD)|(?:BC))',
+        regexBit: '(AD|BC)',
         category: TimestampCategory.Era,
         numeric: false,
         // apply is valid since one can expect year preceding era in a format (BC 1500 makes little sense)
@@ -604,7 +606,7 @@ const TimestampTokenDetails = {
     /** e.g. 3.1.1998 */
     yearFull: {
         label: '{YYYY}',
-        regexBit: '([0-9]{4,})',
+        regexBit: '([12][0-9]{3,})',
         category: TimestampCategory.Years,
         numeric: true,
         subtoken: "yearShort",
@@ -629,7 +631,7 @@ const TimestampTokenDetails = {
     /** e.g. 03.01.1998 */
     monthFull: {
         label: '{MM}',
-        regexBit: '([0-9]{2})',
+        regexBit: '(0\\d|1[012])',
         category: TimestampCategory.Months,
         numeric: true,
         subtoken: "monthShort",
@@ -642,7 +644,7 @@ const TimestampTokenDetails = {
     /** e.g. 3.1.1998 */
     monthShort: {
         label: '{M}',
-        regexBit: '([0-9]{1,2})',
+        regexBit: '(0?\\d|1[012])',
         category: TimestampCategory.Months,
         numeric: true,
         apply: (date, val) => date.setMonth(val - 1),
@@ -679,7 +681,7 @@ const TimestampTokenDetails = {
     /** e.g. 03.01.1998 */
     dayFull: {
         label: '{DD}',
-        regexBit: '([0-9]{2})',
+        regexBit: '(0[1-9]|[12]\\d|3[01])',
         category: TimestampCategory.Days,
         numeric: true,
         subtoken: "dayShort",
@@ -692,7 +694,7 @@ const TimestampTokenDetails = {
     /** e.g. 3.1.1998 */
     dayShort: {
         label: '{D}',
-        regexBit: '([0-9]{1,2})',
+        regexBit: '(0?[1-9]|[12]\\d|3[01])',
         category: TimestampCategory.Days,
         numeric: true,
         apply: (date, val) => date.setDate(+val),
@@ -729,7 +731,7 @@ const TimestampTokenDetails = {
     /** e.g. 7:30 AM */
     meridiem: {
         label: '{RR}',
-        regexBit: '((?:AM)(?:PM))',
+        regexBit: '(AM|PM)',
         category: TimestampCategory.Meridiem,
         numeric: false,
         // same like era, it should be safe to assume meridiem won't be preceding hours (e.g. AM 7:30)
@@ -748,7 +750,7 @@ const TimestampTokenDetails = {
     /** e.g. 07:05:32 */
     hourFull: {
         label: '{hh}',
-        regexBit: '([0-9]{2})',
+        regexBit: '([01]\\d|2[0-3])',
         category: TimestampCategory.Hours,
         numeric: true,
         subtoken: "hourShort",
@@ -771,7 +773,7 @@ const TimestampTokenDetails = {
     /** e.g. 7:05 AM */
     hourShort: {
         label: '{h}',
-        regexBit: '([0-9]{1,2})',
+        regexBit: '([01]?\\d|2[0-3])',
         category: TimestampCategory.Hours,
         numeric: true,
         apply: (date, val) => date.setHours(val),
@@ -793,7 +795,7 @@ const TimestampTokenDetails = {
     /** e.g. 07:05:32 */
     minuteFull: {
         label: '{mm}',
-        regexBit: '([0-9]{2})',
+        regexBit: '([0-5]\\d)',
         category: TimestampCategory.Minutes,
         numeric: true,
         subtoken: "minuteShort",
@@ -806,7 +808,7 @@ const TimestampTokenDetails = {
     /** e.g. 5m 32s */
     minuteShort: {
         label: '{m}',
-        regexBit: '([0-9]{1,2})',
+        regexBit: '([0-5]?\\d)',
         category: TimestampCategory.Minutes,
         numeric: true,
         apply: (date, val) => date.setMinutes(val),
@@ -818,7 +820,7 @@ const TimestampTokenDetails = {
     /** e.g. 14:15:08 */
     secondFull: {
         label: '{ss}',
-        regexBit: '([0-9]{2})',
+        regexBit: '([0-5]\\d)',
         category: TimestampCategory.Seconds,
         numeric: true,
         subtoken: "secondShort",
@@ -831,7 +833,7 @@ const TimestampTokenDetails = {
     /** e.g. 6.32 s */
     secondShort: {
         label: '{s}',
-        regexBit: '([0-9]{1,2})',
+        regexBit: '([0-5]?\\d)',
         category: TimestampCategory.Seconds,
         numeric: true,
         apply: (date, val) => date.setSeconds(val),
@@ -843,7 +845,7 @@ const TimestampTokenDetails = {
     /** e.g. 35.027s */
     millisecondFull: {
         label: '{nnn}',
-        regexBit: '([0-9]{3})',
+        regexBit: '(\\d{3})',
         category: TimestampCategory.Milliseconds,
         numeric: true,
         subtoken: "millisecondShort",
@@ -856,7 +858,7 @@ const TimestampTokenDetails = {
     /** e.g. 35s 27ms */
     millisecondShort: {
         label: '{n}',
-        regexBit: '([0-9]{1,3})',
+        regexBit: '(\\d{,3})',
         category: TimestampCategory.Milliseconds,
         numeric: true,
         apply: (date, val) => date.setMilliseconds(val),
@@ -864,7 +866,11 @@ const TimestampTokenDetails = {
         extract: (date) => date.getMilliseconds().toString(),
         extractTod: (tod) => tod[3].toString()
     }
-}
+};
+(function (){
+    delete TimestampTokenDetails.yearShort;
+    delete TimestampTokenDetails.millisecondShort;
+})();
 
 // TimestampTokenDetails access methods
 
@@ -894,8 +900,9 @@ const TimestampLabelToToken = (() => {
     return rev;
 })()
 
-function nullDate() { return new Date(0) }
-class Timestamp extends Usetype {
+function nullDate() { return new Date(1999, 11, 31, 23, 59, 59, 999) }
+function nullTod() { return [23, 59, 59] }
+export class Timestamp extends Usetype {
 
     /**
      * 
@@ -940,7 +947,7 @@ class Timestamp extends Usetype {
         let allTypesEqual = gatheredTypes.every(type => type === gatheredTypes[0]);
 
         if (!allTypesEqual) {
-            debug.error("Timestamp ", this.formatting, " allTypesEqual false.");
+            //debug.error("Timestamp ", this.formatting, " allTypesEqual false.");
             this.type = "unknown";
         }
 
@@ -949,6 +956,7 @@ class Timestamp extends Usetype {
         this.formatting = [...args.formatting];
 
         if (!args.skipValidation && !hasValidFormat(this)) {
+            //debug.error("Timestamp ", this.formatting, " has invalid format.");
             this.type = "unknown";
             return;
         }
@@ -983,33 +991,16 @@ class Timestamp extends Usetype {
             }
         });
         let pattern = new RegExp(regBits.join(''));
-        this.format = function (date) {
-            return extractors.map(ex => ex(date, this.formatting)).join('');
-        }
-        this.deformat = function (string, verbose = false) {
-            let retval = null;
-            if (this.type === "timeofday")
-                retval = [];
-            else
-                retval = nullDate();
-            let match = string.match(pattern);
-            if (!match)
-                return null;
-            appliers.forEach((app, idx) => app(retval, match[idx + 1], this.formatting));
 
-            // consistency check
-            if (string !== this.format(retval)) {
-                return null;
-            }
-
-            return retval;
-        }
+        this._extractors = extractors;
+        this._pattern = pattern;
+        this._appliers = appliers;
     }
 
     min = null;
     max = null;
     formatting = null;
-    type = "none";
+    type = "none"; // TODO: compatibleType (used) vs timestamp type collission (timestamp type => kind)
     pattern = null;
     replacement = null;
     type = "timestamp";
@@ -1038,8 +1029,33 @@ class Timestamp extends Usetype {
         return prefix + "{" + ret + "}";
     }
 
-    format(date) { console.error("Timestamp::Usetype format invalid", this); return null; }
-    deformat(string) { console.error("Timestamp::Usetype format invalid", this); return null; }
+    format(date) {
+        return this._extractors.map(ex => ex(date, this.formatting)).join('');
+    }
+
+    deformat(string, verbose = false) {
+        let retval = null;
+        if (this.type === "timeofday")
+            retval = nullTod();
+        else if (["time", "date", "datetime"].includes(this.type))
+            retval = nullDate();
+        else    
+            return retval;
+
+        let match = string.match(this._pattern);
+        if (!match)
+            return null;
+        this._appliers.forEach((app, idx) => app(retval, match[idx + 1], this.formatting));
+
+        // consistency check
+        if (string !== this.format(retval)) {
+            if (verbose)
+                debug.warn("Timestamp ", this.formatting, " deformat(", string, ") = ", retval, " vs consistency check ", this.format(retval));
+            return null;
+        }
+
+        return retval;
+    }
 
     isSupersetOf(other) {
         if (this.formatting.length !== other.formatting.length) {
@@ -1071,6 +1087,43 @@ class Timestamp extends Usetype {
 
     isImplicitSupersetOf(other) {
 
+    }
+
+    /**
+     * Try to generate timestamp usetype from short string formatting
+     * @param {string} string usual formatting joined into string (without curly brackets)
+     * @warning volatile, should be used only for debugging purposes.
+     */
+    static fromShortFormatting(string) {
+        let strippedLabels = [];
+        for (let key in TimestampTokenDetails)
+            strippedLabels.push(TimestampTokenDetails[key].label.slice(1,-1));
+        let temp = string;
+        let properLabels = [];
+        while (temp.length > 0) {
+            let matched = strippedLabels.filter(label => temp.startsWith(label));
+            if (matched.length > 0) {
+                let longest = matched.reduce((l,n)=>l.length<n.length?n:l,"");
+                properLabels.push('{'+longest+'}');
+                temp = temp.slice(longest.length);
+            }
+            else {
+                properLabels.push(temp[0]);
+                temp = temp.slice(1);
+            }
+        }
+        properLabels[0] = [properLabels[0]];
+        properLabels = properLabels.reduce((acc, next) => {
+            if (acc[acc.length - 1].endsWith('}') || next.startsWith('{')) {
+                acc.push(next);
+                return acc;
+            }
+            else {
+                acc[acc.length - 1] = acc[acc.length - 1] + next;
+                return acc;
+            }
+        });
+        return new Timestamp({formatting: properLabels});
     }
 }
 window.Timestamp = Timestamp;
