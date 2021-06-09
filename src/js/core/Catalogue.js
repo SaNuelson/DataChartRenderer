@@ -220,7 +220,9 @@ class Binding {
 }
 
 export const eventHandles = {
-    sourceChange: 'dataChanged'
+    sourceChange: 'dataChanged',
+    usetypeChange: 'usetypesChanged',
+    bindingChange: 'bindingsChanged'
 }
 
 bindEventSystemMixin(Catalogue, Object.values(eventHandles));
