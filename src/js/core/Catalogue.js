@@ -27,7 +27,7 @@ export class Catalogue {
     /** @type {Usetype[][]} */
     _usetypes = [];
     get usetypes() {
-        if (this._usetypes.length === 0)
+        if (this._usetypes.length === 0 && this._auto)
             this._determineUsetypes(); 
         return this._usetypes; 
     }
@@ -41,12 +41,13 @@ export class Catalogue {
     _bindings = [];
     get size() { return this._bindings.length; }
     get bindings() { 
-        if (this._bindings.length === 0)
+        if (this._bindings.length === 0 && this._auto)
             this._createBindings();
         return this._bindings; 
     }
 
-    constructor (args) {
+    constructor ({auto = true} = {}) {
+        this._auto = auto;
     }
 
     _reset() {
@@ -58,17 +59,25 @@ export class Catalogue {
         this._bindings = [];
     }
 
+    setAutomatic(flag) {
+        this._auto = flag;
+    }
+
     setData(papares) {
         this._reset();
         let data = papares.data;
 
         // last row empty
-        if (data[data.length - 1].length === 1 && data[data.length - 1][0] === "")
+        if (data[data.length - 1].length === 1 && data[data.length - 1][0] === "") {
+            console.log("Removing last empty row...");
             data.splice(-1);
+        }
 
         // last column empty
-        if (data.map(row => row[row.length - 1].trim().length === 0))
+        if (data.every(row => row[row.length - 1].trim().length === 0)) {
+            console.log("Remving last empty column...");
             data = data.map(row => row.slice(0, -1));
+        }
 
         this._head = data[0];
         this._data = data.slice(1);
@@ -94,10 +103,21 @@ export class Catalogue {
         });
     }
 
+    setUsetypes(usetypes) {
+        if (!this._auto)
+            this._usetypes = usetypes;
+    }
+
     _determineUsetypes() {
         this._usetypes = [];
         for (let i = 0, len = this.width; i < len; i++) {
             this._usetypes[i] = determineType(this.col(i));
+        }
+    }
+
+    createBinding(args) {
+        if (!this._auto) {
+            throw new Error("Not implemented");
         }
     }
 
@@ -215,6 +235,10 @@ class Binding {
 
     setBoundElementId(boundElementId) {
         this._boundElementId = boundElementId;
+    }
+
+    get usedFeatures() {
+        return this._bindOrder;
     }
 
 }

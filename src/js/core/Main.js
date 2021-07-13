@@ -29,3 +29,5 @@ export function Init(opts) {
 /* #endregion */
 
 export { Catalogue, Role, SourceData };
+window.Catalogue = Catalogue;
+window.Init = Init;

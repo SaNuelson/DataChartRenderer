@@ -95,6 +95,10 @@ function preprocessEnumlikeness(source, args) {
 		args.potentialIds = true;
 		enumUsetypes = [];
 	}
+	else if (enumUsetype.ambiguous) {
+		args.ambiguousSets = enumUsetype.ambiguous;
+		enumUsetypes = [];
+	}
 	else {
 		debug.log("Enum usetype detected as ", enumUsetype);
 	}

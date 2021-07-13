@@ -32,6 +32,8 @@ $(() => {
 
     // SHOW LOAD file
     $('#file-helper-link').on('click', () => (setTimeout(() => { $('#file-dropdown-toggler').trigger('click'); }, 100)));
+
+    $('#chart-wrapper').on('shown.bs.tab', tabSwitchedHandler);
 });
 
 const googleChartsLoadedHandler = () => {
@@ -39,6 +41,15 @@ const googleChartsLoadedHandler = () => {
 };
 
 //#endregion
+
+function tabSwitchedHandler(ev) {
+    let shownTab = ev.target;
+    let shownChart = ev.target.id.replace("pill-","").replace("-tab","");
+    let usedColumns = manager.bindings[shownChart].usedFeatures;
+    console.log("Recolor ", usedColumns);
+    $(`table#preview-table td`).removeClass('bg-success');
+    usedColumns.forEach((i) => $(`table#preview-table td.table-col-${i}`).addClass('bg-success'));
+}
 
 //#region Back to Front
 
@@ -54,7 +65,7 @@ function sourceChangeHandler() {
 function loadDataPreview() {
     let table = $('<table></table>')
         .prop('id', 'preview-table')
-        .addClass(['table', 'table-dark', 'table-bordered', 'table-striped']);
+        .addClass(['table', 'table-dark', 'table-bordered']);
     let thead = $('<thead></thead>');
     let header = $('<tr></tr>');
 
@@ -66,7 +77,7 @@ function loadDataPreview() {
     table.append(tbody);
     manager._data.slice(0, 5).forEach(line => {
         let row = $('<tr></tr>');
-        line.forEach(d => row.append($('<td></td>').text(d)));
+        line.forEach((d, i) => row.append($('<td></td>').text(d).addClass('table-col-' + i)));
         tbody.append(row);
     })
 
@@ -132,6 +143,7 @@ function loadChartMapping() {
 
 
     for (let i = 0; i < manager.bindings.length; i++) {
+        let id = i;
         let name = manager.bindings[i]._chartType;
 
         let pill = $('<li></li>')
@@ -141,19 +153,19 @@ function loadChartMapping() {
             .addClass('nav-link')
             .text(name)
             .prop({
-                'id': `pill-${name}-tab`,
+                'id': `pill-${id}-tab`,
                 'type': 'button',
                 'role': 'tab'
             })
             .attr({
                 'data-bs-toggle': 'pill',
-                'data-bs-target': `#pill-${name}`
+                'data-bs-target': `#pill-${id}`
             });
         let pillContent = $('<div></div>')
             .addClass('tab-pane fade')
             .attr('role', 'tabpanel')
             .prop({
-                'id': `pill-${name}`
+                'id': `pill-${id}`
             });
         pills.append(pill.append(pillLink));
         content.append(pillContent);

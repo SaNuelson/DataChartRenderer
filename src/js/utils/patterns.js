@@ -26,6 +26,9 @@ const patternBits = {
  * @param {boolean} args.rest match any characters left out into merged groups
  * @param {boolean} args.matchall True - no global flag, named groups, use with .matchAll,
  * False - global flag, groups can't be named, use with .match
+ * @param {object} args.custom optional custom set of matchers. key is used as label, value can be string or array (signifying disjunction).
+ * If defined, these take priority over other matchers.
+ * @todo args.custom needs to allow non-repeatable character sequences to avoid unexpected behaviour.
  * @returns {RegExpStringIterator|String[]} If matchall is true, returns regex result iterator,
  * else returns simple array of matches.
  * @example
@@ -40,9 +43,22 @@ export const getCutPattern = function({
     numbers = false,
     separators = false,
     rest = false,
-    matchall = true
+    matchall = true,
+    custom = {}
 }) {
     let used = [];
+
+    // custom regex capture groups
+    // can be used even if a part of other groups
+    // thanks to the fact they're matched sequentially
+    if (custom) {
+        for (let label in custom) {
+            if (custom[label] instanceof Array) {
+                used.push({name:label, val:custom[label]});
+            }
+            used.push({name:label, val:[custom[label]]});
+        }
+    }
 
     if (letters)
         used.push({name:"letters", val:[patternBits.letters, patternBits.marks]});

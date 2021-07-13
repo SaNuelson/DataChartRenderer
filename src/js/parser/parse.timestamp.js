@@ -353,9 +353,7 @@ function validateTimestampFormat(format) {
 
     let tokenLabels = format.filter(label => Object.values(TimestampTokenDetails).some(token => token.label === label));
     if (hasDuplicates(tokenLabels)) {
-        // TODO: for debug purposes, replace by simple false
-        window.faultyFormat = format;
-        throw "duplicates found, saved in window.faultyFormat";
+        return false;
     }
     let tokens = format.map(label => TimestampLabelToToken[label]);
     tokens = tokens.filter(l => l);
@@ -900,8 +898,8 @@ const TimestampLabelToToken = (() => {
     return rev;
 })()
 
-function nullDate() { return new Date(1999, 11, 31, 23, 59, 59, 999) }
-function nullTod() { return [23, 59, 59] }
+function nullDate() { return new Date(2000, 3, 21, 15, 20, 25, 30) }
+function nullTod() { return [15, 20, 25, 30] }
 export class Timestamp extends Usetype {
 
     /**
@@ -969,10 +967,16 @@ export class Timestamp extends Usetype {
         // apply those using appliers
 
         let regBits = [];
+        
         let appliers = [];
         let extractors = [];
+
+        let debugAppliers = [];
+        let debugExtractors = [];
+
         let applyMethod = "apply";
         let extractMethod = "extract";
+
         if (this.type === "timeofday") {
             applyMethod = "applyTod";
             extractMethod = "extractTod";
@@ -984,6 +988,9 @@ export class Timestamp extends Usetype {
                 regBits.push(token.regexBit);
                 appliers.push(token[applyMethod]);
                 extractors.push(token[extractMethod]);
+
+                debugAppliers.push(makeFunctionVerbose(bit, token[applyMethod]));
+                debugExtractors.push(makeFunctionVerbose(bit, token[extractMethod]));
             }
             else {
                 regBits.push(escapeRegExp(bit));
@@ -995,6 +1002,9 @@ export class Timestamp extends Usetype {
         this._extractors = extractors;
         this._pattern = pattern;
         this._appliers = appliers;
+
+        this._verboseAppliers = debugAppliers;
+        this._verboseExtractors = debugExtractors;
     }
 
     min = null;
@@ -1029,7 +1039,9 @@ export class Timestamp extends Usetype {
         return prefix + "{" + ret + "}";
     }
 
-    format(date) {
+    format(date, verbose = false) {
+        if (verbose)
+            return this._verboseExtractors.map(ex => ex(date, this.formatting)).join('');
         return this._extractors.map(ex => ex(date, this.formatting)).join('');
     }
 
@@ -1039,16 +1051,25 @@ export class Timestamp extends Usetype {
             retval = nullTod();
         else if (["time", "date", "datetime"].includes(this.type))
             retval = nullDate();
-        else    
+        else {
+            if (verbose)
+                debug.warn("Timestamp ", this.formatting, " deformat(", string, ") failed due to invalid type.");
             return retval;
+        }
 
         let match = string.match(this._pattern);
-        if (!match)
+        if (!match) {
+            if (verbose)
+                debug.warn("Timestamp ", this.formatting, " deformat(", string, ") failed to match to pattern");
             return null;
-        this._appliers.forEach((app, idx) => app(retval, match[idx + 1], this.formatting));
+        }
+        if (verbose)
+            this._verboseAppliers.forEach((app, idx) => app(retval, match[idx + 1], this.formatting));
+        else
+            this._appliers.forEach((app, idx) => app(retval, match[idx + 1], this.formatting));
 
         // consistency check
-        if (string !== this.format(retval)) {
+        if (string !== this.format(retval, verbose)) {
             if (verbose)
                 debug.warn("Timestamp ", this.formatting, " deformat(", string, ") = ", retval, " vs consistency check ", this.format(retval));
             return null;
@@ -1126,4 +1147,12 @@ export class Timestamp extends Usetype {
         return new Timestamp({formatting: properLabels});
     }
 }
-window.Timestamp = Timestamp;
+
+function makeFunctionVerbose(label, func) {
+    return function (obj, val) {
+        debug.log("Function ", label, "(", obj, val, ") => ");
+        let retval = func(obj, val);
+        debug.log(obj);
+        return retval;
+    }
+}

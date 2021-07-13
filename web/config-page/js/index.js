@@ -1,7 +1,9 @@
-import { Chart, SourceData, Init as CoreInit } from '/src/js/core/Main.js';
-import { Template } from '/src/js/core/Template.js';
+import '../../../src/js/verbose.js';
+import '../../../src/js/debug.js';
+// TODO: Absolute paths and all from Main.js
+import { Init as CoreInit, Catalogue } from '../../../src/js/core/Main.js';
 import { Init as UiInit } from '/src/js/uigen/Main.js';
-import '/src/js/debug.js';
+import { Template } from '../../../src/js/core/Template.js';
 
 ///////// This page only works with a single instance.
 ///////// Multiple instance chart workers are on their way.
@@ -9,10 +11,12 @@ import '/src/js/debug.js';
 console.log("Javascript index file loaded.");
 
 //#region Initialization
-
-window.manager = new Chart()
-    .on('dataChanged', sourceChangeHandler)
-    .on('chartTypeChanged', () => { $('#chart-type-select').prop('value', manager.Name); loadOptions()});
+var manager = new Catalogue({auto: false});
+manager.addEventListener('dataChanged', sourceChangeHandler);
+window.app = {
+    manager: manager,
+    template: Template
+}
 
 $(() => {
     CoreInit({
@@ -25,13 +29,12 @@ $(() => {
     });
     
     // LOAD local data files
-    $("#source-file-input").on('change', function () { fileSelectedHandler(this, 'data'); })
-    $('#config-file-input').on('change', function () { fileSelectedHandler(this, 'config'); })
+    $("#source-file-input").on('change', function () { loadLocalFile(this); })
     $("#load-local-file-btn").on('click', () => $('#source-file-input').trigger('click'))
 
     // LOAD DEMO data files
-    $('#load-demo-file-btn').on('click', () => manager.loadDataFromUrl('../res/data_type_debug.csv'));
-    $('#load-people-demo-file-btn').on('click', () => manager.loadDataFromUrl('../res/people.csv'));
+    $('#load-demo-file-btn').on('click', () => loadFileByUrl('../res/data_type_debug.csv'));
+    $('#load-people-demo-file-btn').on('click', () => loadFileByUrl('../res/people.csv'));
 
     // SAVE config JSON
     $('#save-json-file-btn').on('click', () => trySaveJSON());
@@ -61,9 +64,8 @@ $(() => {
     manager.options = { 'width': $('#chart-wrapper').width(), 'height': $('#chart-wrapper').height() };
 
     // first time tutorial switch
-    $('#source-file-input').one('change', function () { $('#chart-type-help-btn').click() });
-    $('#chart-type-select').one('change', function () { $('#opts-help-btn').click() });
-    manager.setContainer('chart-div');
+    $('#source-file-input').one('change', function () { $('#chart-type-help-btn').trigger('click') });
+    $('#chart-type-select').one('change', function () { $('#opts-help-btn').trigger('click') });
 
 });
 
@@ -111,16 +113,20 @@ function sourceChangeHandler() {
  function loadDataPreview() {
     let table = $('<table></table>')
         .prop('id', 'preview-table')
-        .addClass(['table', 'table-dark']);
+        .addClass(['table', 'table-dark', 'table-bordered', 'table-striped']);
+    let thead = $('<thead></thead>');
     let header = $('<tr></tr>');
 
-    manager.SourceData.head.forEach(h => header.append($('<th></th>').text(h)));
-    table.append(header);
+    manager._head.forEach(h => header.append($('<th></th>').text(h)));
+    thead.append(header);
+    table.append(thead);
 
-    manager.SourceData.rowr(0, 5).forEach(line => {
+    let tbody = $('<tbody></tbody>');
+    table.append(tbody);
+    manager._data.slice(0, 5).forEach(line => {
         let row = $('<tr></tr>');
         line.forEach(d => row.append($('<td></td>').text(d)));
-        table.append(row);
+        tbody.append(row);
     })
 
     $('#table-div')
@@ -133,7 +139,7 @@ function sourceChangeHandler() {
  */
 function loadDataRecognition() {
     let row = $('<tr></tr>');
-    for (let i = 0; i < manager.SourceData.width; i++) {
+    for (let i = 0; i < manager.width; i++) {
         row.append(
             $('<td></td>').text(manager.SourceData.usetypeof(i))
         );
@@ -182,27 +188,27 @@ function loadDataRecognition() {
  * Handler that gets called when new file is selected. Handles reading the file and loading new SourceData.
  * @param {HTMLElement} input file input element
  */
-function fileSelectedHandler(input, type) {
-    console.log("Selected new source file: ", input.value);
-    let reader = new FileReader();
-    reader.onload = function (fileLoadedEvent) {
-        document.log("File successfully read.");
-        let text = fileLoadedEvent.target.result;
-        if (type == 'data') {
-            manager.loadDataFromRaw(text);
-        }
-        else if (type == 'config') {
-            console.log("loading config");
-            let json = JSON.parse(text);
-            manager.loadConfigData(json);
-        }
-    }
-    reader.readAsText(input.files[0], 'utf-8');
-
+ function loadLocalFile(input) {
+    console.log("Selected new source file: ", input.value, input.files);
+    let file = input.files[0];
+    setTimeout(function() {manager.loadFromLocal(file)}, 0);
     // reset inputs to be able to select same file multiple times.
     $('#source-file-input').prop('value', '');
     $('#config-file-input').prop('value', '');
 }
+
+// TODO: Invalid URL feedback && URL checking
+function loadFileByUrl(url) {
+    if (url === "local")
+        return $('#source-file-input').trigger('click');
+
+    if (url === "dialog")
+        url = $('#online-file-load-input')[0].value;
+
+    console.log("loadFileByUrl ", url);
+    setTimeout(function() {manager.loadFromUrl(url)}, 0);
+}
+
 
 /**
  * Save configuration JSON file to device.

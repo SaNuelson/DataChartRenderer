@@ -21,37 +21,53 @@ export function recognizeEnums(source) {
 	if (!source || source.length === 0)
 		return [];
 
-	let counts = arr.count(source);
-	counts = arr.toKvp(counts);
-	counts = counts.sort((a,b) => a[1] - b[1]);
+	let valueIndexes = {};
+	for (let i in source) {
+		if (!valueIndexes[source[i]])
+			valueIndexes[source[i]] = [];
+		valueIndexes[source[i]].push(i);
+	}
+
+	let valueCounts = [];
+	for (let value in valueIndexes) {
+		valueCounts.push([value, valueIndexes[value].length]);
+	}
+	valueCounts = valueCounts.sort((a,b) => a[1] - b[1]);
 
 	// TODO: single val for whole column. Should be ignored?
-	if (counts.length === 1) {
-		return [{isConstant: true, constantVal: counts[0][0]}];
+	if (valueCounts.length === 1) {
+		return [{isConstant: true, constantVal: valueCounts[0][0]}];
 	}
 
 	// no repeated value means possible ID column
-	if (counts.length === source.length) {
+	if (valueCounts.length === source.length) {
 		return [{potentialIds: true}];
 	}
 
 	// Check if found set is enum-like
 	// - domain is small enough
 	// - has at least 2 keys
-	let reductionFactor = source.length / counts.length;
-	if (reductionFactor > 0.5 && counts[0][1] >= 2 && counts.length > 2) {
-		return [new Enum({domain:counts.map(a=>a[0])})];
+	let reductionFactor = source.length / valueCounts.length;
+	if (reductionFactor > 0.5 && valueCounts[0][1] >= 2 && valueCounts.length > 2) {
+		return [new Enum({domain:valueCounts.map(a=>a[0])})];
 	}
 
 
 	// otherwise check for NOVAL
 	// TODO: False positive {"1000": 213, "2000": 62, ...}, need better NOVAL criteria
-	if (counts[counts.length - 1][1] / counts[counts.length - 2][1] > 2 &&
-		counts[counts.length - 2][1] > 0) {
-		return [{hasNoval: true, novalVal:counts[counts.length - 1][0]}];
+	if (valueCounts[valueCounts.length - 1][1] / valueCounts[valueCounts.length - 2][1] > 2 && counts[valueCounts.length - 2][1] > 0) {
+		return [{hasNoval: true, novalVal:valueCounts[valueCounts.length - 1][0]}];
 	}
 
-	return [];
+	// last but not least, if determined not to be categorical,
+	// create info about non-uniqueness to be used in mappingg step
+	let ambiguousSets = [];
+	for (let value in valueIndexes) {
+		if (valueIndexes[value].length > 1)
+			ambiguousSets.push(valueIndexes[value]);
+	}
+
+	return [{ambiguous: ambiguousSets}];
 }
 
 /**

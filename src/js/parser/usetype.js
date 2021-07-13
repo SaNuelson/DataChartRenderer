@@ -24,6 +24,9 @@ export class Usetype {
         if (args.potentialIds) {
             this.potentialIds = true;
         }
+        if (args.ambiguous) {
+            this.ambiguousSets = args.ambiguous;
+        }
     }
 
     /** Transform value of underlying type to formatted string 

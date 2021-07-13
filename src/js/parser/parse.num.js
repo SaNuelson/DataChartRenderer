@@ -1,7 +1,8 @@
 import { Usetype } from './usetype.js';
 import { getCutPattern } from '../utils/patterns.js';
 import { unicodeConstants, numberConstants } from './parse.constants.js';
-import { areEqual } from '../utils/array.js';
+import { areEqual, findIndexes, unique } from '../utils/array.js';
+import { escapeRegExp } from '../utils/string.js';
 
 let verbose = (window.verbose ?? {}).number;
 console.log("parse.num.js verbosity = ", verbose);
@@ -88,11 +89,204 @@ export function recognizeNumbers(source, args) {
 	return nuts;
 }
 
+function extractPossibleFormats(source, args) {
+	const exlog = (line, msg) => {
+		debug.warn(`Number Recognizer (CSV line ${line} = ${source[line]}): ${msg}`);
+	}
+
+	/* Unicode character not currently working well, need to find a workaround */
+	const knownThousandSeparators = ['.', ',', ' ', '\xa0']; //...unicodeConstants.getUtf16Whitespace()];
+	const knownDecimalSeparators = ['.', ','];
+	const allKnownSeparators = unique(knownThousandSeparators.concat(knownDecimalSeparators));
+	const pureNumericFormPattern = new RegExp('^[' + allKnownSeparators.join('') + '\\d]+$');
+	let determinedPrefixes = [];
+	let determinedSuffixes = [];
+
+	let determinedMinus = false; // whether format contains negative numbers as well
+	let determinedPlus = false; // whether format explicitly uses plus sign
+
+	let determinedLeftEllipsis = false;
+	let determinedRightEllipsis = false;
+
+	let determinedScientific = false; // whether format uses scientific notation
+	let determinedDelimiterSets = []; // tuples of thousand and decimal separators found
+
+	// Detailed specification:
+	// SAMPLE = PREFIX NUMBER SUFFIX
+	// PREFIX, SUFFIX = non-numeric sequence
+	// NUMBER can be
+	// 		- scientific (contains e12345 at the end)
+	//		- unsigned/signed/explicit (contains no signs / only minus / both minus and plus)
+	//		- whole/decimal (does not / contains decimal part)
+	//			DECIMAL - left/right/not ellipsed (can contain forms ".NUM" / "NUM." / only "NUM.NUM")
+	//		- fully/partially/not separated (each 3 digits / each 3 decimal digits / no digits are separated by separator)
+	for (let i = 0, upto = source.length; i < upto; i++) {
+		let sample = source[i];
+
+		let potentialPrefix = "";
+		let potentialPrefixMatch = sample.match(/^[^0-9]*[^0-9+-]/);
+		if (potentialPrefixMatch) {
+			potentialPrefix = potentialPrefixMatch[0];
+			sample = sample.replace(potentialPrefixMatch[0], "");
+		}
+		// sample is now without prefix
+
+		let potentialSuffix = "";
+		let potentialSuffixMatch = sample.match(/[^.0-9][^0-9]*$/);
+		if (potentialSuffixMatch) {
+			potentialSuffix = potentialSuffixMatch[0];
+			sample = sample.replace(potentialSuffixMatch[0], "");
+		}
+		// sample now without suffix
+
+		let potentialScientific = false
+		let potentialScientificMatch = sample.match(/e[0-9]+$/);
+		if (potentialScientificMatch) {
+			potentialScientific = true;
+			sample = sample.replace(potentialScientificMatch[0], "");
+		}
+		// sample now without scienfitic notation
+
+		let potentialMinus = false;
+		let potentialPlus = false;
+		let potentialSignMatch = sample.match(/^[-+]/);
+		if (potentialSignMatch) {
+			if (potentialSignMatch[0] === "+")
+				potentialPlus = true;
+			potentialMinus = true;
+			sample = sample.replace(potentialSignMatch[0], "");
+		}
+		// sample now without sign
+
+		// sample should now contain only numbers and separators
+		if (!sample.match(pureNumericFormPattern)) {
+			exlog(i, `Stripped sample ${sample} not in pure numeric form .`);
+			window.purePat = pureNumericFormPattern;
+			continue;
+		}
+
+		let potentialThousandSeparators = knownThousandSeparators.filter(sep => sample.includes(sep));
+		let potentialDecimalSeparators = knownDecimalSeparators.filter(sep => sample.includes(sep));
+		let potentialSeparatorSets = [];
+		let containedSeparators = allKnownSeparators.filter(sep => sample.includes(sep));
+
+		// CASE "nothing left"
+		if (sample.length === 0) {
+			exlog(i, `Sample ${source[i]} empty after stripping process.`);
+			continue;
+		}
+		// CASE no separators
+		else if (containedSeparators.length === 0) {
+			potentialSeparatorSets.push(["", ""]);
+		}
+		// CASE only decimal or only thousands separator
+		else if (containedSeparators.length === 1) {
+			let sep = containedSeparators[0];
+			if (isValidThousandSeparator(sample, sep)) {
+				potentialSeparatorSets.push([sep, ""]);
+			}
+			if (isValidDecimalSeparator(sample, sep)) {
+				potentialSeparatorSets.push(["", sep]);
+			}
+		}
+		// CASE both decimal and thousands separators present
+		else {
+			let builtinParseSuccess = false;
+			for (let tsep of potentialThousandSeparators) {
+				for (let dsep of potentialDecimalSeparators) {
+					if (tsep === dsep)
+						continue;
+
+					if (!isValidThousandSeparator(sample, tsep))
+						continue;
+
+					if (!isValidDecimalSeparator(sample, dsep))
+						continue;
+
+					let parseSample = sample.split(tsep).join("").split(ds).join(".");
+
+					if (!isNaN(parseFloat(parseSample))) {
+						potentialSeparatorSets.push([tsep, dsep]);
+						console.error("ALSEP", [tsep, dsep]);
+						builtinParseSuccess = true;
+					}
+				}
+			}
+			if (!builtinParseSuccess) {
+				exlog(i, `Failed to parse ${sample} using parseFloat with any combination of separators.`);
+				continue;
+			}
+		}
+
+		/* TODO: Potentially check for ellipses, and separation (full/partial) */
+		// let potentialLeftEllipsis = false;
+		// let potentialLeftEllipsisMatch = sample.match(/^\./);
+		// if (potentialLeftEllipsisMatch)
+		// 	potentialLeftEllipsis = true;
+
+		// let potentialRightEllipsis = false;
+		// let potentialRightEllipsisMatch = sample.match(/\.$/);
+
+		/* TODO: Potential strict mode where inconsitencies are considered errors */
+		if (potentialPrefix)
+			determinedPrefixes.push(potentialPrefix);
+		if (potentialSuffix)
+			determinedSuffixes.push(potentialSuffix);
+
+		determinedMinus &= potentialMinus;
+		determinedPlus &= potentialPlus;
+
+		determinedLeftEllipsis = false;
+		determinedRightEllipsis = false;
+
+		determinedScientific &= potentialScientific;
+		determinedDelimiterSets = determinedDelimiterSets.concat(potentialSeparatorSets);
+
+	}
+
+	let numutypes = [];
+	for (let delimset of determinedDelimiterSets) {
+		let numutype = new Number({
+			prefixes: determinedPrefixes,
+			suffixes: determinedSuffixes,
+			separators: delimset,
+			integral: !delimset[1],
+			scientific: determinedScientific,
+			explicitSign: determinedPlus
+		}, args);
+		numutypes.push(numutype);
+	}
+
+	let change = true;
+	while (change) {
+		change = false;
+		for (let i = 0; i < numutypes.length; i++) {
+			for (let j = 0; j < numutypes.length; j++) {
+				if (i === j)
+					continue;
+				if (numutypes[i].isEqualTo(numutypes[j]) ||
+					numutypes[i].isSupersetOf(numutypes[j])) {
+					numutypes.splice(j);
+					change = true;
+				}
+				else if (numutypes[j].isSupersetOf(numutypes[i])) {
+					numutypes.splice(i);
+					change = true;
+				}
+				if (change) break;
+			}
+			if (change) break;
+		}
+	}
+
+	return numutypes;
+}
+
 /**
  * @param {string[]} source formats (possibly a subset of one passed in)
  * @returns {Number[]} possible numutypes
  */
-function extractPossibleFormats(source, args) {
+function extractPossibleFormatsOld(source, args) {
 	const exlog = (line, msg) => {
 		debug.warn(`Number Recognizer (CSV line ${line} = ${source[line]}): ${msg}`);
 	}
@@ -284,6 +478,23 @@ function extractPossibleFormats(source, args) {
 	return numutypes;
 }
 
+function isValidThousandSeparator(string, sep) {
+	// thousands separator is valid only if it separates groups of 3 digits,
+	// with the exception of first part, last part, and the part with decimal separator
+	let split = string.split(sep);
+	if (split[0].length > 3)
+		return false;
+	if (split[split.length - 1].length !== 3 && split[split.length - 1].match(/^[0-9]+$/))
+		return false;
+	return split.slice(1, -1).every(part => part.length === 3 || part.match(/\D/));
+}
+
+function isValidDecimalSeparator(string, sep) {
+	// decimal separator is valid only if it occurs once
+	let decimalMatch = string.match(new RegExp(escapeRegExp(sep), "g"));
+	return decimalMatch && decimalMatch.length === 1;
+}
+
 /**
  * Try to parse a number based on provided format
  * @param {string} source 
@@ -326,7 +537,8 @@ export class Number extends Usetype {
 		prefixes = [],
 		suffixes = [],
 		scientific = false,
-		strictlyPositive = false
+		strictlyPositive = false,
+		explicitSign = false
 	}, args) {
 		super(args);
 		if (separators.length > 0 && separators[0] !== "") {
@@ -334,6 +546,9 @@ export class Number extends Usetype {
 		}
 		if (separators.length > 1 && separators[1] !== "") {
 			this.decimalSeparator = separators[1];
+		}
+		else {
+			this.integral = true;
 		}
 		if (separators.length > 2 && separators[2] === separators[0]) {
 			this.separateDecimalThousands = true;
@@ -343,6 +558,9 @@ export class Number extends Usetype {
 		}
 		if (strictlyPositive) {
 			this.strictlyPositive = true;
+		}
+		if (explicitSign) {
+			this.explicit = true;
 		}
 
 		this.prefixes = prefixes;
@@ -367,6 +585,8 @@ export class Number extends Usetype {
 	decimalSeparator = "";
 	thousandSeparator = "";
 	separateDecimalThousands = false;
+	scientific = false;
+	explicit = false;
 	//#endregion
 
 	/**
@@ -385,9 +605,20 @@ export class Number extends Usetype {
 		let outPrefix = this.prefixPlaceholder ?? this.prefixes;
 		let outSuffix = this.suffixPlaceholder ?? this.suffixes;
 
+		if (this.scientific) {
+			let exponent = num.toFixed(1).indexOf(".") - 1;
+			num /= 10 ** exponent;
+			suffix = "e" + exponent + suffix;
+		}
+
+		if (this.explicit && num >= 0) {
+			prefix += "+";
+		}
+
 		var numString;
 		if (this.decimalPlaces)
 			numString = num.toFixed(this.decimalPlaces);
+
 		else
 			numString = num.toString();
 		var numParts = numString.split(".");
@@ -436,13 +667,15 @@ export class Number extends Usetype {
 	}
 
 	isSupersetOf(other) {
-		if (!areEqual(this.prefixes, other.prefixes)) {
-			debug.warn("isSupersetOf() incompatible prefix sets", this.prefixes, other.prefixes);
+		if (!other.prefixes.every(prefix => this.prefixes.includes(prefix))) {
+			let exceptions = other.prefixes.filter(prefix => !this.prefixes.includes(prefix));
+			debug.warn("isSupersetOf() incompatible prefix sets", this.prefixes, other.prefixes, " -> ", exceptions);
 			return false;
 		}
 
-		if (!areEqual(this.suffixes, other.suffixes)) {
-			debug.warn("isSupersetOf() incompatible suffix sets", this.suffixes, other.suffixes);
+		if (!other.suffixes.every(suffix => this.suffixes.includes(suffix))) {
+			let exceptions = other.suffixes.filter(suffix => !this.suffixes.includes(suffix));
+			debug.warn("isSupersetOf() incompatible suffix sets", this.suffixes, other.suffixes, " -> ", exceptions);
 			return false;
 		}
 
@@ -459,6 +692,10 @@ export class Number extends Usetype {
 		}
 
 		return true;
+	}
+
+	isEqualTo(other) {
+		return this.isSupersetOf(other) && other.isSupersetOf(this);
 	}
 
 	toString() {
@@ -496,22 +733,28 @@ export class Number extends Usetype {
 function recognizeIndicators(indicators) {
 	let currCodes = numberConstants.getCurrencyCodes();
 
-	if (!indicators || !(indicators instanceof Array) || indicators.length === 0) {
+	if (!indicators || 
+		!(indicators instanceof Array) || 
+		indicators.length === 0 || 
+		indicators.every(ind => ind.match(/^\s*$/))) {
 		return { type: 'unknown', format: 'unknown', domain: [] };
 	}
 
-	if (indicators.every(indicator => currCodes.includes(indicator)))
+	if (indicators.every(indicator => currCodes.includes(indicator))) {
 		return { type: 'currency', format: 'code', domain: [...currCodes] };
+	}
 
 	let currSymbols = numberConstants.getCurrencySymbols();
-	if (indicators.every(indicator => currSymbols.includes(indicator)))
+	if (indicators.every(indicator => currSymbols.includes(indicator))) {
 		return { type: 'currency', format: 'symbol', domain: [...currSymbols] };
+	}
 
 	let metricPrefixSymbols = numberConstants.getMetricPrefixSymbols();
 	let cardinalityPrefixSymbols = numberConstants.getCardinalityPrefixSymbols();
 	let magnitudePrefixSymbols = [].concat(metricPrefixSymbols, cardinalityPrefixSymbols);
-	if (indicators.every(indicator => magnitudePrefixSymbols.includes(indicator)))
+	if (indicators.every(indicator => magnitudePrefixSymbols.includes(indicator))) {
 		return { type: 'magnitude', format: 'symbol', domain: [...magnitudePrefixSymbols] };
+	}
 
 	let metricPrefixNames = numberConstants.getMetricPrefixes();
 	if (indicators.every(indicator => metricPrefixNames.includes(indicator)))

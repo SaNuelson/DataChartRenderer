@@ -1,6 +1,10 @@
 
 export const unique = function (arr) {
-    return [...Set(arr)];
+    return [...new Set(arr)];
+}
+
+export const charsToRegex = function (arr) {
+    return new RegExp('[' + arr.join('') + ']');
 }
 
 /**
@@ -140,6 +144,10 @@ export function areEqual(ax, bx) {
         if (ax[i] !== bx[i])
             return false;
     return true;
+}
+
+export function isSubsetOf(as, bs) {
+    return as.every(a => bs.includes(a));
 }
 
 /**
