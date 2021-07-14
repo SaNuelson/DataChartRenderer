@@ -80,6 +80,7 @@ function preprocessEnumlikeness(source, args) {
 		debug.log("NOVAL detected as ", enumUsetype.noval);
 		args.hasNoval = true;
 		args.novalValue = enumUsetype.novalVal;
+		args.ambiguousSets = enumUsetype.ambiguousSets;
 		source = source.filter(value => value !== args.noval);
 		enumUsetypes = [];
 	}
@@ -95,14 +96,16 @@ function preprocessEnumlikeness(source, args) {
 		args.potentialIds = true;
 		enumUsetypes = [];
 	}
-	else if (enumUsetype.ambiguous) {
-		args.ambiguousSets = enumUsetype.ambiguous;
+	else if (enumUsetype.ambiguousSets) {
+		args.ambiguousSets = enumUsetype.ambiguousSets;
 		enumUsetypes = [];
 	}
 	else {
 		debug.log("Enum usetype detected as ", enumUsetype);
+		args.ambiguousSets = enumUsetype.ambiguousSets;
 	}
 
+	console.log("args after enum ", args);
 	return [source, enumUsetypes, args];
 }
 

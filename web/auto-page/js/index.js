@@ -1,8 +1,7 @@
 import '../../../src/js/verbose.js';
 import '../../../src/js/debug.js';
 // TODO: Absolute paths and all from Main.js
-import { Init as CoreInit, Catalogue } from '../../../src/js/core/Main.js';
-import { Template } from '../../../src/js/core/Template.js';
+import { Catalogue, Init as ChartJsInit } from '../../../src/js/core/Main.js';
 
 ///////// This page only works with a single instance.
 ///////// Multiple instance chart workers are on their way.
@@ -14,31 +13,22 @@ console.log("Javascript index file loaded.");
 var manager = new Catalogue({});
 manager.addEventListener('dataChanged', sourceChangeHandler);
 window.app = {
-    manager: manager,
-    template: Template
+    manager: manager
 }
 
+ChartJsInit({onChartTemplatesLoaded: function () {console.log("Chart.js templates loaded.")}});
+
 $(() => {
-    CoreInit({
-        onGoogleChartsLoaded: googleChartsLoadedHandler
-    });
     // LOAD data files
     $('#load-dropdown a[data-action="load-preset-file"]').on('click', function(ev) {loadFileByUrl(ev.target.getAttribute("data-target"))})
     $("#source-file-input").on('change', (ev) => loadLocalFile(ev.target));
     $('#online-file-load-button').on('click', () => loadFileByUrl("dialog"));
-
-    // DRAW chart
-    $('#draw-chart-btn').on('click', () => manager.draw());
 
     // SHOW LOAD file
     $('#file-helper-link').on('click', () => (setTimeout(() => { $('#file-dropdown-toggler').trigger('click'); }, 100)));
 
     $('#chart-wrapper').on('shown.bs.tab', tabSwitchedHandler);
 });
-
-const googleChartsLoadedHandler = () => {
-    console.log("Google Charts successfully loaded.")
-};
 
 //#endregion
 
@@ -167,10 +157,16 @@ function loadChartMapping() {
             .prop({
                 'id': `pill-${id}`
             });
+        let pillCanvas = $('<canvas></canva>')
+            .prop({
+                'id': `pill-canvas-${id}`
+            })
         pills.append(pill.append(pillLink));
         content.append(pillContent);
+        pillContent.append(pillCanvas);
 
-        manager.setBindingElementId(i, pillContent[0].id);
+
+        manager.setBindingElementId(i, pillCanvas[0].id);
 
         if (first) {
             pillLink.addClass('active');

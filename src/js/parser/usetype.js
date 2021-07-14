@@ -24,8 +24,8 @@ export class Usetype {
         if (args.potentialIds) {
             this.potentialIds = true;
         }
-        if (args.ambiguous) {
-            this.ambiguousSets = args.ambiguous;
+        if (args.ambiguousSets) {
+            this.ambiguousSets = args.ambiguousSets;
         }
     }
 
@@ -43,7 +43,34 @@ export class Usetype {
 
     toString() { return "U{undefined}"; }
     toFormatString() { return ""; }
-    toDebugString() { return "Usetype::Base()"; }
+    toDebugString() { return "Usetype::Base()";}
+
+    /**
+     * Check if other usetype is a superset (if any string is parsable by this, it is parsable by other).
+     * @param {Usetype<T>} other
+     * @returns {boolean} 
+     */
+    isSubsetOf(other) { throw new Error("Abstract base class Usetype.isSubsetOf() called."); }
+    /**
+     * Check if this usetype is a superset (if any string is parsable by other, it is parsable by this).
+     * @param {Usetype<T>} other 
+     * @returns {boolean}
+     */
+    isSupersetOf(other) { throw new Error("Abstract base class Usetype.isSupersetOf() called."); }
+    /**
+     * Check if this usetype is equal to other (both parse the same set of strings).
+     * Usually implemented as isSupersetOf && isSubsetOf
+     * @param {Usetype<T>} other 
+     * @returns {boolean}
+     */
+    isEqualTo(other) { throw new Error("Abstract base class Usetype.isEqualTo() called."); }
+    /**
+     * Check if this usetype is similar to other (parsed strings convey the same meaning).
+     * Usually implemented as isSupersetOf || isSubsetOf
+     * @param {Usetpe<T>} other 
+     * @returns {boolean}
+     */
+    isSimilarTo(other) { throw new Error("Abstract base class Usetype.isSimilarTo() called."); }
 
     /** 
      * Possible underlying types for this Usetype subclass.
@@ -57,4 +84,17 @@ export class Usetype {
      * @type {string}
      */
     type = "undefined";
+
+    /**
+     * Type of the universe. Can be ordinal or nominal.
+     * @type {"ordinal"|"nominal"}
+     */
+    domainType = 'none';
+
+    /**
+     * Priority with respect to other Usetype instances.
+     * Could be intertwined with confidence. For now basically depends on its subclass.
+     * @type {number}
+     */
+    priority = -1;
 }

@@ -1,0 +1,85 @@
+{
+    "ChartTypes": [
+        {
+            "label": "Line Chart",
+            "type": "line",
+            "usage_description": "X axis ordinal",
+            "constaints": {
+                "xAxis": [
+                    {
+                        "domainType": "ordinal"
+                    }
+                ],
+                "yAxis": [
+                    {
+                        "domainType": "ordinal"
+                    }
+                ]
+            }
+        },
+        {
+            "label": "Bar Chart",
+            "type": "bar",
+            "usage_description": "X axis nominal, large data sets",
+            "constraints": {
+                "xAxis": [
+                    {
+                        "domainType": "nominal"
+                    }
+                ],
+                "yAxis": [
+                    {
+                        "domainType": "ordinal"
+                    }
+                ]
+            }
+        },
+        {
+            "label": "Doughnut Chart",
+            "type": "doughnut",
+            "usage_description": "X axis nominal, Y axes values not too similar",
+            "constraints": {
+                "xAxis": [
+                    {
+                        "domainType": "nominal"
+                    }
+                ],
+                "yAxis": [
+                    {
+                        "domainType": "ordinal",
+                        "range": "wild"
+                    }
+                ]
+            }
+        },
+        {
+            "label": "Bubble Chart",
+            "type": "bubble",
+            "usage_description": "X axis 2-composite, ordinal per field",
+            "constraints": {
+                "xAxis": [
+                    {
+                        "domainType": "ordinal"
+                    },
+                    {
+                        "domainType": "ordinal"
+                    }
+                ]
+            }
+        }
+    ],
+    "AdditionalChartTypes": [
+        {
+            "label": "Radar Chart",
+            "type": "radar"
+        },
+        {
+            "label": "Polar Chart",
+            "type": "polarArea"
+        },
+        {
+            "label": "Scatter Chart",
+            "type": "scatter"
+        }
+    ]
+}

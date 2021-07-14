@@ -11,14 +11,15 @@ import {hasDuplicates, isSubsetOf} from '../utils/array.js';
  * let fifth = [[1, ]]
  */
 export function determinePrimaryKeys(ambiguitySetsArray) {
+    console.log("determinePrimaryKeys(", ambiguitySetsArray, ")");
     return determinePrimaryKeysBruteForce(ambiguitySetsArray);
 }
 
 function determinePrimaryKeysBruteForce(ambiguitySetsArray) {
     let potentialSet = getPotentialSet([...Array(ambiguitySetsArray.length).keys()]);
-    console.log(potentialSet);
+    //console.log(potentialSet);
     let isSetDisabled = potentialSet.map(()=>false);
-    console.log(isSetDisabled);
+    //console.log(isSetDisabled);
     let detectedKeys = [];
     for (let i in potentialSet) {
         if (isSetDisabled[i])
@@ -28,15 +29,15 @@ function determinePrimaryKeysBruteForce(ambiguitySetsArray) {
 
         let selection = ambiguitySetsArray.filter((_,i)=>set.includes(i));
         let isValidKey = isCompoundKeyValid(selection);
-        console.log([set, isValidKey]);
+        //console.log([set, isValidKey]);
         if (isValidKey)
         {
             detectedKeys.push(set);
             isSetDisabled = isSetDisabled.map((v,i) => v || isSubsetOf(set, potentialSet[i]));
-            console.log(isSetDisabled);
+            //console.log(isSetDisabled);
         }
     }
-    console.log(detectedKeys);
+    //console.log(detectedKeys);
     return detectedKeys;
 }
 
@@ -56,7 +57,7 @@ function isCompoundKeyValid(ambiguitySets) {
     if (ambiguitySets.length === 1)
         return ambiguitySets[0].every(edge => edge.length === 1);
 
-    console.log(ambiguitySets);
+    //console.log(ambiguitySets);
     let referenceSet = ambiguitySets[0];
     let otherSets = ambiguitySets.slice(1);
 
@@ -72,7 +73,7 @@ function isCompoundKeyValid(ambiguitySets) {
                     let otherEdge = otherSet[l];
                     let searchedValueIndex = otherEdge.indexOf(searchedValue);
                     if (searchedValueIndex !== -1) {
-                        console.log(i,j,k,l,searchedValue, searchedValueIndex);
+                        //console.log(i,j,k,l,searchedValue, searchedValueIndex);
                         searchedValuePositions.push([l, searchedValueIndex]);
                         break;
                     }
@@ -80,7 +81,7 @@ function isCompoundKeyValid(ambiguitySets) {
             }
             referenceEdgePositions.push(searchedValuePositions.toString());
         }
-        console.log(referenceEdgePositions);
+        //console.log(referenceEdgePositions);
         if (hasDuplicates(referenceEdgePositions)) {
             return false;
         }
@@ -105,4 +106,4 @@ let first = range(0, 100, 2).map((i) => [i, i+1]);
 let second = [0, 1].map((i)=>range(i, i + 99, 2));
 let third = range(100).map(i => [i]);
 
-console.log(determinePrimaryKeys([first, second, third]));
+//console.log(determinePrimaryKeys([first, second, third]));

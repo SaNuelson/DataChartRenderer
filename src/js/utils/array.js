@@ -150,6 +150,10 @@ export function isSubsetOf(as, bs) {
     return as.every(a => bs.includes(a));
 }
 
+export function intersection(as, bs) {
+    return as.filter(a => bs.includes(a));
+}
+
 /**
  * Insert element el between every two elements of arr.
  * @param {any[]} arr array to infill (won't be mutated)
@@ -171,7 +175,45 @@ export function infill(arr, el, start = false, end = false) {
     return infilled;
 }
 
-let a = ["a", ["b","c"], "d", {e:true}, ()=>{}];
-let b = "X";
+/**
+ * Return a subset containing only minimas with respect to inclusion
+ * @param {any[][]} ass 
+ * @example
+ * filterInclusionMinimas([[1, 2], [1], [2], [3, 4, 5], [3, 4], [3, 5]]);
+ * // [[1], [2], [3, 4], [3, 5]]
+ */
+export function filterInclusionMinimas(ass) {
+    let retset = [];
+    for (let i = 0; i < ass.length; i++) {
+        let minimal = true;
+        for (let j = 0; j < ass.length; j++) {
+            if (i === j)
+                continue;
 
-let ret = infill(a, b, true, true);
+            if (isSubsetOf(ass[j], ass[i])) {
+                minimal = false;
+                break;
+            }
+        }
+        if (minimal)
+            retset.push(ass[i]);
+    }
+    return retset;
+}
+
+/** See filterInclusionMinimas */
+export function filterInclusionMaximas(ass) {
+    let retset = [];
+    for (let i = 0; i < ass.length; i++) {
+        let minimal = true;
+        for (let j = 0; j < ass.length; j++) {
+            if (isSubsetOf(ass[i], ass[j])) {
+                minimal = false;
+                break;
+            }
+        }
+        if (minimal)
+            retset.push(ass[i]);
+    }
+    return retset;
+}

@@ -21,6 +21,8 @@ export function recognizeEnums(source) {
 	if (!source || source.length === 0)
 		return [];
 
+	let retval = {};
+
 	let valueIndexes = {};
 	for (let i in source) {
 		if (!valueIndexes[source[i]])
@@ -41,25 +43,9 @@ export function recognizeEnums(source) {
 
 	// no repeated value means possible ID column
 	if (valueCounts.length === source.length) {
-		return [{potentialIds: true}];
+		return [{potentialIds: true, ambiguousSets: []}];
 	}
 
-	// Check if found set is enum-like
-	// - domain is small enough
-	// - has at least 2 keys
-	let reductionFactor = source.length / valueCounts.length;
-	if (reductionFactor > 0.5 && valueCounts[0][1] >= 2 && valueCounts.length > 2) {
-		return [new Enum({domain:valueCounts.map(a=>a[0])})];
-	}
-
-
-	// otherwise check for NOVAL
-	// TODO: False positive {"1000": 213, "2000": 62, ...}, need better NOVAL criteria
-	if (valueCounts[valueCounts.length - 1][1] / valueCounts[valueCounts.length - 2][1] > 2 && counts[valueCounts.length - 2][1] > 0) {
-		return [{hasNoval: true, novalVal:valueCounts[valueCounts.length - 1][0]}];
-	}
-
-	// last but not least, if determined not to be categorical,
 	// create info about non-uniqueness to be used in mappingg step
 	let ambiguousSets = [];
 	for (let value in valueIndexes) {
@@ -67,7 +53,21 @@ export function recognizeEnums(source) {
 			ambiguousSets.push(valueIndexes[value]);
 	}
 
-	return [{ambiguous: ambiguousSets}];
+	// Check if found set is enum-like
+	// - domain is small enough
+	// - has at least 2 keys
+	let reductionFactor = source.length / valueCounts.length;
+	if (reductionFactor > 0.5 && valueCounts[0][1] >= 2 && valueCounts.length > 2) {
+		return [new Enum({domain:valueCounts.map(a=>a[0])}, {ambiguousSets: ambiguousSets})];
+	}
+
+	// otherwise check for NOVAL
+	// TODO: False positive {"1000": 213, "2000": 62, ...}, need better NOVAL criteria
+	if (valueCounts[valueCounts.length - 1][1] / valueCounts[valueCounts.length - 2][1] > 2 && valueCounts[valueCounts.length - 2][1] > 0) {
+		return [{hasNoval: true, novalVal:valueCounts[valueCounts.length - 1][0], ambiguousSets: ambiguousSets}];
+	}
+
+	return [{ambiguousSets: ambiguousSets}];
 }
 
 /**
@@ -88,18 +88,25 @@ export function recognizeEnums(source) {
     /**
      * @param {EnumUsetypeArgs} args
      */
-    constructor(args) {
+    constructor({domain = []}, args) {
         super(args);
-        if (args.domain)
-            this.domain = args.domain;
+        if (domain)
+            this.domain = domain;
     }
 
     format(string) { return this.domain.includes(string) ? string : undefined }
     deformat(value) { return this.domain.includes(value) ? value : undefined }
+
+	isSubsetOf(other) { return this.domain.every(value => other.domain.includes(value)); }
+	isSupersetOf(other) { return other.isSubsetOf(this); }
+	isEqualTo(other) { return this.isSubsetOf(other) && this.isSupersetOf(other); }
+	isSimilarTo(other) { return this.isSubsetOf(other) || this.isSupersetOf(other); }
 
     size() { return this.domain.length }
     toString() { return `E{[${this.domain}]}` }
     toDebugString() { return `Usetype.Enum([${this.domain}])` }
     compatibleTypes = ["string"];
     type = "string";
+	domainType = 'nominal';
+	priority = 1;
 }

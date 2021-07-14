@@ -203,7 +203,7 @@ function extractPossibleFormats(source, args) {
 					if (!isValidDecimalSeparator(sample, dsep))
 						continue;
 
-					let parseSample = sample.split(tsep).join("").split(ds).join(".");
+					let parseSample = sample.split(tsep).join("").split(dsep).join(".");
 
 					if (!isNaN(parseFloat(parseSample))) {
 						potentialSeparatorSets.push([tsep, dsep]);
@@ -694,8 +694,16 @@ export class Number extends Usetype {
 		return true;
 	}
 
+	isSubsetOf(other) {
+		return other.isSupersetOf(this);
+	}
+
 	isEqualTo(other) {
 		return this.isSupersetOf(other) && other.isSupersetOf(this);
+	}
+
+	isSimilarTo(other) {
+		return this.isSupersetOf(other) || this.isSubsetOf(other);
 	}
 
 	toString() {
@@ -728,6 +736,8 @@ export class Number extends Usetype {
 	 */
 	compatibleTypes = ["number"];
 	type = "number";
+	domainType = 'ordinal';
+	priority = 2;
 }
 
 function recognizeIndicators(indicators) {

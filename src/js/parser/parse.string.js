@@ -33,12 +33,28 @@ class String extends Usetype {
 		}
 
 		if (args.type) {
-			this.type = args.type;
+			this.kind = args.type;
 		}
 	}
 	
 	format(x) { return x.toString(); } 
 	deformat(x) { return x.toString(); }
+
+	isSubsetOf(other) {
+		return (other.type === this.type) || (this.type && !other.type);
+	}
+
+	isSupersetOf(other) {
+		return other.isSubsetOf(this);
+	}
+
+	isEqualTo(other) {
+		return this.isSubsetOf(other) && this.isSupersetOf(other);
+	}
+
+	isSimilarTo(other) {
+		return this.isSubsetOf(other) || this.isSupersetOf(other);
+	}
 
 	toString() {
 		if (this.unique) {
@@ -49,7 +65,7 @@ class String extends Usetype {
 			return "SC(" + this.constantValue + "){" + (this.type ?? "") + "}";
 		}
 
-		return "S{" + (this.type ?? "") + "}";
+		return "S{" + (this.kind ?? "") + "}";
 	}
 	
     compatibleTypes = ["string"];
@@ -59,6 +75,10 @@ class String extends Usetype {
      * @type {string}
      */
     type = "string";
+
+	domainType = 'nominal';
+
+	priority = 0;
 }
 
 function validateUrl(value) {

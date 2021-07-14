@@ -25,16 +25,16 @@ else {
 /**
  * Recognize possible timestamp formats in provided strings.
  * @param {string[]} source array of strings with expected uniform formatting
- * @param {*} params NYI, additional parameters for recognizer
+ * @param {*} args NYI, additional parameters for recognizer
  * @returns {Timestamp[]} array of extracted timestamp usetypes
  */
-export function recognizeTimestamps(source, params) {
+export function recognizeTimestamps(source, args) {
     const initialBatchSize = 5;
 
     let now = performance.now();
 
     // first try the most frequently used timestamps
-    let expectedUsetypes = getExpectedUsetypes();
+    let expectedUsetypes = getExpectedUsetypes(args);
     expectedUsetypes = filterTimestampUsetypes(source, expectedUsetypes);
     expectedUsetypes = filterDuplicatesAndSubtypes(expectedUsetypes);
 
@@ -48,7 +48,7 @@ export function recognizeTimestamps(source, params) {
 
     // otherwise do it the hard way
     let initialBatch = source.slice(0, initialBatchSize);
-    let extractedUsetypes = extractTimestampUsetypes(initialBatch);
+    let extractedUsetypes = extractTimestampUsetypes(initialBatch, args);
     debug.log("recognizeTimestamp -- extractedUsetypes === ", extractedUsetypes);
 
     debug.log("recognizeTimestamp -- extractTimestampUsetypes -- took ", performance.now() - now);
@@ -76,7 +76,7 @@ export function recognizeTimestamps(source, params) {
 }
 
 /** For each string in source, find all possible mappable formattings */
-function extractTimestampUsetypes(source) {
+function extractTimestampUsetypes(source, args) {
 
     let formattings = [];
     let memo = {};
@@ -92,7 +92,7 @@ function extractTimestampUsetypes(source) {
         })
     }
 
-    let usetypes = formattings.map(f => new Timestamp({ formatting: f }));
+    let usetypes = formattings.map(f => new Timestamp({ formatting: f }, args));
     return usetypes;
 
     function extractTokenRecursive(string, usedCategories = [], startingIndex = 0) {
@@ -192,10 +192,10 @@ function filterDuplicatesAndSubtypes(usetypes) {
 
 /** If present, select usetypes which belong to the expected set of timestamp formats */
 var expectedUsetypesCache;
-function getExpectedUsetypes() {
+function getExpectedUsetypes(args) {
     if (!expectedUsetypesCache)
         generateExpectedUsetypes();
-    return expectedUsetypesCache.map(format => new Timestamp({formatting: format, skipValidation: true}));
+    return expectedUsetypesCache.map(format => new Timestamp({formatting: format, skipValidation: true}, args));
 
     function generateExpectedUsetypes() {
         // TODO: Move to json and fetch from there.
@@ -906,8 +906,8 @@ export class Timestamp extends Usetype {
      * 
      * @param {DatetimeUsetypeArgs} args 
      */
-    constructor(args) {
-        super(args);
+    constructor(args, superArgs) {
+        super(superArgs);
 
         let explicitType = args.type;
         if (!explicitType)
@@ -946,16 +946,16 @@ export class Timestamp extends Usetype {
 
         if (!allTypesEqual) {
             //debug.error("Timestamp ", this.formatting, " allTypesEqual false.");
-            this.type = "unknown";
+            this.timestampType = "unknown";
         }
 
-        this.type = gatheredTypes[0];
+        this.timestampType = gatheredTypes[0];
 
         this.formatting = [...args.formatting];
 
         if (!args.skipValidation && !hasValidFormat(this)) {
             //debug.error("Timestamp ", this.formatting, " has invalid format.");
-            this.type = "unknown";
+            this.timestampType = "unknown";
             return;
         }
 
@@ -977,7 +977,7 @@ export class Timestamp extends Usetype {
         let applyMethod = "apply";
         let extractMethod = "extract";
 
-        if (this.type === "timeofday") {
+        if (this.timestampType === "timeofday") {
             applyMethod = "applyTod";
             extractMethod = "extractTod";
         }
@@ -1010,10 +1010,12 @@ export class Timestamp extends Usetype {
     min = null;
     max = null;
     formatting = null;
-    type = "none"; // TODO: compatibleType (used) vs timestamp type collission (timestamp type => kind)
+    timestampType = "none";
     pattern = null;
     replacement = null;
     type = "timestamp";
+    domainType = 'ordinal';
+    priority = 3;
 
     toString() {
         let ret = '';
@@ -1022,19 +1024,19 @@ export class Timestamp extends Usetype {
         else if (this.min || this.max)
             ret = this.format(this.min ? this.min : this.max);
         else {
-            if (this.type === "datetime")
+            if (this.timestampType === "datetime")
                 ret = this.format(nullDate());
-            else if (this.type === "date")
+            else if (this.timestampType === "date")
                 ret = this.format(nullDate());
-            else if (this.type === "timeofday")
+            else if (this.timestampType === "timeofday")
                 ret = this.format(dateToTimeOfDay(nullDate()));
         }
         let prefix = 'X';
-        if (this.type === "date")
+        if (this.timestampType === "date")
             prefix = 'D';
-        else if (this.type === "datetime")
+        else if (this.timestampType === "datetime")
             prefix = 'DT';
-        else if (this.type === "timeofday")
+        else if (this.timestampType === "timeofday")
             prefix = 'TOD'
         return prefix + "{" + ret + "}";
     }
@@ -1047,9 +1049,9 @@ export class Timestamp extends Usetype {
 
     deformat(string, verbose = false) {
         let retval = null;
-        if (this.type === "timeofday")
+        if (this.timestampType === "timeofday")
             retval = nullTod();
-        else if (["time", "date", "datetime"].includes(this.type))
+        else if (["time", "date", "datetime"].includes(this.timestampType))
             retval = nullDate();
         else {
             if (verbose)
@@ -1109,6 +1111,12 @@ export class Timestamp extends Usetype {
     isImplicitSupersetOf(other) {
 
     }
+
+    isSubsetOf(other) {return other.isSupersetOf(this); }
+
+    isEqualTo(other) { return this.isSubsetOf(other) && this.isSupersetOf(other); }
+
+    isSimilarTo(other) { return this.isSubsetOf(other) || this.isSupersetOf(other); }
 
     /**
      * Try to generate timestamp usetype from short string formatting
