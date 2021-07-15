@@ -22,7 +22,12 @@ export class Catalogue {
      * @type {string[]} 
      */
     _head = [];
-    get head() { return this._head; }
+    _headValid = false;
+    get head() { 
+        if(!this._headValid)
+            this._checkHeaderValidity();
+        return this._head; 
+    }
 
     /** 
      * Content of parsed data in form of a table
@@ -35,7 +40,7 @@ export class Catalogue {
     /** Number of features (columns) */
     get width() { return (this._data[0] ?? []).length; }
     /** Number of all values excluding header */
-    get length() { return this.height() * this.width(); }
+    get length() { return this.height * this.width; }
     /** Data table */
     get data() { return this._data; }
     /** I-th record (row) */
@@ -181,6 +186,23 @@ export class Catalogue {
                 this._usetypes[i] = determinedUsetypes[0];
             }
         }
+        this._checkHeaderValidity();
+    }
+
+    _checkHeaderValidity() {
+        this._headValid = false;
+        for (let i = 0; i < this._head.length; i++) {
+            let ut = this.usetypes[i];
+            console.warn("checkHeaderValidity", this._head[i], ut.deformat(this._head[i]));
+            if (ut.deformat(this._head[i]) === null)
+                this._headValid = true;
+        }
+        if (!this._headValid) {
+            console.warn("Header seems not to be present, appending usetype information instead...");
+            this._data = [this._head, ...this._data];
+            this._head = this._usetypes.map(ut => ut.toString());
+            this._headValid = true;
+        }
     }
 
     createBindings(args) {
@@ -188,7 +210,7 @@ export class Catalogue {
             throw new Error("Not implemented");
         }
         this._createBindings();
-        return bindings;
+        return this._bindings;
     }
 
     _createBindings() {

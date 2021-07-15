@@ -28,7 +28,17 @@ $(() => {
     $('#file-helper-link').on('click', () => (setTimeout(() => { $('#file-dropdown-toggler').trigger('click'); }, 100)));
 
     $('#chart-wrapper').on('shown.bs.tab', tabSwitchedHandler);
+
+    checkPrerequestedSource();
 });
+
+function checkPrerequestedSource() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const sourceUrl = urlParams.get('src');
+    if (sourceUrl !== null) {
+        loadFileByUrl(sourceUrl);
+    }
+}
 
 //#endregion
 
@@ -59,13 +69,13 @@ function loadDataPreview() {
     let thead = $('<thead></thead>');
     let header = $('<tr></tr>');
 
-    manager._head.forEach(h => header.append($('<th></th>').text(h)));
+    manager.head.forEach(h => header.append($('<th></th>').text(h)));
     thead.append(header);
     table.append(thead);
 
     let tbody = $('<tbody></tbody>');
     table.append(tbody);
-    manager._data.slice(0, 5).forEach(line => {
+    manager.data.slice(0, 5).forEach(line => {
         let row = $('<tr></tr>');
         line.forEach((d, i) => row.append($('<td></td>').text(d).addClass('table-col-' + i)));
         tbody.append(row);

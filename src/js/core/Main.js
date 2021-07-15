@@ -9,7 +9,7 @@ import { drawChart, loadTemplateData } from '../uigen/ChartJsIntegration.js';
  */
 export function Init(opts) {
     // workaround, will have to use webpack dist afterwards.
-    fetch("/src/json/chart.js.json")
+    fetch("https://raw.githubusercontent.com/SaNuelson/DataChartRenderer/master/src/json/chart.js.json")
         .then((data) => data.json())
         .then((json) => {
             loadTemplateData(json);
