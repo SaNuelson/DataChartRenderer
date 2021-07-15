@@ -27,6 +27,9 @@ export class Usetype {
         if (args.ambiguousSets) {
             this.ambiguousSets = args.ambiguousSets;
         }
+        if (args.limitExceeded) {
+            this.ignored = true;
+        }
     }
 
     /** Transform value of underlying type to formatted string 

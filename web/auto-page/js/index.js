@@ -46,9 +46,10 @@ function tabSwitchedHandler(ev) {
     let shownTab = ev.target;
     let shownChart = ev.target.id.replace("pill-","").replace("-tab","");
     let usedColumns = manager.bindings[shownChart].usedFeatures;
-    console.log("Recolor ", usedColumns);
     $(`table#preview-table td`).removeClass('bg-success');
-    usedColumns.forEach((i) => $(`table#preview-table td.table-col-${i}`).addClass('bg-success'));
+    $(`table#preview-table td`).removeClass('bg-danger');
+    usedColumns[0].forEach((i) => $(`table#preview-table td.table-col-${i}`).addClass('bg-success'));
+    usedColumns[1].forEach((i) => $(`table#preview-table td.table-col-${i}`).addClass('bg-danger'));
 }
 
 //#region Back to Front
@@ -77,7 +78,7 @@ function loadDataPreview() {
     table.append(tbody);
     manager.data.slice(0, 5).forEach(line => {
         let row = $('<tr></tr>');
-        line.forEach((d, i) => row.append($('<td></td>').text(d).addClass('table-col-' + i)));
+        line.forEach((d, i) => row.append($('<td></td>').text(d.length > 50 ? (d.substring(0,50) + "...") : d).addClass('table-col-' + i)));
         tbody.append(row);
     })
 
@@ -141,7 +142,7 @@ function loadChartMapping() {
         wrapper.empty().html('Unable to find any possible combinations...');
     }
 
-
+    let firstPill;
     for (let i = 0; i < manager.bindings.length; i++) {
         let id = i;
         let name = manager.bindings[i]._chartType;
@@ -181,6 +182,7 @@ function loadChartMapping() {
         if (first) {
             pillLink.addClass('active');
             pillContent.addClass('active show');
+            firstPill = pillLink[0];
             first = false;
             drawChart(i);
         }
@@ -194,6 +196,8 @@ function loadChartMapping() {
             pillContent.removeClass('container'); // disgusting but has to be done
         }
     }
+    if(firstPill)
+        tabSwitchedHandler({target: firstPill});
 }
 
 //#endregion

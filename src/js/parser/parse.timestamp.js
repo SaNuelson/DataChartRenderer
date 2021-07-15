@@ -5,6 +5,7 @@ import { getCutPattern } from '../utils/patterns.js';
 import { infill, areEqual, groupBy, hasDuplicates } from '../utils/array.js';
 import { escapeRegExp } from '../utils/string.js';
 import { timestampConstants } from './parse.constants.js';
+import { compareDates, compareTods } from '../utils/time.js';
 
 /**
  * @file Holds timestsamp parsing, recognizing logic along with format wrapper
@@ -1077,6 +1078,7 @@ export class Timestamp extends Usetype {
             return null;
         }
 
+        this._checkDomain(retval);
         return retval;
     }
 
@@ -1108,15 +1110,27 @@ export class Timestamp extends Usetype {
         return true;
     }
 
-    isImplicitSupersetOf(other) {
-
-    }
-
     isSubsetOf(other) {return other.isSupersetOf(this); }
 
     isEqualTo(other) { return this.isSubsetOf(other) && this.isSupersetOf(other); }
 
     isSimilarTo(other) { return this.isSubsetOf(other) || this.isSupersetOf(other); }
+
+    _checkDomain(value) {
+        let compFunc;
+        if (this.timestampType === "timeofday")
+            compFunc = compareTods;
+        else if (this.timestampType === "date")
+            compFunc = compareDates;
+        else
+            return;
+
+        if (!this.min || compFunc(this.min, value) > 0)  
+            this.min = value;
+
+        if (!this.max || compFunc(this.max, value) < 0)
+            this.max = value;
+    }
 
     /**
      * Try to generate timestamp usetype from short string formatting

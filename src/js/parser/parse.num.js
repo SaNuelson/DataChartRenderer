@@ -282,202 +282,6 @@ function extractPossibleFormats(source, args) {
 	return numutypes;
 }
 
-/**
- * @param {string[]} source formats (possibly a subset of one passed in)
- * @returns {Number[]} possible numutypes
- */
-function extractPossibleFormatsOld(source, args) {
-	const exlog = (line, msg) => {
-		debug.warn(`Number Recognizer (CSV line ${line} = ${source[line]}): ${msg}`);
-	}
-
-	const potentialThousandSeparators = ['.', ',', ...unicodeConstants.getUtf16Whitespace()];
-	const potentialDecimalSeparators = ['.', ','];
-	const cutPattern = getCutPattern({
-		numbers: true,
-		rest: true
-	})
-
-	let memory = {
-		prefixes: [],
-		suffixes: [],
-		delims: [],
-		addPrefix: function (p) {
-			if (this.prefixes[p])
-				this.prefixes[p] += 1;
-			else
-				this.prefixes[p] = 1;
-		},
-		addSuffix: function (s) {
-			if (this.suffixes[s])
-				this.suffixes[s] += 1;
-			else
-				this.suffixes[s] = 1;
-		},
-		addDelims: function (kd, dd, md) {
-			let valid = (!dd || potentialDecimalSeparators.includes(dd)) &&
-				(!md || potentialThousandSeparators.includes(md)) &&
-				(!kd || potentialThousandSeparators.includes(kd));
-
-			console.log(`addDelims(${kd},${dd},${md}) = (${kd.charCodeAt(0)})-(${potentialThousandSeparators.includes(kd)}) `);
-			if (!valid) { return false; }
-
-			let key = kd + "|" + dd + "|" + md;
-			if (this.delims[key])
-				this.delims[key] += 1;
-			else
-				this.delims[key] = 1;
-
-			return true;
-		},
-		addNum: function (num) {
-			this.minVal = Math.min(this.minVal, num);
-			this.maxVal = Math.max(this.maxVal, num);
-		}
-	};
-
-	for (let i = 0, upto = source.length; i < upto; i++) {
-
-		let split = [...source[i].trim().matchAll(cutPattern)].map(match => match.groups);
-
-		if (split.every(s => !s.numbers)) {
-			exlog(i, "String contains no digits");
-			continue;
-		}
-
-		// PREFIX extraction
-		if (split[0].rest) {
-			memory.addPrefix(split[0].rest);
-			split.splice(0, 1);
-		}
-
-		// SUFFIX extraction
-		if (split[split.length - 1].rest) {
-			memory.addSuffix(split[split.length - 1].rest);
-			split.splice(-1, 1);
-		}
-
-		let delims = split.filter(token => token.rest).map(token => token.rest);
-		console.log("delims for ", source[i], " are (", delims.join(","), ")");
-
-		// FORMAT
-		// N - number sequence
-		// N3 - 3 digits
-		// D - delimiter sequence
-		// $Di - value of delims[i]
-
-		// FORMAT 
-		// 	(N)
-		if (delims.length === 0) {
-			memory.addDelims("", "", "");
-		}
-		// FORMAT 
-		// 	(N)(D)(N)
-		else if (delims.length === 1) {
-			memory.addDelims("", delims[0], "");
-			if (split[2].numbers.length === 3) {
-				memory.addDelims(delims[0], "", "");
-			}
-		}
-		// FORMAT
-		//  (N)(D)(N)((D)(N))+
-		else {
-			let counts = delims.reduce((acc, delim) => {
-				if (acc[delim])
-					acc[delim] += 1;
-				else
-					acc[delim] = 1;
-				return acc
-			}, {});
-			let delimkeys = Object.keys(counts);
-
-			if (delimkeys.length === 1) {
-				memory.addDelims(delimkeys[0], "", "");
-				continue;
-			}
-
-			if (delimkeys.length !== 2) {
-				exlog(i, `Too many unique delimiters (${delimkeys})`);
-				continue;
-			}
-
-			if (counts[delimkeys[0]] > 1 && counts[delimkeys[1]] > 1) {
-				exlog(i, `No delimiter ${delimkeys} recognized as decimal`);
-				continue;
-			}
-
-			// FORMAT 
-			//  (N)($Dx)(N3)($Dy)(N)
-			if (counts[delimkeys[0]] === 1 && counts[delimkeys[1]] === 1) {
-				if (split[2].numbers.length !== 3) {
-					exlog(i, `Between delimiters ${delimkeys}, there should be 3 digits`);
-					continue;
-				}
-				memory.addDelims(split[1].rest, split[3].rest, "");
-				memory.addDelims("", split[1].rest, split[3].rest);
-			}
-			// FORMAT 
-			//  (N)(($Dx)(N))*($Dy)(N)(($Dx)(N))+
-			//  (N)(($Dx)(N))+($Dy)(N)(($Dx)(N))*
-			else {
-				// all non-border digit sequences have to be of length 3
-				for (let j = 2, lnidx = split.length - 2; j < lnidx; j += 2) {
-					if (split[j].numbers.length !== 3) {
-						exlog(i, `Number sequence ${split[j].numbers} has invalid length`);
-						continue;
-					}
-				}
-				// first digit sequence hasto be at most 3
-				if (split[0].numbers.length > 3) {
-					exlog(i, `First digit sequence is longer than 3`);
-					continue;
-				}
-
-				// determine which delimiter is which
-				let dd, td;
-				if (counts[delimkeys[0]] === 1) {
-					dd = delimkeys[0];
-					td = delimkeys[1];
-				}
-				else if (counts[delimkeys[1]] === 1) {
-					dd = delimkeys[1];
-					td = delimkeys[0];
-				}
-
-				// FORMAT 
-				//  (N)((td)(N))+(dd)(N)
-				if (split[split.length - 2].rest === dd) {
-					memory.addDelims(td, dd);
-				}
-				// FORMAT 
-				//  (N)(($Dx)(N))*($Dy)(N)(($Dx)(N))+
-				else {
-					// last sequence can be longer (if there are no mili-delimiters)
-					if (split[split.length - 1].numbers.length > 3 && split[split.length - 2].rest !== dd) {
-						exlog(i, `Last digit sequence is longer than 3 while using mili-delimiter`);
-						continue;
-					}
-
-					memory.addDelims(td, dd, td);
-				}
-			}
-		}
-	}
-	console.log("MEM", memory);
-	let numutypes = [];
-	for (let delimset in memory.delims) {
-		let delims = delimset.split('|');
-		numutypes.push(new Number({
-			prefixes: Object.keys(memory.prefixes),
-			suffixes: Object.keys(memory.suffixes),
-			separators: delims,
-			integral: delims[1] === ''
-		}, args));
-	}
-
-	return numutypes;
-}
-
 function isValidThousandSeparator(string, sep) {
 	// thousands separator is valid only if it separates groups of 3 digits,
 	// with the exception of first part, last part, and the part with decimal separator
@@ -540,6 +344,7 @@ export class Number extends Usetype {
 		strictlyPositive = false,
 		explicitSign = false
 	}, args) {
+		console.log("Number ctor", args);
 		super(args);
 		if (separators.length > 0 && separators[0] !== "") {
 			this.thousandSeparator = separators[0];
@@ -587,6 +392,9 @@ export class Number extends Usetype {
 	separateDecimalThousands = false;
 	scientific = false;
 	explicit = false;
+
+	min = undefined;
+	max = undefined;
 	//#endregion
 
 	/**
@@ -663,35 +471,45 @@ export class Number extends Usetype {
 			temp = temp.split(this.thousandSeparator).join('');
 		if (isNaN(temp))
 			return null;
+
+		this._checkDomain(+temp);
+
 		return +temp;
 	}
 
 	isSupersetOf(other) {
 		if (!other.prefixes.every(prefix => this.prefixes.includes(prefix))) {
 			let exceptions = other.prefixes.filter(prefix => !this.prefixes.includes(prefix));
-			debug.warn("isSupersetOf() incompatible prefix sets", this.prefixes, other.prefixes, " -> ", exceptions);
+			// debug.warn("isSupersetOf() incompatible prefix sets", this.prefixes, other.prefixes, " -> ", exceptions);
 			return false;
 		}
 
 		if (!other.suffixes.every(suffix => this.suffixes.includes(suffix))) {
 			let exceptions = other.suffixes.filter(suffix => !this.suffixes.includes(suffix));
-			debug.warn("isSupersetOf() incompatible suffix sets", this.suffixes, other.suffixes, " -> ", exceptions);
+			// debug.warn("isSupersetOf() incompatible suffix sets", this.suffixes, other.suffixes, " -> ", exceptions);
 			return false;
 		}
 
 		if (other.decimalSeparator &&
 			this.decimalSeparator !== other.decimalSeparator) {
-			debug.warn("isSupersetOf() incompatible decimal separators ", this.decimalSeparator, other.decimalSeparator);
+			// debug.warn("isSupersetOf() incompatible decimal separators ", this.decimalSeparator, other.decimalSeparator);
 			return false;
 		}
 
 		if (other.thousandSeparator &&
 			this.thousandSeparator !== other.thousandSeparator) {
-			debug.warn("isSupersetOf() incompatible thousand separators ", this.thousandSeparator, other.thousandSeparator);
+			// debug.warn("isSupersetOf() incompatible thousand separators ", this.thousandSeparator, other.thousandSeparator);
 			return false;
 		}
 
 		return true;
+	}
+
+	_checkDomain(num) {
+		if (!this.min || this.min > num)
+			this.min = num;
+		if (!this.max || this.max < num)
+			this.max = num;
 	}
 
 	isSubsetOf(other) {
@@ -703,7 +521,14 @@ export class Number extends Usetype {
 	}
 
 	isSimilarTo(other) {
-		return this.isSupersetOf(other) || this.isSubsetOf(other);
+		if (!this.isEqualTo(other))
+			return false;
+
+		// somewhat similar? To avoid exponentially different sets
+		let thisSpread = this.max - this.min;
+		let otherSpread = other.max - other.min;
+		let maxSpread = Math.max(thisSpread, otherSpread);
+		return Math.abs(this.max - other.max) < 5 * maxSpread;
 	}
 
 	toString() {

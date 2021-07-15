@@ -23,10 +23,10 @@ export class Catalogue {
      */
     _head = [];
     _headValid = false;
-    get head() { 
-        if(!this._headValid)
+    get head() {
+        if (!this._headValid)
             this._checkHeaderValidity();
-        return this._head; 
+        return this._head;
     }
 
     /** 
@@ -103,7 +103,11 @@ export class Catalogue {
         this._meta = {};
         this._usetypes = [];
         this._keySets = [];
+        this._valueSets = [];
         this._bindings = [];
+        // TODO: Move elsewhere
+        for (let c in Chart.instances)
+            Chart.instances[c].destroy();
     }
 
     setAutomatic(flag) {
@@ -116,13 +120,13 @@ export class Catalogue {
 
         // last row empty
         if (data[data.length - 1].length === 1 && data[data.length - 1][0] === "") {
-            console.log("Removing last empty row...");
+            // console.log("Removing last empty row...");
             data.splice(-1);
         }
 
         // last column empty
         if (data.every(row => row[row.length - 1].trim().length === 0)) {
-            console.log("Remving last empty column...");
+            // console.log("Remving last empty column...");
             data = data.map(row => row.slice(0, -1));
         }
 
@@ -182,7 +186,7 @@ export class Catalogue {
 
             // TODO: Confidence-level based selection
             else {
-                determinedUsetypes.sort((u, v) => u.priority - v.priority);
+                determinedUsetypes.sort((u, v) => v.priority - u.priority);
                 this._usetypes[i] = determinedUsetypes[0];
             }
         }
@@ -193,7 +197,7 @@ export class Catalogue {
         this._headValid = false;
         for (let i = 0; i < this._head.length; i++) {
             let ut = this.usetypes[i];
-            console.warn("checkHeaderValidity", this._head[i], ut.deformat(this._head[i]));
+            if (ut.hasNoval && ut.novalVal === this._head[i]);
             if (ut.deformat(this._head[i]) === null)
                 this._headValid = true;
         }
@@ -218,8 +222,18 @@ export class Catalogue {
         // TODO: Select most representative keySet for each valueSet
         for (let keySet of this.keySets) {
             for (let valueSet of this.valueSets) {
-                if (intersection(keySet, valueSet).length > 0)
-                    continue;
+                console.log("for sets", keySet, valueSet);
+
+                let commonFeatures = intersection(keySet, valueSet);
+
+                // We can reduce the targetted features by those contained within source
+                if (commonFeatures.length > 0) {
+                    if (commonFeatures.length === keySet.length ||
+                        commonFeatures.length === valueSet.length) {
+                        continue;
+                    }
+                    valueSet = valueSet.filter(value => !commonFeatures.includes(value));
+                }
 
                 let types = getAppropriateChartTypes(this.data, this.usetypes, { keys: keySet, values: valueSet });
                 let bindingBatch = types.map(
@@ -228,7 +242,6 @@ export class Catalogue {
                         valueIdxs: valueSet,
                         chartType: type
                     }));
-                console.log("For types ", types, "made bindings ", bindingBatch);
                 this._bindings = this._bindings.concat(bindingBatch);
             }
         }
@@ -241,7 +254,7 @@ export class Catalogue {
         let trivialKeys = repLabels.filter(i => representatives[i].potentialIds);
         let trivialNonKeys = repLabels.filter(i => representatives[i].isConstant);
 
-        let nonDetermined = representatives.filter(rep => !rep.potentialIds && !rep.isConstant);
+        let nonDetermined = representatives.filter(rep => !rep.potentialIds && !rep.isConstant && !rep.ignored);
         let nonDeterminedLabels = repLabels.filter(i => !representatives[i].potentialIds && !representatives[i].isConstant);
 
         let ambiguitySets = nonDetermined.map(rep => rep.ambiguousSets);
@@ -250,7 +263,6 @@ export class Catalogue {
 
         let minimal = filterInclusionMinimas(compositeKeyLabels);
         if (minimal.length !== compositeKeyLabels.length) {
-            console.log("minimal keys with respect to inclusion: ", compositeKeyLabels, minimal);
             compositeKeyLabels = minimal;
         }
 
@@ -280,13 +292,9 @@ export class Catalogue {
         let timestampSimilarityGroups = timestampUsetypes.reduce(aggregateSimilarity, []);
         let timestampSimilarityGroupIdxs = timestampSimilarityGroups.map(group => group.map(ut => this.usetypes.indexOf(ut)));
 
-        console.log("NUMBER SIMILARITY GROUPS", numberUsetypes, numberSimilarityGroups);
-        console.log("TIMESTAMP SIMILARITY gROUPS", timestampUsetypes, timestampSimilarityGroups);
-
         this._valueSets = numberSimilarityGroupIdxs.concat(timestampSimilarityGroupIdxs);
-    
+
         function aggregateSimilarity(set, next) {
-            console.log("aggregateSimilarity", set, next);
             let anySimilar = false;
             for (let group of set) {
                 let similarTo = [];
@@ -298,17 +306,14 @@ export class Catalogue {
                 if (similarTo.length - 1 === group.length) {
                     group.push(next);
                     anySimilar = true;
-                    console.log("similar to all in group", group);
                 }
                 else if (similarTo.length > 1) {
                     set.push(similarTo);
                     anySimilar = true;
-                    console.log("similat to some ", similarTo, "in group", group);
                 }
             }
             if (!anySimilar)
                 set.push([next]);
-            console.log("->", set);
             return set;
         }
     }
@@ -381,7 +386,7 @@ class Binding {
             console.warn("Binding.boundElementId setter called while already having elId set to ", this._boundElementId);
     }
 
-    get usedFeatures() { return this._keyIdxs.concat(this._valueIdxs); }
+    get usedFeatures() { return [this._keyIdxs, this._valueIdxs]; }
 
     /** @type {string} type of chart */
     _chartType

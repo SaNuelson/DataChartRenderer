@@ -12,7 +12,8 @@
                 ],
                 "yAxis": [
                     {
-                        "domainType": "ordinal"
+                        "domainType": "ordinal",
+                        "type": "number"
                     }
                 ]
             }
@@ -63,6 +64,27 @@
                     },
                     {
                         "domainType": "ordinal"
+                    }
+                ],
+                "yAxis": [
+                    {
+                        "domainType": "ordinal",
+                        "type": "number"
+                    }
+                ]
+            },
+            "customRules": {
+                "xAxis" : [
+                    {
+                        "key": "x"
+                    },
+                    {
+                        "key": "y"
+                    }
+                ],
+                "yAxis" : [
+                    {
+                        "key": "r"
                     }
                 ]
             }

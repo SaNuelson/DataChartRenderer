@@ -20,7 +20,9 @@ else {
 }
 
 const defaultRecognizerArgs = {
-	skipConstants: false
+	skipConstants: false,
+	sizeHardLimit: 50,
+	sampleSize: 500
 }
 
 /**
@@ -37,13 +39,17 @@ export function determineType(data, args) {
 
 	let gatheredUsetypes = [];
 
-	let enumUsetypes;
-	[data, enumUsetypes, args] = preprocessEnumlikeness(data, args);
-	gatheredUsetypes.push(...enumUsetypes);
-	
+	let isValid = preprocessHardLimitSize(data, args);
+
+	let enumUsetypes = [];
+	if (isValid) {
+		[data, enumUsetypes, args] = preprocessEnumlikeness(data, args);
+		gatheredUsetypes.push(...enumUsetypes);
+	}
+
 	// [data, args] = preprocessIndicators(data, args);
 	
-	if (!args.skipConstants || !args.isConstant) {
+	if ((!args.skipConstants || !args.isConstant) && isValid) {
 		let numPerformance = performance.now();
 		let numUsetypes = recognizeNumbers(data, args);
 		debug.log("determineType -- recognizeNumbers -- took ", performance.now() - numPerformance);
@@ -67,6 +73,15 @@ export function determineType(data, args) {
 	debug.groupEnd();
 
 	return gatheredUsetypes;
+}
+
+function preprocessHardLimitSize(source, args) {
+	if (!args.sizeHardLimit)
+		return true;
+	let withinSizeLimit = source.every(sample => sample.length < args.sizeHardLimit);
+	if (!withinSizeLimit)
+		args.limitExceeded = true;
+	return withinSizeLimit;
 }
 
 function preprocessEnumlikeness(source, args) {

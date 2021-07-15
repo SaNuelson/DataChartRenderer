@@ -72,13 +72,16 @@ export function getAppropriateChartTypes(data, usetypes, options) {
  */
 export function drawChart(boundElementId, data, usetypes, options) {
     if (!options.type)
-        options.type = getAppropriateChartTypes(data, usetypes, options);
+        options.type = getAppropriateChartTypes(data, usetypes, options)[0];
 
     if (!options.head)
         options.head = [...Object.keys(Array(usetypes.length))];
 
-    let extractedKeyData = [];
-    let extractedValueData = [];
+    if (options.type === "bubble")
+        return drawBubbleChart(boundElementId, data, usetypes, options);
+
+    let extractedData = [];
+    let keyData = [];
     
     let keyLabels = options.keys.map(idx => options.header[idx]);
     let keyTotalLabel = keyLabels.join(", ");
@@ -89,38 +92,132 @@ export function drawChart(boundElementId, data, usetypes, options) {
     for (let line of data) {
         let keyRow = options.keys.map(idx => line[idx]);
         let keyString = keyRow.join(", ");
-        extractedKeyData.push(keyString);
-        
-        let valueRow = options.values.map(idx => line[idx]);
-        valueRow = valueRow.map((value, i) => valueUsetypes[i].deformat(value));
-        extractedValueData.push(valueRow);
+        keyData.push(keyString);
+
+        let rowData = {};
+        rowData.x = keyString;
+        for (let i = 0; i < valueUsetypes.length; i++) {
+            rowData["y" + i] = valueUsetypes[i].deformat(line[options.values[i]]);
+        }
+        extractedData.push(rowData);
     }
 
     let datasets = [];
-    for (let i = 0; i < options.values.length; i++) {
+    for (let i = 0; i < valueUsetypes.length; i++) {
         let dataset = {
             label: valueLabels[i],
-            data: extractedValueData.map(row => row[i]),
+            data: extractedData,
+            parsing: {
+                yAxisKey: 'y' + i
+            },
             borderColor: getDistinctColor(i)
-        };
+        }
         datasets.push(dataset);
     }
 
     let chartData = {
-        labels: extractedKeyData,
+        labels: keyData,
         datasets: datasets
     };
 
-    let config = {
-        type: options.type,
-        data: chartData
+    let chartOptions = {scales: {}};
+    chartOptions.scales.x = {
+        scaleLabel: {
+            display: true,
+            labelString: keyTotalLabel
+        }
+    };
+    if (keyUsetypes.length === 1 && keyUsetypes[0].type === "timestamp") {
+        chartOptions.scales.x.type = 'time';
+    }
+    if (keyUsetypes.length === 1 && keyUsetypes[0].min) {
+        chartOptions.scales.x.min = keyUsetypes[0].min;
+        chartOptions.scales.x.max = keyUsetypes[0].max;
     }
 
-    console.log("drawChart with opts ", options, "draws with config", config, "from ", extractedValueData);
+    for (let i = 0; i < valueUsetypes.length; i++) {
+        chartOptions.scales['y' + i] = {
+            scaleLabel: {
+                display: true,
+                labelString: "TEST" + valueLabels[i]
+            }
+        };
+
+        if (valueUsetypes[i].type === "timestamp") {
+            chartOptions.scales['y' + i] = {type: 'time'}
+        }
+        if (valueUsetypes[i].min) {
+            chartOptions.scales['y' + i] = chartOptions.scales['y' + i] ?? {};
+            chartOptions.scales['y' + i].min = valueUsetypes[i].min;
+            chartOptions.scales['y' + i].max = valueUsetypes[i].max;
+            console.log("MINMAX", valueUsetypes[i].min, valueUsetypes[i].max);
+        }
+    }
+
+    let config = {
+        type: options.type,
+        data: chartData,
+        options: chartOptions
+    };
+
     return new Chart(document.getElementById(boundElementId), config);
 }
 
+function drawBubbleChart(boundElementId, data, usetypes, options) {
+    let extractedData = [];
+
+    let xIdx = options.keys[0];
+    let xUt = usetypes[xIdx];
+    let xLabel = options.header[xIdx];
+
+    let yIdx = options.keys[1];
+    let yUt = usetypes[yIdx];
+    let yLabel = options.header[yIdx];
+
+    let rIdx = options.values[0];
+    let rUt = usetypes[rIdx];
+    let rLabel = options.header[rIdx];
+
+    let radiusMax = 0;
+    for (let line of data) {
+        let xVal = xUt.deformat(line[xIdx]);
+        let yVal = yUt.deformat(line[yIdx]);
+        let rVal = rUt.deformat(line[rIdx]);
+        extractedData.push({x:xVal,y:yVal,r:rVal});
+        radiusMax = Math.max(radiusMax, rVal);
+    }
+
+    let factor;
+    if (radiusMax > 10) {
+        factor = Math.floor(Math.log10(radiusMax));
+        console.log(radiusMax, factor);
+        for (let data of extractedData) {
+            console.log(data.r);
+            data.r /= (10 ** factor);
+            console.log(data.r);
+        }
+    }
+    
+    let config = {
+        type: options.type,
+        data: {
+            datasets: [
+                {
+                    label: "(" + xLabel + ")x(" + yLabel + ") => " + rLabel + (factor ? ("(e" + factor + ")") : ""),
+                    data: extractedData,
+                    borderColor: getDistinctColor(0),
+                    backgroundColor: getDistinctColor(1)
+                }
+            ]
+        },
+    };
+
+    return new Chart(document.getElementById(boundElementId), config);
+}
+
+
 function checkConstraints(constraints, data, usetypes, indexes, aggregated = false) {
+    console.log("checkConstraints ", constraints, indexes);
     if (!constraints || constraints.length === 0 || !indexes || indexes.length === 0)
         return false;
     
@@ -134,10 +231,16 @@ function checkConstraints(constraints, data, usetypes, indexes, aggregated = fal
         let conGroup = constraints[0];
         if (!aggregated)
             conGroup = constraints[i];
-        let usetype = usetypes[i];
+        let usetype = usetypes[indexes[i]];
 
-        if (conGroup.domainType && conGroup.domainType !== usetype.domainType)
+        if (conGroup.domainType && conGroup.domainType !== usetype.domainType) {
+            console.log("domainType discrepancy ", conGroup, usetype);
             return false;
+        }
+        if (conGroup.type && conGroup.type !== usetype.type){
+            console.log("type discrepancy ", conGroup, usetype);
+            return false;
+        }
             
         if (conGroup.range && conGroup.range === "wild") {
             //TODO check if corresponding usetypes were used on large enough domain
