@@ -134,7 +134,8 @@ export function drawChart(boundElementId, data, usetypes, options) {
 
     let chartOptions = {scales: {}};
     chartOptions.scales.x = {
-        scaleLabel: {
+        display: true,
+        title: {
             display: true,
             labelString: keyTotalLabel
         }
@@ -149,7 +150,8 @@ export function drawChart(boundElementId, data, usetypes, options) {
 
     for (let i = 0; i < valueUsetypes.length; i++) {
         chartOptions.scales['y' + i] = {
-            scaleLabel: {
+            display: true,
+            title: {
                 display: true,
                 labelString: valueLabels[i]
             }
@@ -160,8 +162,8 @@ export function drawChart(boundElementId, data, usetypes, options) {
         }
         if (valueUsetypes[i].min) {
             chartOptions.scales['y' + i] = chartOptions.scales['y' + i] ?? {};
-            chartOptions.scales['y' + i].min = valueUsetypes[i].min;
-            chartOptions.scales['y' + i].max = valueUsetypes[i].max;
+            chartOptions.scales['y' + i].min = totalMin;
+            chartOptions.scales['y' + i].max = totalMax;
         }
     }
 

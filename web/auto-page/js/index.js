@@ -104,14 +104,32 @@ function loadDataRecognition() {
     thead.append(header);
     table.append(thead);
 
-    let tbody = $('<tbody></tbody>');
-    let row = $('<tr></tr>');
-    for (let i = 0; i < utinfo.length; i++) {
-        row.append($('<td></td>').text(utinfo[i].toString()));
-    }
-    tbody.append(row);
-    table.append(tbody);
-
+    let tbody = $('<tbody></tbody>').appendTo(table);
+    let usetypeRow = $('<tr></tr>').appendTo(tbody);
+    utinfo.forEach(u => usetypeRow.append($('<td></td>').text(u.toFormatString())));
+    let infoRow = $('<tr></tr>').appendTo(tbody);
+    let infoRow2 = $('<tr></tr>').appendTo(tbody);
+    utinfo.forEach((u,ui) => {
+        if (u.domain) {
+            let td = $('<td rowspan=2></td>');
+            let tdtt = $('<table class="table table-dark table-bordered"></table>').appendTo(td);
+            let tdth = $('<thead><tr><td>Value</td><td>Counts</td></tr></thead>').appendTo(tdtt);
+            let tdtb = $('<tbody></tbody>').appendTo(tdtt);
+            for (let i = 0; i < u.ambiguousSets.length; i++) {
+                let tdtr = $('<tr></tr>').appendTo(tdtb);
+                let tdtv = $('<td></td>').text(manager.data[u.ambiguousSets[i][0]][ui]).appendTo(tdtr);
+                let tdtk = $('<td></td>').text(u.ambiguousSets[i].length).appendTo(tdtr);
+            }
+            td.appendTo(infoRow);
+        }
+        else if (u.min) {
+            let minTd = $('<td></td>').text('MIN:' + u.min).appendTo(infoRow);
+            let maxTd = $('<td></td>').text('MAX: ' + u.max).appendTo(infoRow2);
+        }
+        else {
+            let td = $('<td rowspan=2></td>').appendTo(infoRow);
+        }
+    })
 
     $('#recog-div')
         .empty()

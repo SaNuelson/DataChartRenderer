@@ -206,6 +206,8 @@ export class Catalogue {
         for (let i = 0; i < this._head.length; i++) {
             let ut = this.usetypes[i];
             if (ut.hasNoval && ut.novalVal === this._head[i]);
+            console.log(i);
+            console.log(ut);
             if (ut.deformat(this._head[i]) === null)
                 this._headValid = true;
         }

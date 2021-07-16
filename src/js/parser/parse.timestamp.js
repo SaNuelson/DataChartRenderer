@@ -1042,6 +1042,10 @@ export class Timestamp extends Usetype {
         return prefix + "{" + ret + "}";
     }
 
+    toFormatString() {
+        return 'Chronometric (' + this.timestampType + ') "' + Timestamp.toShortFormatting(this.formatting) + '"';
+    }
+
     format(date, verbose = false) {
         if (verbose)
             return this._verboseExtractors.map(ex => ex(date, this.formatting)).join('');
@@ -1167,6 +1171,10 @@ export class Timestamp extends Usetype {
             }
         });
         return new Timestamp({formatting: properLabels});
+    }
+
+    static toShortFormatting(formatting) {
+        return formatting.map(f => f.replace(/\{(.*)\}/,"$1")).join('');
     }
 }
 

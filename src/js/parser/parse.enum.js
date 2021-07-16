@@ -17,11 +17,9 @@ else {
  * @param {string[]} source strings upon which format should be determined
  * @returns {Enum[]} possible enum formats of specified strings
  */
-export function recognizeEnums(source) {
+export function recognizeEnums(source, args) {
 	if (!source || source.length === 0)
 		return [];
-
-	let retval = {};
 
 	let valueIndexes = {};
 	for (let i in source) {
@@ -29,7 +27,6 @@ export function recognizeEnums(source) {
 			valueIndexes[source[i]] = [];
 		valueIndexes[source[i]].push(i);
 	}
-	console.log("Value indexes", valueIndexes);
 
 	let valueCounts = [];
 	for (let value in valueIndexes) {
@@ -39,12 +36,16 @@ export function recognizeEnums(source) {
 
 	// TODO: single val for whole column. Should be ignored?
 	if (valueCounts.length === 1) {
-		return [{isConstant: true, constantVal: valueCounts[0][0]}];
+		args.isConstant = true;
+		args.constantVal = valueCounts[0][0];
+		return [];
 	}
 
 	// no repeated value means possible ID column
 	if (valueCounts.length === source.length) {
-		return [{potentialIds: true, ambiguousSets: []}];
+		args.potentialIds = true;
+		args.ambiguousSets = [];
+		return [];
 	}
 
 	// create info about non-uniqueness to be used in mappingg step
@@ -53,6 +54,7 @@ export function recognizeEnums(source) {
 		if (valueIndexes[value].length > 1)
 			ambiguousSets.push(valueIndexes[value]);
 	}
+	args.ambiguousSets = ambiguousSets;
 
 	// Check if found set is enum-like
 	// - domain is small enough
@@ -65,10 +67,12 @@ export function recognizeEnums(source) {
 	// otherwise check for NOVAL
 	// TODO: False positive {"1000": 213, "2000": 62, ...}, need better NOVAL criteria
 	if (valueCounts[valueCounts.length - 1][1] / valueCounts[valueCounts.length - 2][1] > 2 && valueCounts[valueCounts.length - 2][1] > 0) {
-		return [{hasNoval: true, novalVal:valueCounts[valueCounts.length - 1][0], ambiguousSets: ambiguousSets}];
+		args.hasNoval = true;
+		args.novalVal = valueCounts[valueCounts.length - 1][0];
+		return [];
 	}
 
-	return [{ambiguousSets: ambiguousSets}];
+	return [];
 }
 
 /**
@@ -105,6 +109,7 @@ export function recognizeEnums(source) {
 
     size() { return this.domain.length }
     toString() { return `E{[${this.domain}]}` }
+	toFormatString() { return 'Categorical'; }
     toDebugString() { return `Usetype.Enum([${this.domain}])` }
     compatibleTypes = ["string"];
     type = "string";

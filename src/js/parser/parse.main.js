@@ -43,7 +43,7 @@ export function determineType(data, args) {
 
 	let enumUsetypes = [];
 	if (isValid) {
-		[data, enumUsetypes, args] = preprocessEnumlikeness(data, args);
+		[data, enumUsetypes] = preprocessEnumlikeness(data, args);
 		gatheredUsetypes.push(...enumUsetypes);
 	}
 
@@ -87,41 +87,19 @@ function preprocessHardLimitSize(source, args) {
 function preprocessEnumlikeness(source, args) {
 	let enumUsetypes = recognizeEnums(source, args);
 	console.log("preprocessEnumlikeness", enumUsetypes);
-	let enumUsetype = enumUsetypes[0];
-	if (!enumUsetype) {
-		enumUsetypes = [];
+	
+	if (args.hasNoval) {
+		debug.log("NOVAL detected as ", args.novalVal);
+		source = source.filter(value => value !== args.novalVal);
 	}
-	else if (enumUsetype.hasNoval) {
-		debug.log("NOVAL detected as ", enumUsetype.noval);
-		args.hasNoval = true;
-		args.novalValue = enumUsetype.novalVal;
-		args.ambiguousSets = enumUsetype.ambiguousSets;
-		source = source.filter(value => value !== args.noval);
-		enumUsetypes = [];
-	}
-	else if (enumUsetype.isConstant) {
-		debug.log("CONSTANT detected as ", enumUsetype.constant);
-		args.isConstant = true;
-		args.constantVal = enumUsetype.constantVal;
+	
+	if (args.isConstant) {
+		debug.log("CONSTANT detected as ", args.constant);
 		source = [source[0]];
-		enumUsetypes = [];
 	}
-	else if (enumUsetype.potentialIds) {
-		debug.log("POTENTIAL ID column found");
-		args.potentialIds = true;
-		enumUsetypes = [];
-	}
-	else if (enumUsetype.ambiguousSets) {
-		args.ambiguousSets = enumUsetype.ambiguousSets;
-		enumUsetypes = [];
-	}
-	else {
-		debug.log("Enum usetype detected as ", enumUsetype);
-		args.ambiguousSets = enumUsetype.ambiguousSets;
-	}
-
+	
 	console.log("args after enum ", args);
-	return [source, enumUsetypes, args];
+	return [source, enumUsetypes];
 }
 
 // Not implemented, would require internal changes to respective parsers

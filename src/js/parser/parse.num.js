@@ -532,20 +532,23 @@ export class Number extends Usetype {
 	}
 
 	toString() {
-		if (this.min && this.max) {
+		if (this.min) {
 			return "N{" + this.format(this.min) + "-" + this.format(this.max) + "}";
-		}
-		else if (this.min) {
-			return "N{" + this.format(this.min) + "}";
-		}
-		else if (this.max) {
-			return "N{" + this.format(this.max) + "}";
 		}
 		else {
 			return "N{" + this.format(nullNum()) + "}";
 		}
 	}
-	toFormatString() { return ""; }
+	toFormatString() {
+		let ret = 'Number';
+		if (this.scientific) ret += ', scientific';
+		if (this.strictlyPositive) ret += ', strictly positive';
+		if (this.decimalSeparator) ret += ', decimal';
+		else ret += ', whole';
+		if (this.prefixes.length > 0) ret += ', ' + (this.prefixPlaceholder ?? '') + ' prefixed';
+		if (this.suffixes.length > 0) ret += ', ' + (this.suffixPlaceholder ?? '') + ' suffixed';
+		return ret;
+	}
 	toDebugString() { return "Usetype::Number()"; }
 
 	/** 
