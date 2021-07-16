@@ -32,6 +32,7 @@ export function getAppropriateChartTypes(data, usetypes, options) {
         
         let constraints = chartType.constraints;
         if (constraints) {
+            console.log("Enforcing constraints for ", chartHandle);
             let keyConstraints = constraints.xAxis;
             if (keyConstraints) {
                 if (!checkConstraints(keyConstraints, data, usetypes, options.keys))
@@ -80,6 +81,9 @@ export function drawChart(boundElementId, data, usetypes, options) {
     if (options.type === "bubble")
         return drawBubbleChart(boundElementId, data, usetypes, options);
 
+    if (options.type === "pie" || options.type === "doughnut")
+        return drawPieChart(boundElementId, data, usetypes, options);
+
     let extractedData = [];
     let keyData = [];
     
@@ -110,7 +114,8 @@ export function drawChart(boundElementId, data, usetypes, options) {
             parsing: {
                 yAxisKey: 'y' + i
             },
-            borderColor: getDistinctColor(i)
+            borderColor: getDistinctColor(i),
+            backgroundColor: getDistinctColor(i)
         }
         datasets.push(dataset);
     }
@@ -119,6 +124,13 @@ export function drawChart(boundElementId, data, usetypes, options) {
         labels: keyData,
         datasets: datasets
     };
+
+    let totalMin;
+    let totalMax;
+    if(valueUsetypes[0].min) {
+        totalMin = Math.min(...valueUsetypes.map(u=>u.min));
+        totalMax = Math.max(...valueUsetypes.map(u=>u.max));
+    }
 
     let chartOptions = {scales: {}};
     chartOptions.scales.x = {
@@ -139,7 +151,7 @@ export function drawChart(boundElementId, data, usetypes, options) {
         chartOptions.scales['y' + i] = {
             scaleLabel: {
                 display: true,
-                labelString: "TEST" + valueLabels[i]
+                labelString: valueLabels[i]
             }
         };
 
@@ -150,7 +162,6 @@ export function drawChart(boundElementId, data, usetypes, options) {
             chartOptions.scales['y' + i] = chartOptions.scales['y' + i] ?? {};
             chartOptions.scales['y' + i].min = valueUsetypes[i].min;
             chartOptions.scales['y' + i].max = valueUsetypes[i].max;
-            console.log("MINMAX", valueUsetypes[i].min, valueUsetypes[i].max);
         }
     }
 
@@ -215,6 +226,38 @@ function drawBubbleChart(boundElementId, data, usetypes, options) {
     return new Chart(document.getElementById(boundElementId), config);
 }
 
+function drawPieChart(boundElementId, data, usetypes, options) {
+    let kIdx = options.keys[0];
+    let kUt = usetypes[kIdx];
+    let kLabel = options.header[kIdx];
+
+    let yIdx = options.values[0];
+    let yUt = usetypes[yIdx];
+    let yLabel = options.header[yIdx];
+
+    let extractedLabels = [];
+    let extractedData = [];
+    for (let line of data) {
+        extractedLabels.push(kUt.deformat(line[kIdx]));
+        extractedData.push(yUt.deformat(line[yIdx]));
+    }
+
+    let config = {
+        type: options.type,
+        data: {
+            labels: extractedLabels,
+            datasets: [
+                {
+                    label: yLabel,
+                    data: extractedData,
+                    backgroundColor: data.map((_, i) => getDistinctColor(i))
+                }
+            ]
+        },
+    };
+
+    return new Chart(document.getElementById(boundElementId), config);
+}
 
 function checkConstraints(constraints, data, usetypes, indexes, aggregated = false) {
     console.log("checkConstraints ", constraints, indexes);
@@ -237,6 +280,7 @@ function checkConstraints(constraints, data, usetypes, indexes, aggregated = fal
             console.log("domainType discrepancy ", conGroup, usetype);
             return false;
         }
+        
         if (conGroup.type && conGroup.type !== usetype.type){
             console.log("type discrepancy ", conGroup, usetype);
             return false;
@@ -250,14 +294,35 @@ function checkConstraints(constraints, data, usetypes, indexes, aggregated = fal
     return true;
 }
 
+const distinctColors = [
+    [255, 99, 132],
+    [255, 159, 64],
+    [255, 205, 86],
+    [75, 192, 192],
+    [54, 162, 235],
+    [153, 102, 255],
+    [201, 203, 207]
+]
 function getDistinctColor(i) {
+    let colorValues;
+    if (i < distinctColors.length) {
+        colorValues = distinctColors[i];
+    }
+    else {
+        let j = Math.floor(i / distinctColors.length);
+        let k = i % distinctColors.length;
+        let firstColor = distinctColors[j];
+        let secondColor = distinctColors[k];
+        colorValues = combine(firstColor, secondColor);
+    }
+    return 'rgba(' + colorValues.join(', ') + ')';
+
+}
+
+function combine(...cs) {
     return [
-        'rgb(255, 99, 132)',
-        'rgb(255, 159, 64)',
-        'rgb(255, 205, 86)',
-        'rgb(75, 192, 192)',
-        'rgb(54, 162, 235)',
-        'rgb(153, 102, 255)',
-        'rgb(201, 203, 207)'
-    ][i];
+        Math.floor(cs.map(c=>c[0]).reduce((c,n)=>c+n)/cs.length),
+        Math.floor(cs.map(c=>c[1]).reduce((c,n)=>c+n)/cs.length),
+        Math.floor(cs.map(c=>c[2]).reduce((c,n)=>c+n)/cs.length)
+    ]
 }

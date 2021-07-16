@@ -37,7 +37,7 @@
         },
         {
             "label": "Doughnut Chart",
-            "type": "doughnut",
+            "type": "pie",
             "usage_description": "X axis nominal, Y axes values not too similar",
             "constraints": {
                 "xAxis": [
@@ -48,6 +48,7 @@
                 "yAxis": [
                     {
                         "domainType": "ordinal",
+                        "type": "number",
                         "range": "wild"
                     }
                 ]

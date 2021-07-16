@@ -1,5 +1,6 @@
 import { bindEventSystemMixin } from '../utils/events.js';
 import { Usetype } from '../parser/usetype.js';
+import { Number } from '../parser/parse.num.js';
 import { determineType } from '../parser/parse.main.js';
 import { determinePrimaryKeys } from '../mapper/mapper.main.js';
 import { count, toKvp, isSubsetOf, intersection, filterInclusionMinimas, filterInclusionMaximas } from '../utils/array.js';
@@ -184,8 +185,15 @@ export class Catalogue {
             if (determinedUsetypes.length === 1)
                 this._usetypes[i] = determinedUsetypes[0];
 
+                
             // TODO: Confidence-level based selection
             else {
+                // often single number will get detected as multiple kinds of timestamps
+                if (determinedUsetypes.filter(u => u.type === "timestamp").length > 1) {
+                    console.log("Filtering single-valued timestamps", determinedUsetypes);
+                    determinedUsetypes = determinedUsetypes.filter(u => u.type !== "timestamp");
+                }
+
                 determinedUsetypes.sort((u, v) => v.priority - u.priority);
                 this._usetypes[i] = determinedUsetypes[0];
             }
@@ -271,6 +279,8 @@ export class Catalogue {
         // necessary artificial key
         if (this._keySets.length === 0) {
             this._keySets = [[-1]];
+            this._usetypes[-1] = Number.getIdUsetype();
+            this._data.forEach((row, i) => row[-1] = i);
         }
     }
 

@@ -96,7 +96,6 @@ function loadDataRecognition() {
         .addClass(['table', 'table-dark', 'table-bordered']);
 
     let utinfo = manager.usetypes;
-    let height = utinfo.reduce((max, next) => Math.max(max, next.length), 0);
 
     let thead = $('<thead></thead>');
     let header = $('<tr></tr>');
@@ -106,17 +105,13 @@ function loadDataRecognition() {
     table.append(thead);
 
     let tbody = $('<tbody></tbody>');
-    for (let i = 0; i < height; i++) {
-        let row = $('<tr></tr>');
-        for (let j = 0; j < utinfo.length; j++) {
-            if (utinfo[j][i])
-                row.append($('<td></td>').text(utinfo[j][i].toString()));
-            else
-                row.append($('<td></td>'));
-        }
-        tbody.append(row);
+    let row = $('<tr></tr>');
+    for (let i = 0; i < utinfo.length; i++) {
+        row.append($('<td></td>').text(utinfo[i].toString()));
     }
+    tbody.append(row);
     table.append(tbody);
+
 
     $('#recog-div')
         .empty()

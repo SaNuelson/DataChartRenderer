@@ -527,8 +527,8 @@ export class Number extends Usetype {
 		// somewhat similar? To avoid exponentially different sets
 		let thisSpread = this.max - this.min;
 		let otherSpread = other.max - other.min;
-		let maxSpread = Math.max(thisSpread, otherSpread);
-		return Math.abs(this.max - other.max) < 5 * maxSpread;
+		let spreadRatio = thisSpread / otherSpread;
+		return 0.5 < spreadRatio && spreadRatio < 2;
 	}
 
 	toString() {
@@ -563,6 +563,10 @@ export class Number extends Usetype {
 	type = "number";
 	domainType = 'ordinal';
 	priority = 2;
+
+	static getIdUsetype() {
+		return new Number({strictlyPositive: true}, {potentialIds: true});
+	}
 }
 
 function recognizeIndicators(indicators) {

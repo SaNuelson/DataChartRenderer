@@ -1120,7 +1120,7 @@ export class Timestamp extends Usetype {
         let compFunc;
         if (this.timestampType === "timeofday")
             compFunc = compareTods;
-        else if (this.timestampType === "date")
+        else if (this.timestampType === "datetime" || this.timestampType === "date")
             compFunc = compareDates;
         else
             return;
