@@ -966,8 +966,8 @@ export class Timestamp extends Usetype {
 
     }
 
-    min = null;
-    max = null;
+    min = undefined;
+    max = undefined;
     formatting = null;
     timestampType = "none";
     pattern = null;
