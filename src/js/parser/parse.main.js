@@ -8,17 +8,6 @@ import { recognizeStrings } from './parse.string.js';
 import { numberConstants, enumConstants, timestampConstants } from './parse.constants.js';
 import { getCommonPrefix, getCommonSuffix } from '../utils/string.js';
 
-let verbose = (window.verbose ?? {}).parser;
-console.log("parse.main.js verbosity = ", verbose);
-if (verbose) {
-	var debug = window.console;
-}
-else {
-	var debug = {};
-	let funcHandles = Object.getOwnPropertyNames(window.console).filter(item => typeof window.console[item] === 'function');
-	funcHandles.forEach(handle => debug[handle] = window.console[handle]);
-}
-
 const defaultRecognizerArgs = {
 	skipConstants: false,
 	sizeHardLimit: 50,
@@ -34,43 +23,37 @@ export function determineType(data, args) {
 	if (!args)
 		args = Object.assign({}, defaultRecognizerArgs);
 
-	debug.groupCollapsed(`detemineType(${data.length > 0 ? data[0] + "..." : []})`);
-	debug.log("args = ", args);
-
 	let gatheredUsetypes = [];
 
 	let isValid = preprocessHardLimitSize(data, args);
 
+	let now = performance.now();
 	let enumUsetypes = [];
 	if (isValid) {
 		[data, enumUsetypes] = preprocessEnumlikeness(data, args);
 		gatheredUsetypes.push(...enumUsetypes);
 	}
+	window.app.benchInfo.save('enumUsetype', performance.now() - now);
 
 	// [data, args] = preprocessIndicators(data, args);
 	
 	if ((!args.skipConstants || !args.isConstant) && isValid) {
-		let numPerformance = performance.now();
+		now = performance.now();
 		let numUsetypes = recognizeNumbers(data, args);
-		debug.log("determineType -- recognizeNumbers -- took ", performance.now() - numPerformance);
-		debug.log("NumberUsetypes detected: ", numUsetypes);
+		window.app.benchInfo.save('numberUsetype', performance.now() - now);
 		gatheredUsetypes.push(...numUsetypes);	
 
-		let timestampPerformance = performance.now();
+		now = performance.now();
 		let timestampUsetypes = recognizeTimestamps(data, args);
-		debug.log("determineType -- recognizeTimestamps -- took ", performance.now() - timestampPerformance);
-		debug.log("TimestampUsetypes detected: ", timestampUsetypes);
+		window.app.benchInfo.save('timestampUsetype', performance.now() - now);
 		gatheredUsetypes.push(...timestampUsetypes);
 	}
 	if (gatheredUsetypes.length === 0) {
-		let stringPerformance = performance.now();
+		now = performance.now();
 		let stringUsetypes = recognizeStrings(data, args);
-		debug.log("detemineType -- recognizeSTrings -- took ", performance.now() - stringPerformance);
-		debug.log("StringUsetypes detected: ", stringUsetypes);
+		window.app.benchInfo.save('timestampUsetype', performance.now() - now);
 		gatheredUsetypes = stringUsetypes;
 	}
-
-	debug.groupEnd();
 
 	return gatheredUsetypes;
 }
@@ -86,19 +69,15 @@ function preprocessHardLimitSize(source, args) {
 
 function preprocessEnumlikeness(source, args) {
 	let enumUsetypes = recognizeEnums(source, args);
-	console.log("preprocessEnumlikeness", enumUsetypes);
 	
 	if (args.hasNoval) {
-		debug.log("NOVAL detected as ", args.novalVal);
 		source = source.filter(value => value !== args.novalVal);
 	}
 	
 	if (args.isConstant) {
-		debug.log("CONSTANT detected as ", args.constant);
 		source = [source[0]];
 	}
 	
-	console.log("args after enum ", args);
 	return [source, enumUsetypes];
 }
 
