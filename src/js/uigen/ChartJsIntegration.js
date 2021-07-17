@@ -297,12 +297,19 @@ function getDistinctColor(i) {
     if (i < distinctColors.length) {
         colorValues = distinctColors[i];
     }
-    else {
+    else if (i < distinctColors.length ** 2) {
         let j = Math.floor(i / distinctColors.length);
         let k = i % distinctColors.length;
         let firstColor = distinctColors[j];
         let secondColor = distinctColors[k];
         colorValues = combine(firstColor, secondColor);
+    }
+    else {
+        coloValues = [
+            Math.floor(Math.random() * 255),
+            Math.floor(Math.random() * 255),
+            Math.floor(Math.random() * 255)
+        ];
     }
     return 'rgba(' + colorValues.join(', ') + ')';
 

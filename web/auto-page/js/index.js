@@ -143,6 +143,9 @@ function loadDataRecognition() {
             let ambigSum = u.ambiguousSets.map(s => s.length).reduce((s,n)=>s+n);
             let ambigInfo = $('<td></td>').text('Contains ' + ambigSum + '/' + manager.height + ' ambiguous rows.').appendTo(ambiguityRow);
         }
+        else if (u.isConstant) {
+            let ambigInfo = $('<td></td>').text('Is constant - contains only a single value.').appendTo(ambiguityRow);
+        }
         else {
             let ambigInfo = $('<td></td>').text('Contains no ambiguous rows. Is potential trivial key.').appendTo(ambiguityRow);
         }
@@ -252,7 +255,7 @@ function loadLocalFile(input) {
 // TODO: Invalid URL feedback && URL checking
 function loadFileByUrl(url) {
     window.app.benchInfo.create();
-    
+
     if (url === "local")
         return $('#source-file-input').trigger('click');
 

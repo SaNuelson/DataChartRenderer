@@ -34,7 +34,7 @@ export function recognizeNumbers(source, args) {
 		for (let j = 0, jl = nuts.length; j < jl; j++) {
 			if (!nuts[j].disabled) {
 				let num = nuts[j].deformat(token);
-				if (num) {
+				if (num !== null) {
 					matches[j]++;
 					if (nuts[j].max < num) nuts[j].max = num;
 					if (nuts[j].min > num) nuts[j].min = num;
@@ -51,8 +51,10 @@ export function recognizeNumbers(source, args) {
 
 							foundExpansion = true;
 							let currentParsed = potentialExpansion[k].deformat(token);
+							console.log("EXP", currentParsed, nuts[j].min, nuts[j].max);
 							potentialExpansion[k].min = Math.min(currentParsed, nuts[j].min);
 							potentialExpansion[k].max = Math.max(currentParsed, nuts[j].max);
+							console.log("EXP RSLT ", potentialExpansion[k].min, potentialExpansion[k].max);
 							nuts[j] = potentialExpansion[k];
 							potentialExpansion.splice(k, 1);
 							break;
