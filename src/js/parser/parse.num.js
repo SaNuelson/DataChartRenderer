@@ -50,6 +50,9 @@ export function recognizeNumbers(source, args) {
 						if (potentialExpansion[k].isSupersetOf(nuts[j])) {
 
 							foundExpansion = true;
+							let currentParsed = potentialExpansion[k].deformat(token);
+							potentialExpansion[k].min = Math.min(currentParsed, nuts[j].min);
+							potentialExpansion[k].max = Math.max(currentParsed, nuts[j].max);
 							nuts[j] = potentialExpansion[k];
 							potentialExpansion.splice(k, 1);
 							break;
