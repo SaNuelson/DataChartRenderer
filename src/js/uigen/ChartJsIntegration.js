@@ -21,7 +21,6 @@ export function loadTemplateData(json) {
  * @param {number[]} options.values Set of indexes of columns to be considered target
  */
 export function getAppropriateChartTypes(data, usetypes, options) {
-    console.log("getAppropriateChartTypes", options);
     let keyUts = options.keys.map(key => usetypes[key]);
     let valUts = options.keys.map(val => usetypes[val]);
     
@@ -32,7 +31,6 @@ export function getAppropriateChartTypes(data, usetypes, options) {
         
         let constraints = chartType.constraints;
         if (constraints) {
-            console.log("Enforcing constraints for ", chartHandle);
             let keyConstraints = constraints.xAxis;
             if (keyConstraints) {
                 if (!checkConstraints(keyConstraints, data, usetypes, options.keys))
@@ -56,7 +54,6 @@ export function getAppropriateChartTypes(data, usetypes, options) {
         console.warn("Multiple potential chart types determined for ", options, " as ", potentialChartTypes);
     }
 
-    console.log("getAppropriateChartTypes returns ", potentialChartTypes);
     return potentialChartTypes;
 }
 
@@ -203,11 +200,8 @@ function drawBubbleChart(boundElementId, data, usetypes, options) {
     let factor;
     if (radiusMax > 10) {
         factor = Math.floor(Math.log10(radiusMax));
-        console.log(radiusMax, factor);
         for (let data of extractedData) {
-            console.log(data.r);
             data.r /= (10 ** factor);
-            console.log(data.r);
         }
     }
     
@@ -262,7 +256,6 @@ function drawPieChart(boundElementId, data, usetypes, options) {
 }
 
 function checkConstraints(constraints, data, usetypes, indexes, aggregated = false) {
-    console.log("checkConstraints ", constraints, indexes);
     if (!constraints || constraints.length === 0 || !indexes || indexes.length === 0)
         return false;
     
@@ -279,12 +272,10 @@ function checkConstraints(constraints, data, usetypes, indexes, aggregated = fal
         let usetype = usetypes[indexes[i]];
 
         if (conGroup.domainType && conGroup.domainType !== usetype.domainType) {
-            console.log("domainType discrepancy ", conGroup, usetype);
             return false;
         }
         
         if (conGroup.type && conGroup.type !== usetype.type){
-            console.log("type discrepancy ", conGroup, usetype);
             return false;
         }
             

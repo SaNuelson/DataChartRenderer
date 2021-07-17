@@ -206,8 +206,6 @@ export class Catalogue {
         for (let i = 0; i < this._head.length; i++) {
             let ut = this.usetypes[i];
             if (ut.hasNoval && ut.novalVal === this._head[i]);
-            console.log(i);
-            console.log(ut);
             if (ut.deformat(this._head[i]) === null)
                 this._headValid = true;
         }
@@ -232,7 +230,6 @@ export class Catalogue {
         // TODO: Select most representative keySet for each valueSet
         for (let keySet of this.keySets) {
             for (let valueSet of this.valueSets) {
-                console.log("for sets", keySet, valueSet);
 
                 let commonFeatures = intersection(keySet, valueSet);
 
@@ -348,7 +345,6 @@ export class Catalogue {
 
     _getUsetypedData(binding) {
         let cols = binding._bindOrder;
-        console.log("getUsetypedData ", cols);
         let parsed_data = new google.visualization.DataTable();
 
         for (let i = 0; i < cols.length; i++) {

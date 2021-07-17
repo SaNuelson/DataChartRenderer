@@ -67,6 +67,12 @@ class String extends Usetype {
 
 		return "S{" + (this.kind ?? "") + "}";
 	}
+
+	toFormatString() {
+		let ret = "Custom/Unknown";
+		if (this.kind) ret += " of kind " + this.kind;
+		return ret;
+	}
 	
     compatibleTypes = ["string"];
 

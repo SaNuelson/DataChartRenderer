@@ -123,13 +123,24 @@ function loadDataRecognition() {
             td.appendTo(infoRow);
         }
         else if (u.min) {
-            let minTd = $('<td></td>').text('MIN:' + u.min).appendTo(infoRow);
-            let maxTd = $('<td></td>').text('MAX: ' + u.max).appendTo(infoRow2);
+            let minTd = $('<td></td>').text('Minimal value found: ' + u.min).appendTo(infoRow);
+            let maxTd = $('<td></td>').text('Maximal value found: ' + u.max).appendTo(infoRow2);
         }
         else {
             let td = $('<td rowspan=2></td>').appendTo(infoRow);
         }
-    })
+    });
+
+    let ambiguityRow = $('<tr></tr>').appendTo(tbody);
+    utinfo.forEach((u,ui)=> {
+        if (u.ambiguousSets && u.ambiguousSets.length > 0) {
+            let ambigSum = u.ambiguousSets.map(s => s.length).reduce((s,n)=>s+n);
+            let ambigInfo = $('<td></td>').text('Contains ' + ambigSum + '/' + manager.height + ' ambiguous rows.').appendTo(ambiguityRow);
+        }
+        else {
+            let ambigInfo = $('<td></td>').text('Contains no ambiguous rows. Is potential trivial key.').appendTo(ambiguityRow);
+        }
+    });
 
     $('#recog-div')
         .empty()
@@ -238,6 +249,9 @@ function loadFileByUrl(url) {
 
     if (url === "dialog")
         url = $('#online-file-load-input')[0].value;
+
+    if (url.startsWith('http://'))
+        alert("Warning: The provided link is not secure. In case of issues consider providing a secure link, downloading the file and passing it in as a local file, or allowing mixed content on this page.");
 
     console.log("loadFileByUrl ", url);
     setTimeout(function() {manager.loadFromUrl(url)}, 0);
