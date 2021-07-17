@@ -122,7 +122,7 @@ function extractPossibleFormats(source, args) {
 		// sample now without suffix
 
 		let potentialScientific = false
-		let potentialScientificMatch = sample.match(/e[0-9]+$/);
+		let potentialScientificMatch = sample.match(/[eE][0-9]+$/);
 		if (potentialScientificMatch) {
 			potentialScientific = true;
 			sample = sample.replace(potentialScientificMatch[0], "");
