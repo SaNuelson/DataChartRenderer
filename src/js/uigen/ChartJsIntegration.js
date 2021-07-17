@@ -305,7 +305,7 @@ function getDistinctColor(i) {
         colorValues = combine(firstColor, secondColor);
     }
     else {
-        coloValues = [
+        colorValues = [
             Math.floor(Math.random() * 255),
             Math.floor(Math.random() * 255),
             Math.floor(Math.random() * 255)
