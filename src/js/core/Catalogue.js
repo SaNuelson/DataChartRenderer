@@ -116,18 +116,19 @@ export class Catalogue {
     }
 
     setData(papares) {
+
+        window.app.benchInfo.save('papa', performance.now() - this._parseTime);
+
         this._reset();
         let data = papares.data;
 
         // last row empty
         if (data[data.length - 1].length === 1 && data[data.length - 1][0] === "") {
-            // console.log("Removing last empty row...");
             data.splice(-1);
         }
 
         // last column empty
         if (data.every(row => row[row.length - 1].trim().length === 0)) {
-            // console.log("Remving last empty column...");
             data = data.map(row => row.slice(0, -1));
         }
 
@@ -154,6 +155,7 @@ export class Catalogue {
     }
 
     loadFromUrl(url, args) {
+        this._parseTime = performance.now();
         Papa.parse(url, {
             encoding: 'utf8',
             download: true,
@@ -163,6 +165,7 @@ export class Catalogue {
     }
 
     loadFromLocal(file, args) {
+        this._parseTime = performance.now();
         let data = Papa.parse(file, {
             encoding: 'utf8',
             skipEmptyFiles: true,
@@ -178,6 +181,7 @@ export class Catalogue {
     _determineUsetypes() {
         this._usetypes = [];
         this._allUsetypes = [];
+        let usetypeTime = performance.now();
         for (let i = 0, len = this.width; i < len; i++) {
             let determinedUsetypes = determineType(this.col(i));
             this._allUsetypes.push(determinedUsetypes);
@@ -190,7 +194,6 @@ export class Catalogue {
             else {
                 // often single number will get detected as multiple kinds of timestamps
                 if (determinedUsetypes.filter(u => u.type === "timestamp").length > 1) {
-                    console.log("Filtering single-valued timestamps", determinedUsetypes);
                     determinedUsetypes = determinedUsetypes.filter(u => u.type !== "timestamp");
                 }
 
@@ -199,6 +202,7 @@ export class Catalogue {
             }
         }
         this._checkHeaderValidity();
+        window.app.benchInfo.save('usetypeAll', performance.now() - usetypeTime);
     }
 
     _checkHeaderValidity() {
@@ -210,7 +214,6 @@ export class Catalogue {
                 this._headValid = true;
         }
         if (!this._headValid) {
-            console.warn("Header seems not to be present, appending usetype information instead...");
             this._data = [this._head, ...this._data];
             this._head = this._usetypes.map(ut => ut.toString());
             this._headValid = true;
@@ -227,6 +230,7 @@ export class Catalogue {
 
     _createBindings() {
         this._bindings = [];
+        let bindingTime = performance.now();
         // TODO: Select most representative keySet for each valueSet
         for (let keySet of this.keySets) {
             for (let valueSet of this.valueSets) {
@@ -252,9 +256,11 @@ export class Catalogue {
                 this._bindings = this._bindings.concat(bindingBatch);
             }
         }
+        window.app.benchInfo.save('bindings', performance.now() - bindingTime);
     }
 
     _generateKeySets() {
+        let keyTime = performance.now();
         let representatives = this.usetypes;
         let repLabels = [...Array(this.usetypes.length).keys()];
 
@@ -281,9 +287,11 @@ export class Catalogue {
             this._usetypes[-1] = Number.getIdUsetype();
             this._data.forEach((row, i) => row[-1] = i);
         }
+        window.app.benchInfo.save('keySets', performance.now() - keyTime);
     }
 
     _generateValueSets() {
+        let valueTime = performance.now();
         let potentialFeatureIdxs = [];
         this.usetypes.forEach((ut, idx) => {
             if (ut.domainType === "ordinal")
@@ -302,6 +310,7 @@ export class Catalogue {
         let timestampSimilarityGroupIdxs = timestampSimilarityGroups.map(group => group.map(ut => this.usetypes.indexOf(ut)));
 
         this._valueSets = numberSimilarityGroupIdxs.concat(timestampSimilarityGroupIdxs);
+        window.app.benchInfo.save('valueSets', performance.now() - valueTime);
 
         function aggregateSimilarity(set, next) {
             let anySimilar = false;
@@ -342,33 +351,6 @@ export class Catalogue {
                 type: binding.chartType
             });
     }
-
-    _getUsetypedData(binding) {
-        let cols = binding._bindOrder;
-        let parsed_data = new google.visualization.DataTable();
-
-        for (let i = 0; i < cols.length; i++) {
-            // TODO: multiple usetypes on single column will break stuff
-            let retIdx = parsed_data.addColumn(this._usetypes[cols[i]][0].type, this._head[cols[i]]);
-        }
-
-        for (let i = 0; i < this._data.length; i++) {
-            let parsed_line = [];
-            for (let j = 0; j < cols.length; j++) {
-                let parsed = this._usetypes[cols[j]][0].deformat(this._data[i][cols[j]]);
-                if (!parsed && parsed !== 0) {
-                    console.error("In column ", this._head[cols[j]],
-                        " Could not parse value ", this._data[i][cols[j]],
-                        " into type ", this._usetypes[cols[j]][0]);
-                    return null;
-                } else {
-                    parsed_line.push(parsed);
-                }
-            }
-            parsed_data.addRow(parsed_line);
-        }
-        return parsed_data;
-    }
 }
 
 class Binding {
@@ -390,8 +372,6 @@ class Binding {
     set boundElementId(value) {
         if (!this._boundElementId)
             this._boundElementId = value;
-        else
-            console.warn("Binding.boundElementId setter called while already having elId set to ", this._boundElementId);
     }
 
     get usedFeatures() { return [this._keyIdxs, this._valueIdxs]; }

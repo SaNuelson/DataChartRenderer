@@ -16,7 +16,6 @@ export function conditionalCartesian(opts, ...data) {
             temp = temp
                 .flatMap(t => data[nextit].filter(n => t.includes ? !t.includes(n) : t !== n).map(d => [t, d].flat()))
                 .filter(opts.callback);
-            // console.log("Sturdy debug at ", nextit, "with new options ", data[nextit], ":\n", temp.reduce((b,n) => b += n.toString() + "\n",""));
         }
         return temp;
     }

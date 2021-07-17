@@ -12,17 +12,6 @@ import { compareDates, compareTods } from '../utils/time.js';
  * @todo UTC time zones
  */
 
-let verbose = (window.verbose ?? {}).time;
-console.log("parse.timestamp.js verbosity = ", verbose);
-if (verbose) {
-	var debug = window.console;
-}
-else {
-	var debug = {};
-	let funcHandles = Object.getOwnPropertyNames(window.console).filter(item => typeof window.console[item] === 'function');
-	funcHandles.forEach(handle => debug[handle] = window.console[handle]);
-}
-
 /**
  * Recognize possible timestamp formats in provided strings.
  * @param {string[]} source array of strings with expected uniform formatting
@@ -32,46 +21,28 @@ else {
 export function recognizeTimestamps(source, args) {
     const initialBatchSize = 5;
 
-    let now = performance.now();
-
     // first try the most frequently used timestamps
+    let now = performance.now();
     let expectedUsetypes = getExpectedUsetypes(args);
     expectedUsetypes = filterTimestampUsetypes(source, expectedUsetypes);
     expectedUsetypes = filterDuplicatesAndSubtypes(expectedUsetypes);
+    window.app.benchInfo.save('timestampUsetypeFirst', performance.now() - now);
 
     if (expectedUsetypes.length > 0) {
-        debug.log("recognizeTimestamp -- expected usetypes found.");
         return expectedUsetypes;
     }
 
-    debug.log("recognizeTimestamp -- expectedUsetypes -- took ", performance.now() - now);
-    now = performance.now();
-
     // otherwise do it the hard way
+    now = performance.now();
     let initialBatch = source.slice(0, initialBatchSize);
     let extractedUsetypes = extractTimestampUsetypes(initialBatch, args);
-    debug.log("recognizeTimestamp -- extractedUsetypes === ", extractedUsetypes);
-
-    debug.log("recognizeTimestamp -- extractTimestampUsetypes -- took ", performance.now() - now);
-    now = performance.now();
-
+    
     extractedUsetypes = filterInvalidUsetypes(extractedUsetypes);
-    debug.log("recognizeTimestamp -- extractedUsetypes === ", extractedUsetypes);
-
-    debug.log("recognizeTimestamp -- filterInvalidUsetypes -- took ", performance.now() - now);
-    now = performance.now();
-
+    
     extractedUsetypes = filterTimestampUsetypes(source, extractedUsetypes);
-    debug.log("recognizeTimestamp -- extractedUsetypes === ", extractedUsetypes);
-
-    debug.log("recognizeTimestamp -- filterTimestampUsetypes -- took ", performance.now() - now);
-    now = performance.now();
-
+    
     extractedUsetypes = filterDuplicatesAndSubtypes(extractedUsetypes);
-    debug.log("recognizeTimestamp -- extractedUsetypes === ", extractedUsetypes);
-
-    debug.log("recognizeTimestamp -- filterDuplicatesAndSubtypes -- took ", performance.now() - now);
-    now = performance.now();
+    window.app.benchInfo.save('timestampUsetypeSecond', performance.now() - now);
 
     return extractedUsetypes;
 }
@@ -166,7 +137,6 @@ function filterTimestampUsetypes(source, usetypes) {
         //     return nextUsetypes;
         // }
         if (nextUsetypes.length === 0) {
-            debug.log("Batch of usetypes nulled during ", source[i], usetypes);
             return [];
         }
         usetypes = nextUsetypes;
@@ -370,9 +340,6 @@ function validateTimestampFormat(format) {
 }
 
 function enforceCustomRules(format) {
-    if (format[0] === TimestampTokenDetails.monthShort.label && format[2] === TimestampTokenDetails.dayShort.label && format[4] === TimestampTokenDetails.yearFull.label) {
-        var debug = true;
-    }
 
     function has(...categories) {
         return function (format) {
@@ -597,9 +564,9 @@ const TimestampTokenDetails = {
         numeric: false,
         // apply is valid since one can expect year preceding era in a format (BC 1500 makes little sense)
         apply: (date, val) => date.getFullYear() > 0 && val === 'BC' && date.setFullYear(-date.getFullYear()),
-        applyTod: (tod, val) => debug.warn("ApplyTOD era called, undefined behaviour"),
+        applyTod: (tod, val) => undefined,
         extract: (date) => date.getFullYear() >= 0 ? 'AD' : 'BC',
-        extractTod: (tod) => debug.warn("ExtractTOD era called, undefined behaviour")
+        extractTod: (tod) => undefined
     },
 
     /** e.g. 3.1.1998 */
@@ -610,9 +577,9 @@ const TimestampTokenDetails = {
         numeric: true,
         subtoken: "yearShort",
         apply: (date, val) => date.setFullYear(+val),
-        applyTod: (tod, val) => debug.warn("ApplyTOD yearFull called, undefined behaviour"),
+        applyTod: (tod, val) => undefined,
         extract: (date) => date.getFullYear().toString().padStart(4, "0"),
-        extractTod: (tod) => debug.warn("ExtractTOD yearFull called, undefined behaviour")
+        extractTod: (tod) => undefined
     },
 
     /** e.g. 3.1.'98 */
@@ -622,9 +589,9 @@ const TimestampTokenDetails = {
         category: TimestampCategory.Years,
         numeric: true,
         apply: (date, val) => date.setFullYear(+val),
-        applyTod: (tod, val) => debug.warn("ApplyTOD yearShort called, undefined behaviour"),
+        applyTod: (tod, val) => undefined,
         extract: (date) => date.getFullYear().toString(),
-        extractTod: (tod) => debug.warn("ExtractTOD yearShort called, undefined behaviour")
+        extractTod: (tod) => undefined
     },
 
     /** e.g. 03.01.1998 */
@@ -635,9 +602,9 @@ const TimestampTokenDetails = {
         numeric: true,
         subtoken: "monthShort",
         apply: (date, val) => date.setMonth(val - 1),
-        applyTod: (tod, val) => debug.warn("ApplyTOD monthFull called, undefined behaviour"),
+        applyTod: (tod, val) => undefined,
         extract: (date) => (date.getMonth() + 1).toString().padStart(2, "0"),
-        extractTod: (tod) => debug.warn("ExtractTOD monthFull called, undefined behaviour")
+        extractTod: (tod) => undefined
     },
 
     /** e.g. 3.1.1998 */
@@ -647,9 +614,9 @@ const TimestampTokenDetails = {
         category: TimestampCategory.Months,
         numeric: true,
         apply: (date, val) => date.setMonth(val - 1),
-        applyTod: (tod, val) => debug.warn("ApplyTOD monthShort called, undefined behaviour"),
+        applyTod: (tod, val) => undefined,
         extract: (date) => (date.getMonth() + 1).toString(),
-        extractTod: (tod) => debug.warn("ExtractTOD monthShort called, undefined behaviour")
+        extractTod: (tod) => undefined
     },
 
     /** e.g. January 3rd 1998 */
@@ -660,9 +627,9 @@ const TimestampTokenDetails = {
         numeric: false,
         subtoken: "monthAbbrev",
         apply: (date, val) => date.setMonth(monthNames.indexOf(val)),
-        applyTod: (tod, val) => debug.warn("ApplyTOD monthName called, undefined behaviour"),
+        applyTod: (tod, val) => undefined,
         extract: (date) => monthNames[date.getMonth()],
-        extractTod: (tod) => debug.warn("ExtractTOD monthName called, undefined behaviour")
+        extractTod: (tod) => undefined
     },
 
     /** e.g. Jan 3rd, 1998 */
@@ -672,9 +639,9 @@ const TimestampTokenDetails = {
         category: TimestampCategory.Months,
         numeric: false,
         apply: (date, val) => date.setMonth(monthAbbrevs.indexOf(val)),
-        applyTod: (tod, val) => debug.warn("ApplyTOD monthAbbrev called, undefined behaviour"),
+        applyTod: (tod, val) => undefined,
         extract: (date) => monthAbbrevs[date.getMonth()],
-        extractTod: (tod) => debug.warn("ExtractTOD monthAbbrev called, undefined behaviour")
+        extractTod: (tod) => undefined
     },
 
     /** e.g. 03.01.1998 */
@@ -685,9 +652,9 @@ const TimestampTokenDetails = {
         numeric: true,
         subtoken: "dayShort",
         apply: (date, val) => date.setDate(+val),
-        applyTod: (tod, val) => debug.warn("ApplyTOD dayFull called, undefined behaviour"),
+        applyTod: (tod, val) => undefined,
         extract: (date) => date.getDate().toString().padStart(2, "0"),
-        extractTod: (tod) => debug.warn("ExtractTOD dayFull called, undefined behaviour")
+        extractTod: (tod) => undefined
     },
 
     /** e.g. 3.1.1998 */
@@ -697,9 +664,9 @@ const TimestampTokenDetails = {
         category: TimestampCategory.Days,
         numeric: true,
         apply: (date, val) => date.setDate(+val),
-        applyTod: (tod, val) => debug.warn("ApplyTOD dayShort called, undefined behaviour"),
+        applyTod: (tod, val) => undefined,
         extract: (date) => date.getDate().toString(),
-        extractTod: (tod) => debug.warn("ExtractTOD dayShort called, undefined behaviour")
+        extractTod: (tod) => undefined
     },
 
     /** e.g. Saturday 3.1. 1998 */
@@ -709,10 +676,10 @@ const TimestampTokenDetails = {
         numeric: false,
         subtoken: "dayOfWeekShort",
         regexBit: '(' + weekDays.map(d => '(?:' + d + ')').join('|') + ')',
-        apply: (date, val) => debug.warn("Apply dayOfWeekFull called, undefined behaviour"),
-        applyTod: (tod, val) => debug.warn("ApplyTOD dayOfWeekFull called, undefined behaviour"),
+        apply: (date, val) => undefined,
+        applyTod: (tod, val) => undefined,
         extract: (date) => weekDays[date.getDay()],
-        extractTod: (tod) => debug.warn("ExtractTOD dayOfWeekFull called, undefined behaviour")
+        extractTod: (tod) => undefined
     },
 
     /** e.g. Sat 3.1. 1998 */
@@ -721,10 +688,10 @@ const TimestampTokenDetails = {
         category: TimestampCategory.DayOfWeek,
         numeric: false,
         regexBit: '(' + weekDayAbbrevs.map(d => '(?:' + d + ')').join('|') + ')',
-        apply: (date, val) => debug.warn("Apply dayOfWeekShort called, undefined behaviour"),
-        applyTod: (tod, val) => debug.warn("ApplyTOD dayOfWeekShort called, undefined behaviour"),
+        apply: (date, val) => undefined,
+        applyTod: (tod, val) => undefined,
         extract: (date) => weekDayAbbrevs[date.getDay()],
-        extractTod: (tod) => debug.warn("ExtractTOD dayOfWeekShort called, undefined behaviour")
+        extractTod: (tod) => undefined
     },
 
     /** e.g. 7:30 AM */
@@ -741,7 +708,7 @@ const TimestampTokenDetails = {
             else if (val === 'AM' && hours === 12)
                 cate.setHours(0); // midnight
         },
-        applyTod: (tod, val) => debug.warn("ApplyTOD meridiem called, undefined behaviour"),
+        applyTod: (tod, val) => undefined,
         extract: (date) => date.getHours() < 12 || date.getHours() === 0 ? 'AM' : 'PM',
         extractTod: (tod) => tod[0] < 12 || tod[0] === 0 ? 'AM' : 'PM'
     },
@@ -946,7 +913,6 @@ export class Timestamp extends Usetype {
         let allTypesEqual = gatheredTypes.every(type => type === gatheredTypes[0]);
 
         if (!allTypesEqual) {
-            //debug.error("Timestamp ", this.formatting, " allTypesEqual false.");
             this.timestampType = "unknown";
         }
 
@@ -955,7 +921,6 @@ export class Timestamp extends Usetype {
         this.formatting = [...args.formatting];
 
         if (!args.skipValidation && !hasValidFormat(this)) {
-            //debug.error("Timestamp ", this.formatting, " has invalid format.");
             this.timestampType = "unknown";
             return;
         }
@@ -972,9 +937,6 @@ export class Timestamp extends Usetype {
         let appliers = [];
         let extractors = [];
 
-        let debugAppliers = [];
-        let debugExtractors = [];
-
         let applyMethod = "apply";
         let extractMethod = "extract";
 
@@ -990,8 +952,6 @@ export class Timestamp extends Usetype {
                 appliers.push(token[applyMethod]);
                 extractors.push(token[extractMethod]);
 
-                debugAppliers.push(makeFunctionVerbose(bit, token[applyMethod]));
-                debugExtractors.push(makeFunctionVerbose(bit, token[extractMethod]));
             }
             else {
                 regBits.push(escapeRegExp(bit));
@@ -1004,8 +964,6 @@ export class Timestamp extends Usetype {
         this._pattern = pattern;
         this._appliers = appliers;
 
-        this._verboseAppliers = debugAppliers;
-        this._verboseExtractors = debugExtractors;
     }
 
     min = null;
@@ -1047,8 +1005,6 @@ export class Timestamp extends Usetype {
     }
 
     format(date, verbose = false) {
-        if (verbose)
-            return this._verboseExtractors.map(ex => ex(date, this.formatting)).join('');
         return this._extractors.map(ex => ex(date, this.formatting)).join('');
     }
 
@@ -1059,15 +1015,11 @@ export class Timestamp extends Usetype {
         else if (["time", "date", "datetime"].includes(this.timestampType))
             retval = nullDate();
         else {
-            if (verbose)
-                debug.warn("Timestamp ", this.formatting, " deformat(", string, ") failed due to invalid type.");
             return retval;
         }
 
         let match = string.match(this._pattern);
         if (!match) {
-            if (verbose)
-                debug.warn("Timestamp ", this.formatting, " deformat(", string, ") failed to match to pattern");
             return null;
         }
         if (verbose)
@@ -1077,8 +1029,6 @@ export class Timestamp extends Usetype {
 
         // consistency check
         if (string !== this.format(retval, verbose)) {
-            if (verbose)
-                debug.warn("Timestamp ", this.formatting, " deformat(", string, ") = ", retval, " vs consistency check ", this.format(retval));
             return null;
         }
 
@@ -1175,14 +1125,5 @@ export class Timestamp extends Usetype {
 
     static toShortFormatting(formatting) {
         return formatting.map(f => f.replace(/\{(.*)\}/,"$1")).join('');
-    }
-}
-
-function makeFunctionVerbose(label, func) {
-    return function (obj, val) {
-        debug.log("Function ", label, "(", obj, val, ") => ");
-        let retval = func(obj, val);
-        debug.log(obj);
-        return retval;
     }
 }

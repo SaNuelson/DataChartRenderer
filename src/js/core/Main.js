@@ -1,5 +1,3 @@
-console.log("Loaded core/Main.js");
-
 import { Catalogue } from './Catalogue.js';
 import { drawChart, loadTemplateData } from '../uigen/ChartJsIntegration.js';
 

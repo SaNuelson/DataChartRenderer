@@ -1,19 +1,7 @@
 import { Usetype } from './usetype.js';
 
-let verbose = (window.verbose ?? {}).string;
-console.log("parse.string.js verbosity = ", verbose);
-if (verbose) {
-	var debug = window.console;
-}
-else {
-	var debug = {};
-	let funcHandles = Object.getOwnPropertyNames(window.console).filter(item => typeof window.console[item] === 'function');
-	funcHandles.forEach(handle => debug[handle] = window.console[handle]);
-}
-
 export function recognizeStrings(source, args) {
     // TODO: internal logic and string recognization
-	console.log("recognizeStrings...");
 	let stringArgs = Object.assign({}, args);
 	if (source.slice(0, 10).every(string => validateUrl(string)))
 		stringArgs.type = 'url';

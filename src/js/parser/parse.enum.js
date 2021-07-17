@@ -1,17 +1,6 @@
 import * as arr from '../utils/array.js';
 import { Usetype } from './usetype.js';
 
-let verbose = (window.verbose ?? {}).enum;
-console.log("parse.enum.js verbosity = ", verbose);
-if (verbose) {
-	var debug = window.console;
-}
-else {
-	var debug = {};
-	let funcHandles = Object.getOwnPropertyNames(window.console).filter(item => typeof window.console[item] === 'function');
-	funcHandles.forEach(handle => debug[handle] = window.console[handle]);
-}
-
 /**
  * Try to recognize possible formats of string-represented enums in source array.
  * @param {string[]} source strings upon which format should be determined

@@ -50,10 +50,6 @@ export function getAppropriateChartTypes(data, usetypes, options) {
             potentialChartTypes.push(chartType.type);
     }
 
-    if (potentialChartTypes.length > 1) {
-        console.warn("Multiple potential chart types determined for ", options, " as ", potentialChartTypes);
-    }
-
     return potentialChartTypes;
 }
 

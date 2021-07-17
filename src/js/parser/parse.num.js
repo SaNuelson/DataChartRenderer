@@ -4,18 +4,6 @@ import { unicodeConstants, numberConstants } from './parse.constants.js';
 import { areEqual, findIndexes, unique } from '../utils/array.js';
 import { escapeRegExp } from '../utils/string.js';
 
-let verbose = (window.verbose ?? {}).number;
-console.log("parse.num.js verbosity = ", verbose);
-if (verbose) {
-	var debug = window.console;
-}
-else {
-	var debug = {};
-	let funcHandles = Object.getOwnPropertyNames(window.console).filter(item => typeof window.console[item] === 'function');
-	funcHandles.forEach(handle => debug[handle] = window.console[handle]);
-}
-
-
 /**
  * Try to recognize possible formats of string-represented numbers in source array.
  * @param {string[]} source strings upon which format should be determined
@@ -35,10 +23,8 @@ export function recognizeNumbers(source, args) {
 		let sortedSource = [...source].sort();
 		initialBatch = sortedSource.slice(0, initialBatchSize);
 	}
-	debug.log("recognizeNum -- initial batch = ", initialBatch);
 
 	let nuts = extractPossibleFormats(initialBatch, args);
-	debug.log("extractedNumUsetypes", nuts);
 	let matches = nuts.map(() => 0);
 	let disabled = 0;
 	for (let i = 0, il = source.length; i < il; i++) {
@@ -54,19 +40,14 @@ export function recognizeNumbers(source, args) {
 					if (nuts[j].min > num) nuts[j].min = num;
 				}
 				else {
-					debug.log("Matching", nuts[j], "against", token, "failed, disabling potential format.");
-					debug.log("Trying to recover expanded number usetype...");
 					if (!potentialExpansion) {
 						potentialExpansion = extractPossibleFormats([token], args);
-						debug.log("Extracting potential expanding usetypes ", potentialExpansion);
 					}
 					else {
-						debug.log("Using pre-extracted potential usetypes ", potentialExpansion);
 					}
 					let foundExpansion = false;
 					for (let k = 0, kl = potentialExpansion.length; k < kl; k++) {
 						if (potentialExpansion[k].isSupersetOf(nuts[j])) {
-							debug.log("Found fitting expansion. Replacing old ", nuts[j], "with new ", potentialExpansion[k]);
 
 							foundExpansion = true;
 							nuts[j] = potentialExpansion[k];
@@ -90,10 +71,6 @@ export function recognizeNumbers(source, args) {
 }
 
 function extractPossibleFormats(source, args) {
-	const exlog = (line, msg) => {
-		debug.warn(`Number Recognizer (CSV line ${line} = ${source[line]}): ${msg}`);
-	}
-
 	/* Unicode character not currently working well, need to find a workaround */
 	const knownThousandSeparators = ['.', ',', ' ', '\xa0']; //...unicodeConstants.getUtf16Whitespace()];
 	const knownDecimalSeparators = ['.', ','];
@@ -160,7 +137,6 @@ function extractPossibleFormats(source, args) {
 
 		// sample should now contain only numbers and separators
 		if (!sample.match(pureNumericFormPattern)) {
-			exlog(i, `Stripped sample ${sample} not in pure numeric form .`);
 			window.purePat = pureNumericFormPattern;
 			continue;
 		}
@@ -172,7 +148,6 @@ function extractPossibleFormats(source, args) {
 
 		// CASE "nothing left"
 		if (sample.length === 0) {
-			exlog(i, `Sample ${source[i]} empty after stripping process.`);
 			continue;
 		}
 		// CASE no separators
@@ -207,13 +182,11 @@ function extractPossibleFormats(source, args) {
 
 					if (!isNaN(parseFloat(parseSample))) {
 						potentialSeparatorSets.push([tsep, dsep]);
-						console.error("ALSEP", [tsep, dsep]);
 						builtinParseSuccess = true;
 					}
 				}
 			}
 			if (!builtinParseSuccess) {
-				exlog(i, `Failed to parse ${sample} using parseFloat with any combination of separators.`);
 				continue;
 			}
 		}
@@ -344,7 +317,6 @@ export class Number extends Usetype {
 		strictlyPositive = false,
 		explicitSign = false
 	}, args) {
-		console.log("Number ctor", args);
 		super(args);
 		if (separators.length > 0 && separators[0] !== "") {
 			this.thousandSeparator = separators[0];
@@ -480,25 +452,21 @@ export class Number extends Usetype {
 	isSupersetOf(other) {
 		if (!other.prefixes.every(prefix => this.prefixes.includes(prefix))) {
 			let exceptions = other.prefixes.filter(prefix => !this.prefixes.includes(prefix));
-			// debug.warn("isSupersetOf() incompatible prefix sets", this.prefixes, other.prefixes, " -> ", exceptions);
 			return false;
 		}
 
 		if (!other.suffixes.every(suffix => this.suffixes.includes(suffix))) {
 			let exceptions = other.suffixes.filter(suffix => !this.suffixes.includes(suffix));
-			// debug.warn("isSupersetOf() incompatible suffix sets", this.suffixes, other.suffixes, " -> ", exceptions);
 			return false;
 		}
 
 		if (other.decimalSeparator &&
 			this.decimalSeparator !== other.decimalSeparator) {
-			// debug.warn("isSupersetOf() incompatible decimal separators ", this.decimalSeparator, other.decimalSeparator);
 			return false;
 		}
 
 		if (other.thousandSeparator &&
 			this.thousandSeparator !== other.thousandSeparator) {
-			// debug.warn("isSupersetOf() incompatible thousand separators ", this.thousandSeparator, other.thousandSeparator);
 			return false;
 		}
 

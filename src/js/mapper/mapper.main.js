@@ -33,7 +33,6 @@ function determinePrimaryKeysBruteForce(ambiguitySetsArray) {
             isSetDisabled = isSetDisabled.map((v,i) => v || isSubsetOf(set, potentialSet[i]));
         }
     }
-    //console.log(detectedKeys);
     return detectedKeys;
 }
 

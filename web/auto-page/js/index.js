@@ -13,8 +13,14 @@ console.log("Javascript index file loaded.");
 var manager = new Catalogue({});
 manager.addEventListener('dataChanged', sourceChangeHandler);
 window.app = {
-    manager: manager
-}
+    manager: manager,
+    benchInfo: {
+        _mem: [],
+        create: function() {this._mem.push({})},
+        save: function(type, time) {this._mem[this._mem.length - 1][type] = time; }
+    }
+};
+
 
 ChartJsInit({onChartTemplatesLoaded: function () {console.log("Chart.js templates loaded.")}});
 
@@ -234,6 +240,7 @@ function loadChartMapping() {
  */
 function loadLocalFile(input) {
     console.log("Selected new source file: ", input.value, input.files);
+    window.app.benchInfo.create();
     let file = input.files[0];
     setTimeout(function() {manager.loadFromLocal(file)}, 0);
     // reset inputs to be able to select same file multiple times.
@@ -244,6 +251,8 @@ function loadLocalFile(input) {
 
 // TODO: Invalid URL feedback && URL checking
 function loadFileByUrl(url) {
+    window.app.benchInfo.create();
+    
     if (url === "local")
         return $('#source-file-input').trigger('click');
 
