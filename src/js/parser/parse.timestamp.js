@@ -1079,10 +1079,10 @@ export class Timestamp extends Usetype {
         else
             return;
 
-        if (!this.min || compFunc(this.min, value) > 0)  
+        if (this.min === undefined || compFunc(this.min, value) > 0)  
             this.min = value;
 
-        if (!this.max || compFunc(this.max, value) < 0)
+        if (this.max === undefined || compFunc(this.max, value) < 0)
             this.max = value;
     }
 

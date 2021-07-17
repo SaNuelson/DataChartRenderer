@@ -474,9 +474,9 @@ export class Number extends Usetype {
 	}
 
 	_checkDomain(num) {
-		if (!this.min || this.min > num)
+		if (this.min === undefined || this.min > num)
 			this.min = num;
-		if (!this.max || this.max < num)
+		if (this.max === undefined || this.max < num)
 			this.max = num;
 	}
 
