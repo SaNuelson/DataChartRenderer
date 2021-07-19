@@ -16,6 +16,7 @@ export function recognizeEnums(source, args) {
 			valueIndexes[source[i]] = [];
 		valueIndexes[source[i]].push(i);
 	}
+	
 
 	let valueCounts = [];
 	for (let value in valueIndexes) {

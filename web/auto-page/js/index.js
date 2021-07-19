@@ -13,12 +13,7 @@ console.log("Javascript index file loaded.");
 var manager = new Catalogue({});
 manager.addEventListener('dataChanged', sourceChangeHandler);
 window.app = {
-    manager: manager,
-    benchInfo: {
-        _mem: [],
-        create: function() {this._mem.push({})},
-        save: function(type, time) {this._mem[this._mem.length - 1][type] = time; }
-    }
+    manager: manager
 };
 
 
@@ -62,6 +57,10 @@ function tabSwitchedHandler(ev) {
 
 function sourceChangeHandler() {
     loadDataPreview();
+    if (manager.height <= 1) {
+        console.error("Invalid data source");
+        return;
+    }
     loadDataRecognition();
     loadChartMapping();
 }
@@ -128,7 +127,7 @@ function loadDataRecognition() {
             }
             td.appendTo(infoRow);
         }
-        else if (u.min) {
+        else if (u.min !== undefined) {
             let minTd = $('<td></td>').text('Minimal value found: ' + u.min).appendTo(infoRow);
             let maxTd = $('<td></td>').text('Maximal value found: ' + u.max).appendTo(infoRow2);
         }
@@ -139,7 +138,11 @@ function loadDataRecognition() {
 
     let ambiguityRow = $('<tr></tr>').appendTo(tbody);
     utinfo.forEach((u,ui)=> {
-        if (u.ambiguousSets && u.ambiguousSets.length > 0) {
+        if (u.ambiguousSets && u.ambiguousSets.length === 1 && u.hasNoval) {
+            let ambigInfo = $('<td></td>').text('Contains no ambiguous rows with the exception of ' + u.ambiguousSets[0].length + ' cells with missing value.').appendTo(ambiguityRow);
+          
+        }
+        else if (u.ambiguousSets && u.ambiguousSets.length > 0) {
             let ambigSum = u.ambiguousSets.map(s => s.length).reduce((s,n)=>s+n);
             let ambigInfo = $('<td></td>').text('Contains ' + ambigSum + '/' + manager.height + ' ambiguous rows.').appendTo(ambiguityRow);
         }
@@ -243,7 +246,6 @@ function loadChartMapping() {
  */
 function loadLocalFile(input) {
     console.log("Selected new source file: ", input.value, input.files);
-    window.app.benchInfo.create();
     let file = input.files[0];
     setTimeout(function() {manager.loadFromLocal(file)}, 0);
     // reset inputs to be able to select same file multiple times.
@@ -254,7 +256,6 @@ function loadLocalFile(input) {
 
 // TODO: Invalid URL feedback && URL checking
 function loadFileByUrl(url) {
-    window.app.benchInfo.create();
 
     if (url === "local")
         return $('#source-file-input').trigger('click');

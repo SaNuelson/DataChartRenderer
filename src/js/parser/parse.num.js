@@ -51,10 +51,8 @@ export function recognizeNumbers(source, args) {
 
 							foundExpansion = true;
 							let currentParsed = potentialExpansion[k].deformat(token);
-							console.log("EXP", currentParsed, nuts[j].min, nuts[j].max);
 							potentialExpansion[k].min = Math.min(currentParsed, nuts[j].min);
 							potentialExpansion[k].max = Math.max(currentParsed, nuts[j].max);
-							console.log("EXP RSLT ", potentialExpansion[k].min, potentialExpansion[k].max);
 							nuts[j] = potentialExpansion[k];
 							potentialExpansion.splice(k, 1);
 							break;
@@ -359,6 +357,12 @@ export class Number extends Usetype {
 			this.suffixPlaceholder = suffixIndicators.type;
 		}
 
+		if (this.hasNoval) {
+			if (this.deformat(this.novalVal) !== null) {
+				this.hasNoval = false;
+				delete this.novalVal;
+			}
+		}
 	}
 
 	//#region Defaults
@@ -496,12 +500,10 @@ export class Number extends Usetype {
 	isSimilarTo(other) {
 		if (!this.isEqualTo(other))
 			return false;
-
-		// somewhat similar? To avoid exponentially different sets
-		let thisSpread = this.max - this.min;
-		let otherSpread = other.max - other.min;
-		let spreadRatio = thisSpread / otherSpread;
-		return 0.5 < spreadRatio && spreadRatio < 2;
+		let thisSize = this.max - this.min;
+		let otherSize = other.max - other.min;
+		let intersection = Math.min(this.max, other.max) - Math.max(this.min, other.min);
+		return intersection >= (thisSize + otherSize) / 10;
 	}
 
 	toString() {

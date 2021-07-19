@@ -1,4 +1,4 @@
-import { Catalogue } from './Catalogue.js';
+import { Catalogue, hardRowLimit } from './Catalogue.js';
 import { drawChart, loadTemplateData } from '../uigen/ChartJsIntegration.js';
 
 /**
@@ -20,3 +20,4 @@ export function Init(opts) {
 export { Catalogue };
 window.Catalogue = Catalogue;
 window.Init = Init;
+window.hardRowLimit = hardRowLimit;

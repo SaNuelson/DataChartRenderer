@@ -22,18 +22,15 @@ export function recognizeTimestamps(source, args) {
     const initialBatchSize = 5;
 
     // first try the most frequently used timestamps
-    let now = performance.now();
     let expectedUsetypes = getExpectedUsetypes(args);
     expectedUsetypes = filterTimestampUsetypes(source, expectedUsetypes);
     expectedUsetypes = filterDuplicatesAndSubtypes(expectedUsetypes);
-    window.app.benchInfo.save('timestampUsetypeFirst', performance.now() - now);
 
     if (expectedUsetypes.length > 0) {
         return expectedUsetypes;
     }
 
     // otherwise do it the hard way
-    now = performance.now();
     let initialBatch = source.slice(0, initialBatchSize);
     let extractedUsetypes = extractTimestampUsetypes(initialBatch, args);
     
@@ -42,7 +39,6 @@ export function recognizeTimestamps(source, args) {
     extractedUsetypes = filterTimestampUsetypes(source, extractedUsetypes);
     
     extractedUsetypes = filterDuplicatesAndSubtypes(extractedUsetypes);
-    window.app.benchInfo.save('timestampUsetypeSecond', performance.now() - now);
 
     return extractedUsetypes;
 }
@@ -158,6 +154,7 @@ function filterDuplicatesAndSubtypes(usetypes) {
         }
         usetypes = usetypes.filter((_, i) => !subtypes.includes(i));
     }
+
     return usetypes;
 }
 
@@ -600,7 +597,6 @@ const TimestampTokenDetails = {
         regexBit: '(0\\d|1[012])',
         category: TimestampCategory.Months,
         numeric: true,
-        subtoken: "monthShort",
         apply: (date, val) => date.setMonth(val - 1),
         applyTod: (tod, val) => undefined,
         extract: (date) => (date.getMonth() + 1).toString().padStart(2, "0"),
@@ -613,6 +609,7 @@ const TimestampTokenDetails = {
         regexBit: '(0?\\d|1[012])',
         category: TimestampCategory.Months,
         numeric: true,
+        subtoken: "monthFull",
         apply: (date, val) => date.setMonth(val - 1),
         applyTod: (tod, val) => undefined,
         extract: (date) => (date.getMonth() + 1).toString(),
@@ -625,7 +622,6 @@ const TimestampTokenDetails = {
         regexBit: '(' + monthNames.map(m => '(?:' + m + ')').join('|') + ')',
         category: TimestampCategory.Months,
         numeric: false,
-        subtoken: "monthAbbrev",
         apply: (date, val) => date.setMonth(monthNames.indexOf(val)),
         applyTod: (tod, val) => undefined,
         extract: (date) => monthNames[date.getMonth()],
@@ -650,7 +646,6 @@ const TimestampTokenDetails = {
         regexBit: '(0[1-9]|[12]\\d|3[01])',
         category: TimestampCategory.Days,
         numeric: true,
-        subtoken: "dayShort",
         apply: (date, val) => date.setDate(+val),
         applyTod: (tod, val) => undefined,
         extract: (date) => date.getDate().toString().padStart(2, "0"),
@@ -663,6 +658,7 @@ const TimestampTokenDetails = {
         regexBit: '(0?[1-9]|[12]\\d|3[01])',
         category: TimestampCategory.Days,
         numeric: true,
+        subtoken: "dayFull",
         apply: (date, val) => date.setDate(+val),
         applyTod: (tod, val) => undefined,
         extract: (date) => date.getDate().toString(),
@@ -674,7 +670,6 @@ const TimestampTokenDetails = {
         label: '{DDDD}',
         category: TimestampCategory.DayOfWeek,
         numeric: false,
-        subtoken: "dayOfWeekShort",
         regexBit: '(' + weekDays.map(d => '(?:' + d + ')').join('|') + ')',
         apply: (date, val) => undefined,
         applyTod: (tod, val) => undefined,
@@ -719,7 +714,6 @@ const TimestampTokenDetails = {
         regexBit: '([01]\\d|2[0-3])',
         category: TimestampCategory.Hours,
         numeric: true,
-        subtoken: "hourShort",
         apply: (date, val) => date.setHours(val),
         applyTod: (tod, val) => tod[0] = val,
         extract: (date, format) => {
@@ -742,6 +736,7 @@ const TimestampTokenDetails = {
         regexBit: '([01]?\\d|2[0-3])',
         category: TimestampCategory.Hours,
         numeric: true,
+        subtoken: "hourFull",
         apply: (date, val) => date.setHours(val),
         applyTod: (tod, val) => tod[0] = val,
         extract: (date, format) => {
@@ -764,7 +759,6 @@ const TimestampTokenDetails = {
         regexBit: '([0-5]\\d)',
         category: TimestampCategory.Minutes,
         numeric: true,
-        subtoken: "minuteShort",
         apply: (date, val) => date.setMinutes(val),
         applyTod: (tod, val) => tod[1] = val,
         extract: (date) => date.getMinutes().toString().padStart(2, '0'),
@@ -777,6 +771,7 @@ const TimestampTokenDetails = {
         regexBit: '([0-5]?\\d)',
         category: TimestampCategory.Minutes,
         numeric: true,
+        subtoken: "minuteFull",
         apply: (date, val) => date.setMinutes(val),
         applyTod: (tod, val) => tod[1] = val,
         extract: (date) => date.getMinutes().toString(),
@@ -789,7 +784,6 @@ const TimestampTokenDetails = {
         regexBit: '([0-5]\\d)',
         category: TimestampCategory.Seconds,
         numeric: true,
-        subtoken: "secondShort",
         apply: (date, val) => date.setSeconds(val),
         applyTod: (tod, val) => tod[2] = val,
         extract: (date) => date.getSeconds().toString().padStart(2, '0'),
@@ -802,6 +796,7 @@ const TimestampTokenDetails = {
         regexBit: '([0-5]?\\d)',
         category: TimestampCategory.Seconds,
         numeric: true,
+        subtoken: "secondFull",
         apply: (date, val) => date.setSeconds(val),
         applyTod: (tod, val) => tod[2] = val,
         extract: (date) => date.getSeconds().toString(),
@@ -814,7 +809,6 @@ const TimestampTokenDetails = {
         regexBit: '(\\d{3})',
         category: TimestampCategory.Milliseconds,
         numeric: true,
-        subtoken: "millisecondShort",
         apply: (date, val) => date.setMilliseconds(val),
         applyTod: (tod, val) => tod[3] = val,
         extract: (date) => date.getMilliseconds().toString().padStart(3, '0'),
@@ -827,6 +821,7 @@ const TimestampTokenDetails = {
         regexBit: '(\\d{,3})',
         category: TimestampCategory.Milliseconds,
         numeric: true,
+        subtoken: "millisecondFull",
         apply: (date, val) => date.setMilliseconds(val),
         applyTod: (tod, val) => tod[3] = val,
         extract: (date) => date.getMilliseconds().toString(),
@@ -964,6 +959,12 @@ export class Timestamp extends Usetype {
         this._pattern = pattern;
         this._appliers = appliers;
 
+		if (this.hasNoval) {
+			if (this.deformat(this.novalVal) !== null) {
+				this.hasNoval = false;
+				delete this.novalVal;
+			}
+		}
     }
 
     min = undefined;
@@ -1043,8 +1044,8 @@ export class Timestamp extends Usetype {
 
         for (let i = 0, l = this.formatting.length; i < l; i++) {
             let thisToken = getTokenDetailsByLabel(this.formatting[i]);
-            let thisSubtoken = TimestampTokenDetails[thisToken.subtoken];
             let otherToken = getTokenDetailsByLabel(other.formatting[i]);
+            let otherSubtoken = TimestampTokenDetails[otherToken.subtoken];
             // literals, must be equal
             if (thisToken.literal) {
                 // TODO: Expect possibility of split literal, e.g. "at " vs "at", " "
@@ -1056,7 +1057,7 @@ export class Timestamp extends Usetype {
                 }
             }
             // tokens, subset token must be equal or thisToken.subtoken
-            else if (otherToken !== thisToken && otherToken !== thisSubtoken) {
+            else if (otherToken !== thisToken && otherSubtoken !== thisToken) {
                 return false;
             }
         }

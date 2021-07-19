@@ -20,38 +20,29 @@ const defaultRecognizerArgs = {
  * @returns {import('./usetype.js').Usetype} list of possible usetypes
  */
 export function determineType(data, args) {
-	if (!args)
-		args = Object.assign({}, defaultRecognizerArgs);
+	args = Object.assign((args ?? {}), defaultRecognizerArgs);
 
 	let gatheredUsetypes = [];
 
 	let isValid = preprocessHardLimitSize(data, args);
 
-	let now = performance.now();
 	let enumUsetypes = [];
 	if (isValid) {
 		[data, enumUsetypes] = preprocessEnumlikeness(data, args);
 		gatheredUsetypes.push(...enumUsetypes);
 	}
-	window.app.benchInfo.save('enumUsetype', performance.now() - now);
 
 	// [data, args] = preprocessIndicators(data, args);
 	
 	if ((!args.skipConstants || !args.isConstant) && isValid) {
-		now = performance.now();
 		let numUsetypes = recognizeNumbers(data, args);
-		window.app.benchInfo.save('numberUsetype', performance.now() - now);
 		gatheredUsetypes.push(...numUsetypes);	
 
-		now = performance.now();
 		let timestampUsetypes = recognizeTimestamps(data, args);
-		window.app.benchInfo.save('timestampUsetype', performance.now() - now);
 		gatheredUsetypes.push(...timestampUsetypes);
 	}
 	if (gatheredUsetypes.length === 0) {
-		now = performance.now();
 		let stringUsetypes = recognizeStrings(data, args);
-		window.app.benchInfo.save('timestampUsetype', performance.now() - now);
 		gatheredUsetypes = stringUsetypes;
 	}
 

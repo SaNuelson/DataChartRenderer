@@ -9,6 +9,10 @@ import { getAppropriateChartTypes, drawChart } from '../uigen/ChartJsIntegration
 // TODO
 // import * as Papa from 'papaparse';
 
+// Hard limit to prevent OOM in cases of large files
+// Set to 0 to turn off
+export const hardRowLimit = 0;
+
 /**
  * Catalogue class server as the top-most manager of chart rendering.
  * Once instantiated, it can be provided with data source, either via "loadFromUrl" or "loadFromLocal" methods.
@@ -49,10 +53,11 @@ export class Catalogue {
     /** I-th feateure (column) */
     col(i) { return this._data.map(row => row[i]); }
 
+    _usetypesLoaded = false;
     /** @type {Usetype[][]} */
     _usetypes = [];
     get usetypes() {
-        if (this._usetypes.length === 0 && this._auto)
+        if (!this._usetypesLoaded && this._auto)
             this._determineUsetypes();
         return this._usetypes;
     }
@@ -63,10 +68,11 @@ export class Catalogue {
     _dataErr = [];
     get errors() { return this._dataErr; }
 
+    _bindingsLoaded = false;
     _bindings = [];
     get size() { return this._bindings.length; }
     get bindings() {
-        if (this._bindings.length === 0 && this._auto)
+        if (!this._bindingsLoaded && this._auto)
             this._createBindings();
         return this._bindings;
     }
@@ -77,10 +83,11 @@ export class Catalogue {
      */
     _keySets = [];
     get keySets() {
-        if (this._keySets.length === 0)
+        if (!this._keySetsLoaded)
             this._generateKeySets();
         return this._keySets;
     }
+    _keySetsLoaded = false;
 
     /**
      * Set of determined target values.
@@ -88,10 +95,11 @@ export class Catalogue {
      */
     _valueSets = [];
     get valueSets() {
-        if (this._valueSets.length === 0)
+        if (!this._valueSetsLoaded)
             this._generateValueSets();
         return this._valueSets;
     }
+    _valueSetsLoaded = false;
 
     constructor({ auto = true } = {}) {
         this._auto = auto;
@@ -106,6 +114,10 @@ export class Catalogue {
         this._keySets = [];
         this._valueSets = [];
         this._bindings = [];
+        this._usetypesLoaded = false;
+        this._bindingsLoaded = false;
+        this._keySetsLoaded = false;
+        this._valueSetsLoaded = false;
         // TODO: Move elsewhere
         for (let c in Chart.instances)
             Chart.instances[c].destroy();
@@ -116,9 +128,6 @@ export class Catalogue {
     }
 
     setData(papares) {
-
-        window.app.benchInfo.save('papa', performance.now() - this._parseTime);
-
         this._reset();
         let data = papares.data;
 
@@ -155,20 +164,20 @@ export class Catalogue {
     }
 
     loadFromUrl(url, args) {
-        this._parseTime = performance.now();
         Papa.parse(url, {
             encoding: 'utf8',
             download: true,
             skipEmptyFiles: true,
+            preview: hardRowLimit,
             complete: (data) => this.setData(data)
         });
     }
 
     loadFromLocal(file, args) {
-        this._parseTime = performance.now();
         let data = Papa.parse(file, {
             encoding: 'utf8',
             skipEmptyFiles: true,
+            preview: hardRowLimit,
             complete: (data) => this.setData(data)
         });
     }
@@ -181,9 +190,8 @@ export class Catalogue {
     _determineUsetypes() {
         this._usetypes = [];
         this._allUsetypes = [];
-        let usetypeTime = performance.now();
         for (let i = 0, len = this.width; i < len; i++) {
-            let determinedUsetypes = determineType(this.col(i));
+            let determinedUsetypes = determineType(this.col(i), {header: this._head[i]});
             this._allUsetypes.push(determinedUsetypes);
 
             if (determinedUsetypes.length === 1)
@@ -194,6 +202,7 @@ export class Catalogue {
             else {
                 // often single number will get detected as multiple kinds of timestamps
                 if (determinedUsetypes.filter(u => u.type === "timestamp").length > 1) {
+                    window.determinedUsetypes = determinedUsetypes;
                     determinedUsetypes = determinedUsetypes.filter(u => u.type !== "timestamp");
                 }
 
@@ -201,8 +210,8 @@ export class Catalogue {
                 this._usetypes[i] = determinedUsetypes[0];
             }
         }
+        this._usetypesLoaded = true;
         this._checkHeaderValidity();
-        window.app.benchInfo.save('usetypeAll', performance.now() - usetypeTime);
     }
 
     _checkHeaderValidity() {
@@ -217,6 +226,17 @@ export class Catalogue {
             this._data = [this._head, ...this._data];
             this._head = this._usetypes.map(ut => ut.toString());
             this._headValid = true;
+            // fix ambiguous sets indexing
+            for (let i = 0; i < this._usetypes.length; i++) {
+                if (this._usetypes[i].ambiguousSets) {
+                    this._usetypes[i].ambiguousSets = this._usetypes[i].ambiguousSets.map(set => set.map(val => +val + 1));
+                    let ambiVals = this._usetypes[i].ambiguousSets.map(set => this._data[set[0]][i]);
+                    for (let j = 0; j < ambiVals.length; j++) {
+                        if (this._data[0][i] === ambiVals[j])
+                            this._usetypes[i].ambiguousSets[j].push(0);
+                    }
+                }
+            }
         }
     }
 
@@ -230,7 +250,6 @@ export class Catalogue {
 
     _createBindings() {
         this._bindings = [];
-        let bindingTime = performance.now();
         // TODO: Select most representative keySet for each valueSet
         for (let keySet of this.keySets) {
             for (let valueSet of this.valueSets) {
@@ -256,11 +275,10 @@ export class Catalogue {
                 this._bindings = this._bindings.concat(bindingBatch);
             }
         }
-        window.app.benchInfo.save('bindings', performance.now() - bindingTime);
+        this._bindingsLoaded = true;
     }
 
     _generateKeySets() {
-        let keyTime = performance.now();
         let representatives = this.usetypes;
         let repLabels = [...Array(this.usetypes.length).keys()];
 
@@ -287,11 +305,10 @@ export class Catalogue {
             this._usetypes[-1] = Number.getIdUsetype();
             this._data.forEach((row, i) => row[-1] = i);
         }
-        window.app.benchInfo.save('keySets', performance.now() - keyTime);
+        this._keySetsLoaded = true;
     }
 
     _generateValueSets() {
-        let valueTime = performance.now();
         let potentialFeatureIdxs = [];
         this.usetypes.forEach((ut, idx) => {
             if (ut.domainType === "ordinal")
@@ -310,7 +327,7 @@ export class Catalogue {
         let timestampSimilarityGroupIdxs = timestampSimilarityGroups.map(group => group.map(ut => this.usetypes.indexOf(ut)));
 
         this._valueSets = numberSimilarityGroupIdxs.concat(timestampSimilarityGroupIdxs);
-        window.app.benchInfo.save('valueSets', performance.now() - valueTime);
+        this._valueSetsLoaded = true;
 
         function aggregateSimilarity(set, next) {
             let anySimilar = false;
