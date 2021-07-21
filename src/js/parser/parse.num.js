@@ -503,7 +503,7 @@ export class Number extends Usetype {
 		let thisSize = this.max - this.min;
 		let otherSize = other.max - other.min;
 		let intersection = Math.min(this.max, other.max) - Math.max(this.min, other.min);
-		return intersection >= (thisSize + otherSize) / 10;
+		return intersection >= (thisSize + otherSize - intersection) / 10;
 	}
 
 	toString() {

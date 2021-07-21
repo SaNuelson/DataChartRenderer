@@ -319,6 +319,7 @@ export class Catalogue {
 
         // TODO: Find similar sets ... less ugly way (e.g. strong component search using dfs-topo-revdfs)
         let numberUsetypes = potentialFeatures.filter(usetype => usetype.type === "number");
+        numberUsetypes.forEach((u,i)=>u.order=i);
         let numberSimilarityGroups = numberUsetypes.reduce(aggregateSimilarity, []);
         let numberSimilarityGroupIdxs = numberSimilarityGroups.map(group => group.map(ut => this.usetypes.indexOf(ut)));
 
@@ -331,11 +332,14 @@ export class Catalogue {
 
         function aggregateSimilarity(set, next) {
             let anySimilar = false;
-            for (let group of set) {
+            let len = set.length;
+            for (let i = 0; i < len; i++) {
+                let group = set[i];
                 let similarTo = [];
                 for (let el of group) {
-                    if (el.isSimilarTo(next))
+                    if (el.isSimilarTo(next)) {
                         similarTo.push(el);
+                    }
                 }
                 similarTo.push(next);
                 if (similarTo.length - 1 === group.length) {
@@ -347,8 +351,9 @@ export class Catalogue {
                     anySimilar = true;
                 }
             }
-            if (!anySimilar)
+            if (!anySimilar) {
                 set.push([next]);
+            }
             return set;
         }
     }
