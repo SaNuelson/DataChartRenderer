@@ -124,6 +124,7 @@ export class Catalogue {
         this._keySets = [];
         this._valueSets = [];
         this._bindings = [];
+        this._headValid = false;
         this._usetypesLoaded = false;
         this._bindingsLoaded = false;
         this._keySetsLoaded = false;
