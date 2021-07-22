@@ -17,7 +17,16 @@ window.app = {
 };
 
 
-ChartJsInit({onChartTemplatesLoaded: function () {console.log("Chart.js templates loaded.")}});
+let chartTemplatesLoaded = false;
+let pageLoaded = false;
+
+ChartJsInit({
+    onChartTemplatesLoaded: function () {
+        console.log("Chart.js templates loaded.");
+        chartTemplatesLoaded = true;
+        checkPrerequestedSource();
+    }
+});
 
 $(() => {
     // LOAD data files
@@ -30,10 +39,14 @@ $(() => {
 
     $('#chart-wrapper').on('shown.bs.tab', tabSwitchedHandler);
 
+    pagesLoaded = true;
     checkPrerequestedSource();
 });
 
 function checkPrerequestedSource() {
+    if(!pagesLoaded || !chartTemplatesLoaded)
+        return;
+
     const urlParams = new URLSearchParams(window.location.search);
     const sourceUrl = urlParams.get('src');
     if (sourceUrl !== null) {
