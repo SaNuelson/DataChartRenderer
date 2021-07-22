@@ -8,7 +8,7 @@ import { getAppropriateChartTypes, drawChart } from '../uigen/ChartJsIntegration
 
 // Hard limit to prevent OOM in cases of large files
 // Set to 0 to turn off
-export const hardRowLimit = 0;
+export const hardRowLimit = 5000;
 
 /**
  * Catalogue class server is the top-most manager of chart rendering.

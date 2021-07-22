@@ -17,12 +17,17 @@ Also note that if you choose to install the CORS Unblock, you have to explicitly
 
 In order to install DCR Chrome extension, you have to do the following:
 1. Download this folder or the entire repository
-   1. Optionally, build the newest version of *dcr.js* by running commands "*npm ci*", "*npx webpack*".
+   1. Optionally, build the newest version of *dcr.js* by running commands
+      ```
+      > npm ci
+      > npx webpack
+      ```
    2. These will overwrite the *dcr.js* file located in extension/ folder
-2. Go to [chrome://extensions](chrome://extensions)
-3. Enable developer mode in the upper right corner
-4. Click on "Load unpacked" in the upper left corner, and select the extension/ folder
-5. This will install the extension and put it into the list of your installed extensions.
+2. Use the *extension/* folder to load unpacked extension to Chrome (process described also [here](https://webkul.com/blog/how-to-install-the-unpacked-extension-in-chrome/))
+   1. Go to [chrome://extensions](chrome://extensions)
+   2. Enable developer mode in the upper right corner
+   3. Click on "Load unpacked" in the upper left corner, and select the extension/ folder
+   4. This will install the extension and put it into the list of your installed extensions.
 
 ### User Guide
 

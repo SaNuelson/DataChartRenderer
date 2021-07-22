@@ -25,7 +25,7 @@
 
             <div class="d-md-none container text-center">
                 <a href="#" class="d-inline d-md-none navbar-brand">
-                    <img src="../config-page/img/logo-smort.svg" class="logo img-fluid" />
+                    <img src="../res/img/logo-smort.svg" class="logo img-fluid" />
                 </a>
             </div>
 
@@ -36,22 +36,60 @@
                         File
                     </a>
                     <ul id="load-dropdown" class="dropdown-menu">
-                        <li><a id="load-local-file-btn" href="#" data-action="load-preset-file" data-target="local"
-                                class="dropdown-item">Load Local Datafile...</a></li>
-                        <li><button type="button" class="dropdown-item" data-bs-target="#online-file-load-modal"
-                                data-bs-toggle="modal" data-bs-dismiss="modal">Load Online Datafile...</button></li>
-                        <li><a id="load-demo-file-btn" href="#" data-action="load-preset-file"
-                                data-target="../res/data_type_debug.csv" class="dropdown-item">Load Debug Demo</a></li>
-                        <li><a id="load-demo-file-btn" href="#" data-action="load-preset-file"
-                                data-target="../res/zoo_navstevnost.csv" class="dropdown-item">Load ZOO Demo</a></li>
+                        <li>
+                            <a id="load-local-file-btn" href="#" data-action="load-preset-file" data-target="local"
+                                class="dropdown-item">Load Local Datafile...</a>
+                        </li>
+                        <li>
+                            <button type="button" class="dropdown-item" data-bs-target="#online-file-load-modal"
+                                data-bs-toggle="modal" data-bs-dismiss="modal">Load Online Datafile...</button>
+                        </li>
+                    </ul>
+                </li>
+            </ul>
+
+            <ul class="navbar-nav navbar-left mr-auto">
+                <li class="nav-item dropdown">
+                    <a id="file-dropdown-toggler" class="nav-link dropdown-toggle" href="#" role="button"
+                        data-bs-toggle="dropdown">
+                        Demo
+                    </a>
+                    <ul id="load-dropdown" class="dropdown-menu">
+                        <li>
+                            <a id="load-demo-file-btn" href="#" data-action="load-preset-file"
+                                data-target="../res/demo/artificial/data_type_debug.csv" class="dropdown-item">Debug - General</a>
+                        </li>
+                        <li>
+                            <a id="load-demo-file-btn" href="#" data-action="load-preset-file"
+                                data-target="../res/demo/artificial/people.csv" class="dropdown-item">Debug - People</a>
+                        </li>
+                        <li>
+                            <a id="load-demo-file-btn" href="#" data-action="load-preset-file"
+                                data-target="../res/demo/artificial/bubble-test.csv" class="dropdown-item">Debug - Bubble Test</a>
+                        </li>
+                        <li>
+                            <a id="load-demo-file-btn" href="#" data-action="load-preset-file"
+                                data-target="../res/demo/adopcezvirata.csv" class="dropdown-item">Random - Adopce zvířat</a>
+                        </li>
+                        <li>
+                            <a id="load-demo-file-btn" href="#" data-action="load-preset-file"
+                                data-target="../res/demo/akcezoo.csv" class="dropdown-item">Random - Akce v ZOO</a>
+                        </li>
+                        <li>
+                            <a id="load-demo-file-btn" href="#" data-action="load-preset-file"
+                                data-target="../res/demo/brownfieldy_ol.csv" class="dropdown-item">Random - Brownfieldy</a>
+                        </li>
+                        <li>
+                            <a id="load-demo-file-btn" href="#" data-action="load-preset-file"
+                                data-target="../res/demo/zoo_navstevnost.csv" class="dropdown-item">Random - Návštěvnost ZOO</a>
+                        </li>
                     </ul>
                 </li>
             </ul>
 
             <div class="d-none d-md-block container text-center text-center">
-                <img src="../config-page/img/logo-smort.svg" class="logo img-fluid" />
+                <img src="../res/img/logo-smort.svg" class="logo img-fluid" />
             </div>
-
         </div>
     </nav>
 
@@ -118,7 +156,7 @@
     <script src="https://unpkg.com/papaparse@5.3.0/papaparse.min.js"></script>
     <script src="https://momentjs.com/downloads/moment.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment@0.1.1"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment@0.1.1"></script>
     <script type="module" src="./js/index.js"></script>
 
     <script>
