@@ -18,7 +18,7 @@ window.app = {
 
 
 let chartTemplatesLoaded = false;
-let pageLoaded = false;
+let pagesLoaded = false;
 
 ChartJsInit({
     onChartTemplatesLoaded: function () {
