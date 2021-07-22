@@ -2,15 +2,12 @@
 let enabled = true;
 let limit = 5000;
 chrome.runtime.onMessage.addListener(
-    function (request) {
+    function (request, sender, sendResponse) {
         if (request.message === "dcr-enable") {
             enabled = true;
-            window.hardRowLimit = +request.limit;
-            console.log("DCR Enabled with limit ", request.limit);
         }
         else if (request.message === "dcr-disable") {
             enabled = false;
-            console.log("DCR Stop");
         }
     }
 );
