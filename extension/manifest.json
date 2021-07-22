@@ -5,7 +5,8 @@
     "description": "This extension dynamically rendering potential chart representations of found CSV files in a popup.",
     "icons": { "32": "favicon.ico"},
     "action": {
-        "default_popup": "popup.html"
+        "default_popup": "popup/popup.html",
+        "default_icon": "icon-on.png"
     },
     "content_scripts": [
         {
@@ -24,5 +25,11 @@
             "css": ["content/main.css"],
             "run_at": "document_end"
         }
+    ],
+    "permissions": [
+      "activeTab",
+      "scripting",
+      "storage",
+      "tabs"
     ]
 }

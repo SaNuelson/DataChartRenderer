@@ -1,44 +1,56 @@
-const enabledLabel = 'dcr-enabled';
-const rowLimitLabel = 'dcr-row-limit';
+console.log("Popup up and running");
 
-let enabled = localStorage.getItem(enabledLabel);
-let rowLimit = localStorage.getItem(rowLimitLabel);
-
+let enabled;
 let toggleBtn = document.getElementById('on-off-btn');
-let limitInput = document.getElementById('limit-input');
+toggleBtn.addEventListener('click', onToggleClicked);
+let limitSlider = document.getElementById('limit-input');
+limitSlider.addEventListener('change', onLimitChanged);
 
-// enabled by default
-if (!enabled) {
-    chrome.tabs.query({ currentWindow: true, active: true }, function (tabs) {
-        var activeTab = tabs[0];
-        chrome.tabs.sendMessage(activeTab.id, { "message": "stop" });
-    });
+chrome.runtime.onMessage.addListener(initHandler);
+function initHandler(req) {
+    if (req.message === "bg-dcr-enable"){
+        onEnabled(req, false);
+    }
+    else if (req.message === "bg-dcr-disable"){
+        onDisabled(false);
+    }
+    chrome.runtime.onMessage.removeListener(initHandler);
 }
 
-toggleBtn.addEventListener('click', function (e) {
-    if (enabled) {
-        toggleBtn.setAttribute('value', 'Enable');
-        enabled = false;
-        localStorage.removeItem(enabledLabel);
-        chrome.tabs.query({ currentWindow: true, active: true }, function (tabs) {
-            var activeTab = tabs[0];
-            chrome.tabs.sendMessage(activeTab.id, { "message": "stop" });
-        });
+// necessary to update btn whenever popup is opened
+if (enabled) onEnabled();
+else onDisabled();
+
+function onEnabled(res) {
+    console.log("ONENABLED");
+    chrome.action.setIcon({path: '../icon-on.png'});
+    if (res && res.limit)
+        limitSlider.value = res.limit;
+    toggleBtn.value = "Disable";
+    enabled = true;
+}
+
+function onDisabled() {
+    console.log("ONDISABLED");
+    chrome.action.setIcon({path: '../icon-off.png'});
+    toggleBtn.value = "Enable";
+    enabled = false;
+}
+
+function onToggleClicked(e) {
+    console.log(toggleBtn.value);
+    if (toggleBtn.value === "Enable") {
+        onEnabled();
+        chrome.runtime.sendMessage({message:'cs-dcr-enable'});
     }
     else {
-        toggleBtn.setAttribute('value', 'Disable');
-        enabled = true;
-        localStorage.setItem(enabledLabel, true);
-        chrome.tabs.query({ currentWindow: true, active: true }, function (tabs) {
-            var activeTab = tabs[0];
-            chrome.tabs.sendMessage(activeTab.id, { "message": "start" });
-        });
+        onDisabled();
+        chrome.runtime.sendMessage({message:'cs-dcr-disable'});
     }
-});
+}
 
-limitInput.addEventListener('change', function (e) {
-    chrome.tabs.query({currentWindow: true, active: true}, function (tabs){
-        var activeTab = tabs[0];
-        chrome.tabs.sendMessage(activeTab.id, {"message": "limit", "value": limitInput.value});
-       });
-})
+function onLimitChanged() {
+    limit = limitSlider.value;
+    if(enabled)
+        chrome.runtime.sendMessage({message:'cs-dcr-enable', limit:limit});
+}
