@@ -3,10 +3,8 @@
     "version": "0.0.1",
     "manifest_version": 3,
     "description": "This extension dynamically rendering potential chart representations of found CSV files in a popup.",
-    "icons": { "32": "favicon.ico"},
-    "action": {
-        "default_popup": "popup.html"
-    },
+    "icons": { "32": "icon-on.png"},
+    "action": {},
     "content_scripts": [
         {
             "matches": [
@@ -24,5 +22,14 @@
             "css": ["content/main.css"],
             "run_at": "document_end"
         }
+    ],
+    "background": {
+        "service_worker": "background.js"
+    },
+    "permissions": [
+      "activeTab",
+      "scripting",
+      "storage",
+      "tabs"
     ]
 }
