@@ -1,13 +1,12 @@
 {
     "name": "Data Chart Renderer",
-    "version": "1.0",
+    "version": "0.0.1",
     "manifest_version": 3,
-    "description": "Chart Extension.",
+    "description": "This extension dynamically rendering potential chart representations of found CSV files in a popup.",
     "icons": { "32": "favicon.ico"},
     "action": {
         "default_popup": "popup.html"
     },
-    "background": "background.html",
     "content_scripts": [
         {
             "matches": [
@@ -18,11 +17,11 @@
                 "lib/chart.min.js",
                 "lib/chartjs-adapter-moment.js",
                 "lib/jquery-3.6.0.slim.min.js",
-                "dcr.js",
                 "lib/papaparse.min.js",
-                "main.js"
+                "content/dcr.js",
+                "content/main.js"
             ],
-            "css": ["main.css"],
+            "css": ["content/main.css"],
             "run_at": "document_end"
         }
     ]
