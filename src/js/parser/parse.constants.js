@@ -1,5 +1,5 @@
 /**
- * @file Contains function which lookup string values in all kinds of constant (country names and codes, currencies...)
+ * @file Contains function which look up string values in all kinds of constant (country names and codes, currencies...)
  * @todo locales, currently the usual param 'locale' has no use and is simply ignored, returning english/global constants
  */
 

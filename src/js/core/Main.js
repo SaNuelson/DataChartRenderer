@@ -2,6 +2,11 @@ import { Catalogue, hardRowLimit } from './Catalogue.js';
 import { drawChart, loadTemplateData } from '../uigen/ChartJsIntegration.js';
 
 /**
+ * @file File responsible for initiating the necessary code and loading external sources, such as JSON containing charting library configuration.
+ * Init function needs to be called in order for the DCR to be usable.
+ */
+
+/**
  * @param {object} opts 
  * @param {function(): void} opts.onChartTemplatesLoaded
  */

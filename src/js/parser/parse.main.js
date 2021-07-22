@@ -2,7 +2,7 @@ import * as utils from '../utils/utils.js';
 
 import { recognizeNumbers } from './parse.num.js';
 import { recognizeTimestamps } from './parse.timestamp.js';
-import { recognizeEnums } from './parse.enum.js';
+import { Enum, recognizeEnums } from './parse.enum.js';
 import { recognizeStrings } from './parse.string.js';
 
 import { numberConstants, enumConstants, timestampConstants } from './parse.constants.js';
@@ -49,6 +49,13 @@ export function determineType(data, args) {
 	return gatheredUsetypes;
 }
 
+/**
+ * In extreme cases when some columns contain large strings (e.g. records/JSONs...), it is necessary to identify and ignore these
+ * to avoid extreme processing times, which in most cases return no useful information (these often can't be used as targets and shouldn't be used as source).
+ * @param {string[]} source 
+ * @param {object} args 
+ * @returns {boolean}
+ */
 function preprocessHardLimitSize(source, args) {
 	if (!args.sizeHardLimit)
 		return true;
@@ -58,6 +65,13 @@ function preprocessHardLimitSize(source, args) {
 	return withinSizeLimit;
 }
 
+/**
+ * Special wrapper for categorical recognizer.
+ * Created due to its different nature and required additional preprocessing in some cases.
+ * @param {string[]} source 
+ * @param {object} args 
+ * @returns {[string[], Enum[]]}
+ */
 function preprocessEnumlikeness(source, args) {
 	let enumUsetypes = recognizeEnums(source, args);
 	
@@ -73,6 +87,12 @@ function preprocessEnumlikeness(source, args) {
 }
 
 // Not implemented, would require internal changes to respective parsers
+/**
+ * A potential improvement, where prefixes and suffixes would be identified before individual recognizers are used.
+ * These affixes could even help determining the most probable use-types (e.g. $ sign for numbers).
+ * @param {string[]} source 
+ * @param {object} args 
+ */
 function preprocessIndicators(source, args) {
 
 	let timestampConstantGroups = Object.values(timestampConstants).map(getFunc => getFunc(args.locale));

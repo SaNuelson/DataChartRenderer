@@ -6,20 +6,22 @@ import { determinePrimaryKeys } from '../mapper/mapper.main.js';
 import { count, toKvp, isSubsetOf, intersection, filterInclusionMinimas, filterInclusionMaximas } from '../utils/array.js';
 import { getAppropriateChartTypes, drawChart } from '../uigen/ChartJsIntegration.js';
 
-// TODO
-// import * as Papa from 'papaparse';
-
 // Hard limit to prevent OOM in cases of large files
 // Set to 0 to turn off
 export const hardRowLimit = 0;
 
 /**
- * Catalogue class server as the top-most manager of chart rendering.
- * Once instantiated, it can be provided with data source, either via "loadFromUrl" or "loadFromLocal" methods.
+ * Catalogue class server is the top-most manager of chart rendering.
+ * Once instantiated, it can be provided with data source, either via "loadFromUrl" + (url:string) or "loadFromLocal" + (File:Stream) methods.
  * Once data is loaded and sliced using Papaparse library, an event eventHandles.sourceChange is triggered,
- * to which user can subscribe via "cat.addEventListener()".
+ * to which user can subscribe via "catalogue.addEventListener()".
  * Bindings can be queried using a getter, or generated explicitly by "generateBindings" function.
- * Once done, these can be used to render charts by simply calling "drawBinding" method.
+ * Once done, these can be used to render charts by simply calling "drawBinding" method with appropriate parameters.
+ * 
+ * Can work in two modes: manual and automatic.
+ * Automatic is the main goal, it generates all metadata automatically.
+ * Manual is currently in development, aiming to create a semi-manual version, which
+ * generates metadata automatically, but can be manually altered.
  */
 export class Catalogue {
     /** 
@@ -62,14 +64,19 @@ export class Catalogue {
         return this._usetypes;
     }
 
+    /** @type {Object} Metadata output from Papa Parse library */
     _meta = {};
     get meta() { return this._meta; }
 
+    /** @type {Object} Error object output from Papa Parse library */
     _dataErr = [];
     get errors() { return this._dataErr; }
 
-    _bindingsLoaded = false;
+    /**
+     * @type {Binding[]} set of bindings created for specified dataset
+     */
     _bindings = [];
+    _bindingsLoaded = false;
     get size() { return this._bindings.length; }
     get bindings() {
         if (!this._bindingsLoaded && this._auto)
@@ -105,6 +112,9 @@ export class Catalogue {
         this._auto = auto;
     }
 
+    /**
+     * Called when new dataset is loade to avoid invalid states.
+     */
     _reset() {
         this._head = [];
         this._data = [];
@@ -127,6 +137,11 @@ export class Catalogue {
         this._auto = flag;
     }
 
+    /**
+     * Method called by Papa Parse upon loading the input file.
+     * Can be theoretically used from outside by simulating the Papa Parse response object.
+     * @param {Object} papares papares output 
+     */
     setData(papares) {
         this._reset();
         let data = papares.data;
@@ -251,11 +266,11 @@ export class Catalogue {
         if (!this._auto) {
             throw new Error("Not implemented");
         }
-        this._createBindings();
+        this._createBindings(args);
         return this._bindings;
     }
 
-    _createBindings() {
+    _createBindings(args) {
         this._bindings = [];
         // TODO: Select most representative keySet for each valueSet
         for (let keySet of this.keySets) {
@@ -372,7 +387,17 @@ export class Catalogue {
         }
     }
 
+    /**
+     * Assign html element by its id to a binding to enable drawing the chart.
+     * Cannot be reassigned. In such case binding has to be destroyed and created again (to avoid dangling Chart instances).
+     * @param {number} i index of binding
+     * @param {string} id id of HTMLElement which to draw chart on. Has to be <canvas> in case of Chart.js
+     */
     setBindingElementId(i, id) { this._bindings[i].boundElementId = id; }
+    /**
+     * Draw chart bound to the i-th binding.
+     * @param {number} i index of binding
+     */
     drawBinding(i) { this._drawBinding(this._bindings[i]); }
 
     /**

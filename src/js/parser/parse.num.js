@@ -10,7 +10,6 @@ import { escapeRegExp } from '../utils/string.js';
  * @returns {Number[]} possible number formats of specified strings
  */
 export function recognizeNumbers(source, args) {
-	// TODO
 	const initialBatchSize = 5;
 
 	if (!source || source.length === 0) {
@@ -18,18 +17,14 @@ export function recognizeNumbers(source, args) {
 	}
 
 	// populate initial batch with largest samples
-	let initialBatch = [];
-	{
-		let sortedSource = [...source].sort();
-		initialBatch = sortedSource.slice(0, initialBatchSize);
-	}
+	let initialBatch = source.slice(0, 5);
 
 	let nuts = extractPossibleFormats(initialBatch, args);
 	let matches = nuts.map(() => 0);
 	let disabled = 0;
 	for (let i = 0, il = source.length; i < il; i++) {
 		let token = source[i];
-		// cached in case multiple number usetypes fail here
+		// cache of recovery use-types
 		let potentialExpansion = undefined;
 		for (let j = 0, jl = nuts.length; j < jl; j++) {
 			if (!nuts[j].disabled) {
@@ -73,6 +68,12 @@ export function recognizeNumbers(source, args) {
 	return nuts;
 }
 
+/**
+ * Slow method to be used on a small number of samples to generate all possible numeric use-types.
+ * @param {string[]} source small set of samples
+ * @param {object} args 
+ * @returns {Number[]}
+ */
 function extractPossibleFormats(source, args) {
 	/* Unicode character not currently working well, need to find a workaround */
 	const knownThousandSeparators = ['.', ',', ' ', '\xa0']; //...unicodeConstants.getUtf16Whitespace()];
@@ -91,7 +92,7 @@ function extractPossibleFormats(source, args) {
 	let determinedScientific = false; // whether format uses scientific notation
 	let determinedDelimiterSets = []; // tuples of thousand and decimal separators found
 
-	// Detailed specification:
+	// Potential numeric-like feature format:
 	// SAMPLE = PREFIX NUMBER SUFFIX
 	// PREFIX, SUFFIX = non-numeric sequence
 	// NUMBER can be
@@ -543,16 +544,16 @@ export class Number extends Usetype {
 	priority = 2;
 
 	static getIdUsetype() {
-		return new Number({strictlyPositive: true}, {potentialIds: true});
+		return new Number({ strictlyPositive: true }, { potentialIds: true });
 	}
 }
 
 function recognizeIndicators(indicators) {
 	let currCodes = numberConstants.getCurrencyCodes();
 
-	if (!indicators || 
-		!(indicators instanceof Array) || 
-		indicators.length === 0 || 
+	if (!indicators ||
+		!(indicators instanceof Array) ||
+		indicators.length === 0 ||
 		indicators.every(ind => ind.match(/^\s*$/))) {
 		return { type: 'unknown', format: 'unknown', domain: [] };
 	}

@@ -66,12 +66,6 @@ export function recognizeEnums(source, args) {
 }
 
 /**
- * @typedef EnumUsetypeArgs
- * Argument object used to construct {@see Enum}.
- * @property {string[]} domain array containing all distinct values
- */
-
-/**
  * Enum usetype. Holds all possible values of a domain.
  * Is pretty much useless otherwise, mostly a compatibility wrapper similarly to StringUsetype.
  * @implements {Usetype}
