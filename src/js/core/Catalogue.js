@@ -29,7 +29,7 @@ export class Catalogue {
     _head = [];
     _headValid = false;
     get head() {
-        if (!this._headValid)
+        if (!this._headValid && this._auto)
             this._checkHeaderValidity();
         return this._head;
     }
@@ -211,7 +211,14 @@ export class Catalogue {
             }
         }
         this._usetypesLoaded = true;
-        this._checkHeaderValidity();
+    }
+
+    determineUsetypeOf(idx) {
+        if (this._auto)
+            return this.usetypes[idx];
+        if (this.width >= idx)
+            return;
+        return determineType(this.col(idx), {header: this.header[idx]});
     }
 
     _checkHeaderValidity() {
@@ -276,6 +283,13 @@ export class Catalogue {
             }
         }
         this._bindingsLoaded = true;
+    }
+
+    createCustomBinding(args) {
+        if (this._auto)
+            return;
+        this._bindings.push(new Binding(this, args));
+        return this._bindings.length - 1;
     }
 
     _generateKeySets() {

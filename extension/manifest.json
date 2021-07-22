@@ -1,0 +1,32 @@
+{
+    "name": "Data Chart Renderer",
+    "version": "1.0",
+    "manifest_version": 3,
+    "description": "Chart Extension.",
+    "icons": { "32": "favicon.ico"},
+    "action": {
+        "default_popup": "popup.html"
+    },
+    "background": "background.html",
+    "content_scripts": [
+        {
+            "matches": [
+                "<all_urls>"
+            ],
+            "js": [
+                "lib/moment.js",
+                "lib/chart.min.js",
+                "lib/chartjs-adapter-moment.js",
+                "lib/jquery-3.6.0.slim.min.js",
+                "dcr.js",
+                "lib/papaparse.min.js",
+                "main.js"
+            ],
+            "css": ["main.css"],
+            "run_at": "document_end"
+        }
+    ],
+    "permissions": [
+        "runtime"
+    ]
+}

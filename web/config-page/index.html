@@ -4,11 +4,12 @@
 
 <head>
     <meta charset="utf-8">
-    <title>CSV2GCR</title>
+    <title>DCR Manual</title>
     <meta name="author" content="Black Warden">
     <meta charset="UTF-8">
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
-        integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-eOJMYsd53ii+scO/bJGFsiCZc+5NDVN2yr8+0RDqr0Ql0h+rP48ckxlpbzKgwra6" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
     <link rel="stylesheet" href="css/index.css">
     <link rel="stylesheet" href="css/popup.css">
 </head>
@@ -32,40 +33,41 @@
             <ul class="navbar-nav navbar-left mr-auto">
                 <li class="nav-item dropdown">
                     <a id="file-dropdown-toggler" class="nav-link dropdown-toggle" href="#" role="button"
-                        data-toggle="dropdown">
+                        data-bs-toggle="dropdown">
                         File
                     </a>
-                    <ul class="dropdown-menu">
-                        <li><a id="load-local-file-btn" href="#" class="dropdown-item">Load New Datafile...</a></li>
-                        <li><a id="load-demo-file-btn" href="#" class="dropdown-item">Load Debug Demo</a></li>
-                        <li><a id="load-people-demo-file-btn" href="#" class="dropdown-item">Load People Demo</a></li>
-                    </ul>
+                    <div class="dropdown-menu" id="load-dropdown">
+                        <a id="load-local-file-btn" href="#" class="dropdown-item">Load Local Datafile...</a>
+                        <a href="#" data-action="load-preset-file" data-target="../res/data_type_debug.csv" class="dropdown-item">Load Debug Demo</a>
+                        <a href="#" data-action="load-preset-file" data-target="../res/zoo_navstevnost.csv" class="dropdown-item">Load ZOO Demo</a>
+                        <a href="#" data-action="load-preset-file" data-target="../res/people.csv" class="dropdown-item">Load People Demo</a>
+                    </div>
                 </li>
                 <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" role="button" data-toggle="dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
                         Chart
                     </a>
-                    <ul class="dropdown-menu">
-                        <li><a id="save-json-file-btn" href="#" class="dropdown-item">Save Options as JSON...</a></li>
-                        <li><a id="load-json-file-btn" href="#" class="dropdown-item">Load Options from JSON...</a></li>
-                    </ul>
+                    <div class="dropdown-menu">
+                        <a id="save-json-file-btn" href="#" class="dropdown-item">Save Options as JSON...</a>
+                        <a id="load-json-file-btn" href="#" class="dropdown-item">Load Options from JSON...</a>
+                    </div>
                 </li>
                 <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" role="button" data-toggle="dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
                         Help
                     </a>
-                    <ul class="dropdown-menu">
-                        <a id="toggle-table-btn" href="#" data-toggle="collapse" data-target="#table-div"
+                    <div class="dropdown-menu">
+                        <a id="toggle-table-btn" href="#" data-bs-toggle="collapse" data-bs-target="#table-div"
                             class="dropdown-item toggle">Toggle Preview Table</a>
-                        <a id="toggle-opts-btn" href="#" data-toggle="collapse" data-target="#opts-div"
+                        <a id="toggle-opts-btn" href="#" data-bs-toggle="collapse" data-bs-target="#opts-div"
                             class="dropdown-item toggle">Toggle Options</a>
-                        <a id="toggle-chart-btn" href="#" data-toggle="collapse" data-target="#chart-div"
+                        <a id="toggle-chart-btn" href="#" data-bs-toggle="collapse" data-bs-target="#chart-div"
                             class="dropdown-item toggle">Toggle Chart</a>
-                        <a id="toggle-help-btn" href="#" data-toggle="collapse" data-target="#help-div"
+                        <a id="toggle-help-btn" href="#" data-bs-toggle="collapse" data-bs-target="#help-div"
                             class="dropdown-item toggle">Toggle Help</a>
-                        <a id="toggle-log-btn" href="#" data-toggle="collapse" data-target="#popup-div"
+                        <a id="toggle-log-btn" href="#" data-bs-toggle="collapse" data-bs-target="#popup-div"
                             class="dropdown-item toggle">Toggle Logger</a>
-                    </ul>
+                    </div>
                 </li>
             </ul>
 
@@ -94,17 +96,17 @@
         <div id="help-div" class="row row-collapse m-3 show">
             <div class="col-4 col-lg-2">
                 <div class="list-group" id="list-tab" role="tablist">
-                    <a id="general-help-btn" class="list-group-item list-group-item-action active" data-toggle="list"
+                    <a id="general-help-btn" class="list-group-item list-group-item-action active" data-bs-toggle="list"
                         href="#general-help" role="tab">0. Get familiar with the site</a>
-                    <a id="data-help-btn" class="list-group-item list-group-item-action" data-toggle="list"
+                    <a id="data-help-btn" class="list-group-item list-group-item-action" data-bs-toggle="list"
                         href="#data-help" role="tab">1.
                         Load your data file</a>
-                    <a id="chart-type-help-btn" class="list-group-item list-group-item-action" data-toggle="list"
+                    <a id="chart-type-help-btn" class="list-group-item list-group-item-action" data-bs-toggle="list"
                         href="#chart-type-help" role="tab">2. Pick a chart type</a>
-                    <a id="opts-help-btn" class="list-group-item list-group-item-action" data-toggle="list"
+                    <a id="opts-help-btn" class="list-group-item list-group-item-action" data-bs-toggle="list"
                         href="#opts-help" role="tab">3.
                         Configurate the chart</a>
-                    <a id="chart-help-btn" class="list-group-item list-group-item-action" data-toggle="list"
+                    <a id="chart-help-btn" class="list-group-item list-group-item-action" data-bs-toggle="list"
                         href="#chart-help" role="tab">4. Render it and save it</a>
                 </div>
             </div>
@@ -167,33 +169,25 @@
     <div id="popup-div" class="col-10 col-sm-8 col-md-5 col-lg-3 collapse show">
     </div>
 
-    <!-- JQuery -->
-    <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
-    <script src="https://code.jquery.com/jquery-3.5.1.js"
-        integrity="sha256-QWo7LDvxbWT2tbbQ97B53yJnYU3WhH/C8ycbRAkjPDc=" crossorigin="anonymous"></script>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.js"
+        integrity="sha256-H+K7U5CnXl1h5ywQfKtSj8PCmoN9aaq30gDh27Xc0jk=" crossorigin="anonymous"></script>
     <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"
         integrity="sha256-T0Vest3yCU7pafRw9r+settMBX6JkKN06dqBnpQ8d30=" crossorigin="anonymous"></script>
-    <!-- JQuery -->
-
-    <!-- Bootstrap -->
-    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"
-        integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo"
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.1/dist/umd/popper.min.js"
+        integrity="sha384-SR1sx49pcuLnqZUnnPwx6FCym0wLsk5JZuNx2bPPENzswTNFaQU1RDvt3wT4gWFG"
         crossorigin="anonymous"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"
-        integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6"
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.min.js"
+        integrity="sha384-j0CNLUeiqtyaRmlzUHCPZ+Gy5fQu0dQ6eZ/xAww941Ai1SxSY+0EQqNXNE6DZiVc"
         crossorigin="anonymous"></script>
-    <!-- Bootstrap -->
-
-    <!-- GCCSV Copy begin -->
-    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
-    <script type="module" src="js/index.js"></script>
-    <!-- GCCSV Copy end -->
-    
     <!-- Import from module when packing -->
     <script src="https://unpkg.com/papaparse@5.3.0/papaparse.min.js"></script>
-
+    <script src="https://momentjs.com/downloads/moment.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment@0.1.1"></script>
     <script type="text/javascript" src="js/popup.js"></script>
-    
+    <script type="module" src="js/index.js"></script>
+
 </body>
 
 </html>

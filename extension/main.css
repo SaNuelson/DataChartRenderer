@@ -1,0 +1,27 @@
+div.dcr-preview-div {
+    position: absolute;
+    width: 600px;
+    height: 600px;
+    background: white;
+    border: 1px solid black;
+}
+
+div.dcr-preview-footer {
+    bottom: 0;
+    width: 100%;
+    height: 30px;
+    border: 1px solid grey;
+    position: absolute;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-evenly;
+}
+
+div.dcr-hidden {
+    display:none;
+}
+
+div.dcr-preview-label {
+    text-align: center;
+    padding-top: 250px;
+}

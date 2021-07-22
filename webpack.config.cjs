@@ -4,7 +4,7 @@ module.exports = {
   entry: './src/js/core/Main.js',
   mode: 'production',
   output: {
-    path: path.resolve(__dirname, 'dist'),
-    filename: 'out.js',
+    path: path.resolve(__dirname, 'extension'),
+    filename: 'dcr.js',
   },
 };

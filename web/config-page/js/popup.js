@@ -1,3 +1,5 @@
+console.log("Popup.js loaded");
+
 $(() => {
     $('#popup-div').append($('<ul id="popup-list"></ul>'));
     setTimeout(onPopupTimeout, PopupTimeout);
@@ -12,35 +14,31 @@ const PopupTimeout = 30000;
 
 let popups = [];
 
-document.log = message => showPopup(message, 0);
-document.warn = message => showPopup(message, 1);
-document.err = message => showPopup(message, 2);
-
 // CONSOLE.LOG EXTENSION
-if (false) {
+if (true) {
+    let log = console.log;
     let warn = console.warn;
     let error = console.error;
-    let err = console.err;
+    console.log = function (...msg) {
+        document.log(msg.join(", "));
+        log(...msg);
+    }
     console.warn = function (msg) {
-        document.warn(msg);
-        warn(msg);
+        document.warn(msg.join(", "));
+        warn(...msg);
     }
     console.error = function (msg) {
-        document.err(msg);
-        error(msg);
-    }
-    console.err = function(msg) {
-        document.err(msg);
-        err(msg);
+        document.err(msg.join(", "));
+        error(...msg);
     }
 }
 
-showPopup = function (message, type) {
+function showPopup(message, type) {
     popups.push(getPopup(message, type));
     tryAddPopupItem();
 }
 
-getPopup = function (message, type) {
+function getPopup(message, type) {
     let typeClass;
     switch (type) {
         case 0:
@@ -71,16 +69,16 @@ getPopup = function (message, type) {
         .on('click', function () { tryRemovePopupItem($(this)) });
 }
 
-onPopupTimeout = function () {
+function onPopupTimeout() {
     tryRemovePopupItem();
     setTimeout(onPopupTimeout, PopupTimeout);
 }
 
-onPopupCreation = function () {
+function onPopupCreation() {
     tryAddPopupItem();
 }
 
-tryRemovePopupItem = function (item) {
+function tryRemovePopupItem(item) {
     if (!item)
         item = $('#popup-list li:first');
     if ($('#popup-list').children().length > 0)
@@ -91,7 +89,7 @@ tryRemovePopupItem = function (item) {
 
 }
 
-tryAddPopupItem = function () {
+function tryAddPopupItem() {
     if (popups.length > 0 && $('#popup-list').children().length < MaxPopups) {
         $('#popup-list')
             .append(popups[0]
