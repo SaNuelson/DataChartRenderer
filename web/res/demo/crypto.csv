@@ -1,0 +1,91 @@
+coin name,coin symbol,coin price,market cap,volume,origin_pattern,origin_url,createdAt,updatedAt,pingedAt
+Aave,AAVE,$347.77,$4.3B,$561.2M,https://www.coinbase.com//price?page=2,https://www.coinbase.com//price?page=2,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC
+Algorand,ALGO,$1.29,$3.7B,$581.9M,https://www.coinbase.com//price?page=2,https://www.coinbase.com//price?page=2,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC
+Avalanche,AVAX,$26.20,$3.3B,$334.1M,https://www.coinbase.com//price?page=2,https://www.coinbase.com//price?page=2,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC
+Binance Coin,BNB,$519.39,$79.7B,$6.7B,https://www.coinbase.com//price,https://www.coinbase.com//price,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC
+Binance Coin,BNB,$520.22,$79.7B,$6.7B,https://www.coinbase.com/price,https://www.coinbase.com/price,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC
+Binance USD,BUSD,$1.00,$5.4B,$7.2B,https://www.coinbase.com//price,https://www.coinbase.com//price,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC
+Binance USD,BUSD,$1.00,$5.4B,$7.2B,https://www.coinbase.com/price,https://www.coinbase.com/price,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC
+BitTorrent,BTT,$0.0078,$5.1B,$1.8B,https://www.coinbase.com//price,https://www.coinbase.com//price,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC
+BitTorrent,BTT,$0.0078,$5.1B,$1.8B,https://www.coinbase.com/price,https://www.coinbase.com/price,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC
+Bitcoin,BTC,"$55,016.82",$1.0T,$65.2B,https://www.coinbase.com//price,https://www.coinbase.com//price,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC
+Bitcoin,BTC,"$55,022.12",$1.0T,$65.2B,https://www.coinbase.com/price,https://www.coinbase.com/price,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC
+Bitcoin BEP2,BTCB,"$54,674.86",$3.0B,$73.6M,https://www.coinbase.com//price?page=2,https://www.coinbase.com//price?page=2,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC
+Bitcoin Cash,BCH,$911.91,$16.9B,$8.0B,https://www.coinbase.com//price,https://www.coinbase.com//price,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC
+Bitcoin Cash,BCH,$913.82,$16.9B,$8.0B,https://www.coinbase.com/price,https://www.coinbase.com/price,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC
+Bitcoin SV,BSV,$287.84,$5.4B,$2.3B,https://www.coinbase.com/price,https://www.coinbase.com/price,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC
+Bitcoin SV,BSV,$288.10,$5.4B,$2.3B,https://www.coinbase.com//price,https://www.coinbase.com//price,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC
+Cardano,ADA,$1.18,$37.6B,$4.8B,https://www.coinbase.com//price,https://www.coinbase.com//price,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC
+Cardano,ADA,$1.18,$37.6B,$4.8B,https://www.coinbase.com/price,https://www.coinbase.com/price,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC
+Chainlink,LINK,$35.80,$14.9B,$3.3B,https://www.coinbase.com//price,https://www.coinbase.com//price,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC
+Chainlink,LINK,$35.85,$14.9B,$3.3B,https://www.coinbase.com/price,https://www.coinbase.com/price,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC
+Chiliz,CHZ,$0.50,$2.8B,$979.3M,https://www.coinbase.com//price?page=2,https://www.coinbase.com//price?page=2,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC
+Compound,COMP,$469.05,$2.4B,$504.3M,https://www.coinbase.com//price?page=2,https://www.coinbase.com//price?page=2,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC
+Cosmos,ATOM,$18.96,$3.9B,$898.9M,https://www.coinbase.com//price?page=2,https://www.coinbase.com//price?page=2,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC
+Crypto.com Coin,CRO,$0.19,$4.7B,$139.4M,https://www.coinbase.com//price?page=2,https://www.coinbase.com//price?page=2,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC
+Dai,DAI,$1.00,$3.6B,$494.9M,https://www.coinbase.com//price?page=2,https://www.coinbase.com//price?page=2,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC
+Dash,DASH,$296.20,$3.0B,$2.0B,https://www.coinbase.com//price?page=2,https://www.coinbase.com//price?page=2,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC
+Decentraland,MANA,$1.30,$2.1B,$715.3M,https://www.coinbase.com//price?page=2,https://www.coinbase.com//price?page=2,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC
+Decred,DCR,$206.82,$2.7B,$94.5M,https://www.coinbase.com//price?page=2,https://www.coinbase.com//price?page=2,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC
+Dogecoin,DOGE,$0.35,$45.3B,$25.1B,https://www.coinbase.com/price,https://www.coinbase.com/price,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC
+Dogecoin,DOGE,$0.36,$45.3B,$25.1B,https://www.coinbase.com//price,https://www.coinbase.com//price,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC
+EOS,EOS,$6.43,$6.1B,$4.5B,https://www.coinbase.com//price,https://www.coinbase.com//price,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC
+EOS,EOS,$6.44,$6.1B,$4.5B,https://www.coinbase.com/price,https://www.coinbase.com/price,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC
+Elrond,EGLD,$166.77,$2.9B,$230.2M,https://www.coinbase.com//price?page=2,https://www.coinbase.com//price?page=2,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC
+Enjin Coin,ENJ,$2.44,$2.0B,$378.9M,https://www.coinbase.com//price?page=2,https://www.coinbase.com//price?page=2,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC
+Ethereum,ETH,"$2,151.42",$247.9B,$36.4B,https://www.coinbase.com/price,https://www.coinbase.com/price,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC
+Ethereum,ETH,"$2,154.88",$247.9B,$36.4B,https://www.coinbase.com//price,https://www.coinbase.com//price,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC
+Ethereum 2,ETH2,"$2,151.42",$247.9B,$36.4B,https://www.coinbase.com/price,https://www.coinbase.com/price,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC
+Ethereum 2,ETH2,"$2,154.88",$247.9B,$36.4B,https://www.coinbase.com//price,https://www.coinbase.com//price,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC
+Ethereum Classic,ETC,$33.18,$3.8B,$3.9B,https://www.coinbase.com//price?page=2,https://www.coinbase.com//price?page=2,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC
+FTX Token,FTT,$48.69,$4.6B,$199.2M,https://www.coinbase.com//price?page=2,https://www.coinbase.com//price?page=2,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC
+Filecoin,FIL,$152.80,$10.3B,$2.3B,https://www.coinbase.com//price,https://www.coinbase.com//price,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC
+Filecoin,FIL,$152.87,$10.3B,$2.3B,https://www.coinbase.com/price,https://www.coinbase.com/price,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC
+Hedera Hashgraph,HBAR,$0.31,$2.4B,$556.3M,https://www.coinbase.com//price?page=2,https://www.coinbase.com//price?page=2,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC
+Holo,HOT,$0.0158,$2.7B,$498.7M,https://www.coinbase.com//price?page=2,https://www.coinbase.com//price?page=2,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC
+Huobi Token,HT,$17.85,$3.2B,$861.2M,https://www.coinbase.com//price?page=2,https://www.coinbase.com//price?page=2,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC
+IOTA,MIOTA,$2.01,$5.6B,$395.6M,https://www.coinbase.com/price,https://www.coinbase.com/price,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC
+IOTA,MIOTA,$2.02,$5.6B,$395.6M,https://www.coinbase.com//price,https://www.coinbase.com//price,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC
+Klaytn,KLAY,$2.36,$5.8B,$86.1M,https://www.coinbase.com//price,https://www.coinbase.com//price,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC
+Klaytn,KLAY,$2.36,$5.8B,$86.1M,https://www.coinbase.com/price,https://www.coinbase.com/price,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC
+Kusama,KSM,$352.82,$3.0B,$382.2M,https://www.coinbase.com//price?page=2,https://www.coinbase.com//price?page=2,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC
+Litecoin,LTC,$247.97,$16.5B,$9.2B,https://www.coinbase.com//price,https://www.coinbase.com//price,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC
+Litecoin,LTC,$248.39,$16.5B,$9.2B,https://www.coinbase.com/price,https://www.coinbase.com/price,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC
+Maker,MKR,"$3,317.18",$3.3B,$429.6M,https://www.coinbase.com//price?page=2,https://www.coinbase.com//price?page=2,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC
+Monero,XMR,$389.27,$6.9B,$1.6B,https://www.coinbase.com//price,https://www.coinbase.com//price,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC
+Monero,XMR,$389.36,$6.9B,$1.6B,https://www.coinbase.com/price,https://www.coinbase.com/price,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC
+NEM,XEM,$0.36,$3.2B,$284.2M,https://www.coinbase.com//price?page=2,https://www.coinbase.com//price?page=2,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC
+Neo,NEO,$106.48,$7.5B,$5.5B,https://www.coinbase.com/price,https://www.coinbase.com/price,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC
+Neo,NEO,$106.68,$7.5B,$5.5B,https://www.coinbase.com//price,https://www.coinbase.com//price,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC
+PancakeSwap,CAKE,$23.18,$3.6B,$527.3M,https://www.coinbase.com//price?page=2,https://www.coinbase.com//price?page=2,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC
+Polkadot,DOT,$33.61,$31.3B,$3.2B,https://www.coinbase.com/price,https://www.coinbase.com/price,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC
+Polkadot,DOT,$33.74,$31.3B,$3.2B,https://www.coinbase.com//price,https://www.coinbase.com//price,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC
+Siacoin,SC,$0.0410,$1.9B,$626.6M,https://www.coinbase.com//price?page=2,https://www.coinbase.com//price?page=2,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC
+Solana,SOL,$29.09,$7.8B,$1.0B,https://www.coinbase.com/price,https://www.coinbase.com/price,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC
+Solana,SOL,$29.17,$7.8B,$1.0B,https://www.coinbase.com//price,https://www.coinbase.com//price,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC
+Stacks,STX,$2.30,$2.5B,$156.3M,https://www.coinbase.com//price?page=2,https://www.coinbase.com//price?page=2,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC
+Stellar Lumens,XLM,$0.49,$11.3B,$1.7B,https://www.coinbase.com//price,https://www.coinbase.com//price,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC
+Stellar Lumens,XLM,$0.50,$11.3B,$1.7B,https://www.coinbase.com/price,https://www.coinbase.com/price,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC
+THETA,THETA,$10.66,$10.7B,$584.2M,https://www.coinbase.com/price,https://www.coinbase.com/price,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC
+THETA,THETA,$10.70,$10.7B,$584.2M,https://www.coinbase.com//price,https://www.coinbase.com//price,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC
+THORChain,RUNE,$13.52,$3.1B,$249.2M,https://www.coinbase.com//price?page=2,https://www.coinbase.com//price?page=2,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC
+TRON,TRX,$0.13,$9.1B,$6.1B,https://www.coinbase.com//price,https://www.coinbase.com//price,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC
+TRON,TRX,$0.13,$9.1B,$6.1B,https://www.coinbase.com/price,https://www.coinbase.com/price,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC
+Terra,LUNA,$13.12,$5.0B,$538.8M,https://www.coinbase.com/price,https://www.coinbase.com/price,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC
+Terra,LUNA,$13.17,$5.0B,$538.8M,https://www.coinbase.com//price,https://www.coinbase.com//price,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC
+Tether,USDT,$1.00,$48.7B,$167.6B,https://www.coinbase.com//price,https://www.coinbase.com//price,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC
+Tether,USDT,$1.00,$48.7B,$167.6B,https://www.coinbase.com/price,https://www.coinbase.com/price,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC
+Tezos,XTZ,$5.38,$4.1B,$761.7M,https://www.coinbase.com//price?page=2,https://www.coinbase.com//price?page=2,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC
+UNUS SED LEO,LEO,$2.20,$2.2B,$8.4M,https://www.coinbase.com//price?page=2,https://www.coinbase.com//price?page=2,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC
+USD Coin,USDC,$1.00,$11.3B,$2.2B,https://www.coinbase.com//price,https://www.coinbase.com//price,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC
+USD Coin,USDC,$1.00,$11.3B,$2.2B,https://www.coinbase.com/price,https://www.coinbase.com/price,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC
+Uniswap,UNI,$29.81,$15.5B,$877.7M,https://www.coinbase.com//price,https://www.coinbase.com//price,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC
+Uniswap,UNI,$29.86,$15.5B,$877.7M,https://www.coinbase.com/price,https://www.coinbase.com/price,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC
+VeChain,VET,$0.24,$15.2B,$3.2B,https://www.coinbase.com//price,https://www.coinbase.com//price,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC
+VeChain,VET,$0.24,$15.2B,$3.2B,https://www.coinbase.com/price,https://www.coinbase.com/price,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC
+Wrapped Bitcoin,WBTC,"$55,050.95",$8.5B,$175.8M,https://www.coinbase.com//price,https://www.coinbase.com//price,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC
+Wrapped Bitcoin,WBTC,"$55,056.39",$8.5B,$175.8M,https://www.coinbase.com/price,https://www.coinbase.com/price,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC
+XRP,XRP,$1.30,$59.0B,$15.7B,https://www.coinbase.com//price,https://www.coinbase.com//price,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC
+XRP,XRP,$1.30,$59.0B,$15.7B,https://www.coinbase.com/price,https://www.coinbase.com/price,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC
+Zcash,ZEC,$228.47,$2.6B,$1.6B,https://www.coinbase.com//price?page=2,https://www.coinbase.com//price?page=2,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC
+Zilliqa,ZIL,$0.18,$2.0B,$282.3M,https://www.coinbase.com//price?page=2,https://www.coinbase.com//price?page=2,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC,2021-04-20 15:43:40 UTC
