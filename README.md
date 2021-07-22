@@ -11,11 +11,15 @@ DCR is already implemented in 2 ways:
 
 ### File Structure
 
+```
 .
-|
-+- extension - contains files required to build DCR Chrome extension
-+- src - contains internal module system which is the core of DCR (used in both modes)
-+- web - contains a web-page related files which enable to run stand-alone web-page (which is deployed in Environments)
++-- extension 
+|   - contains files required to build DCR Chrome extension
++-- src 
+|   - contains internal module system which is the core of DCR (used in both modes)
++-- web 
+|   - contains a web-page related files which enable to run stand-alone web-page (which is deployed in Environments)
+```
 
 #### Thesis-regarded note
 
